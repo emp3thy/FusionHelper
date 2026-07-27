@@ -443,4 +443,15 @@ Every item below is verified working and returns to the agent via `print()`:
 5. `measureMinimumDistance` for declared clearances
 
 Plus the offline pyright gate against Autodesk's shipped stubs before the script is ever sent
-to Fusion (7/7 hallucinated-API defects caught, 0 false positives, ~0.3 s).
+to Fusion (7/7 hallucinated-API defects caught, 0 false positives, ~2 s).
+
+> **Two corrections established after this document was first written — see
+> [`fusion-api-notes.md`](fusion-api-notes.md) §8.**
+>
+> - **Timing: ~2 s, not ~0.3 s.** Measured wall-clock is 1.6–2.2 s; the 0.3 s figure was
+>   pyright's self-reported analysis time and excludes node process start.
+> - **The gate fails OPEN.** A malformed `pyrightconfig.json` makes pyright fall back to
+>   defaults and exit *normally* — 3 errors instead of 7, all seven genuine hallucinations
+>   undetected, while looking like a clean run. The config must be generated programmatically,
+>   and every invocation must run a canary proving the gate is live. `"include": ["."]` is a
+>   live bug (4 files / 1168 diagnostics instead of 1 / 7); stage into an isolated temp dir.

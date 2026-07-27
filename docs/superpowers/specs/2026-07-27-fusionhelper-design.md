@@ -36,7 +36,7 @@ A markdown file and a small Python package. Nothing else.
 3. Claude writes the declaration block (parameters, datums, clearances) and checks the
    dimensional chain, before any geometry.
 4. Claude generates Fusion Python.
-5. `python -m fusionhelper.preflight box.py` — **local, no Fusion involved**, ~0.3 s.
+5. `python -m fusionhelper.preflight box.py` — **local, no Fusion involved**, ~2 s.
 6. Script goes to Fusion through **Autodesk's** MCP.
 7. The appended verification block prints a JSON verdict.
 8. Renders shown to the user.
@@ -180,20 +180,40 @@ Runs before any script reaches Fusion. Two independent checks.
 **Static type check.** Pyright against Autodesk's shipped stubs at
 `%APPDATA%\Autodesk\Autodesk Fusion 360\API\Python\defs`. Verified: 7/7 hallucinated API
 calls caught (including `geometricConstraints.addFixed`, a plausible-looking constraint type
-that does not exist), 0 false positives, ~0.3 s, no Fusion round-trip. Because it validates
+that does not exist), 0 false positives, ~2 s, no Fusion round-trip. Because it validates
 against the installed stubs it tracks the user's Fusion version automatically.
 
-Required configuration — the `reportArgumentType` suppression is not optional. Fusion enums
-are plain classes with `int` attributes while parameters are annotated with the enum class
-type, so every enum argument otherwise raises a false positive and drowns the signal:
+> **The gate fails OPEN, and this is the most important constraint on its implementation.**
+> A malformed `pyrightconfig.json` makes pyright print one line to stderr, fall back to
+> default settings, and **exit normally** — losing `extraPaths` and weakening
+> `reportAttributeAccessIssue`. Measured consequence: 3 errors instead of 7, with all seven
+> genuine hallucinations undetected, while looking like a clean run.
+>
+> Therefore: the config is **generated programmatically** (never hand-maintained, never
+> string-templated); every invocation runs a **canary** — a known-bad probe it asserts pyright
+> flagged — proving config parse, stub resolution and rule severity together; and preflight
+> returns **three** outcomes, `PASS` / `FAIL` / `GATE_BROKEN`, where `GATE_BROKEN` is never
+> reported as a pass. A gate that can silently stop working converts "unchecked" into
+> "checked and clean", which is the exact failure class this project exists to eliminate.
+
+Required configuration — two settings are load-bearing. `reportArgumentType: "none"` is not
+optional: Fusion enums are plain classes with `int` attributes while parameters are annotated
+with the enum class type, so every enum argument otherwise raises a false positive and drowns
+the signal. And `include` must name the single **staged** file — with `["."]`, pyright analysed
+4 files and produced 1168 diagnostics instead of 1 and 7, which makes the gate unusable in a
+real project directory. Stage the script into an isolated temp directory, which also escapes
+any ancestor `pyrightconfig.json` or `pyproject.toml` `[tool.pyright]`.
 
 ```json
 {
-  "extraPaths": ["<APPDATA>/Autodesk/Autodesk Fusion 360/API/Python/defs"],
+  "include": ["script.py"],
+  "extraPaths": ["<discovered defs path>"],
   "typeCheckingMode": "basic",
+  "pythonVersion": "3.12",
   "reportMissingImports": "error",
   "reportAttributeAccessIssue": "error",
-  "reportArgumentType": "none"
+  "reportArgumentType": "none",
+  "reportSelfClsParameterName": "none"
 }
 ```
 
@@ -281,7 +301,7 @@ description
   → parameter table + declared clearances/tolerances      (the spec; also the oracle)
   → datum frame declaration
   → generated Python (emit helpers)
-  → preflight: pyright + lint                             offline, ~0.3s
+  → preflight: pyright + lint                             offline, ~2s
   → fusion_mcp_execute
   → verification block → JSON verdict
   → PASS → renders for the human
