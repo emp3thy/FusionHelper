@@ -1,0 +1,12 @@
+{
+  "include": [
+    "."
+  ],
+  "extraPaths": [
+    "C:\\Users\\gethi\\AppData\\Roaming\\Autodesk\\Autodesk Fusion 360\\API\\Python\\defs"
+  ],
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "error",
+  "reportAttributeAccessIssue": "error",
+  "reportArgumentType": "none"
+}

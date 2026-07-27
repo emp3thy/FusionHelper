@@ -202,9 +202,38 @@ split matters: an ERROR must always mean "this will throw at runtime". And it ma
 incomplete rejected-set tolerable — a script with zero WARNs provably cannot trip the ERROR set,
 which is a stronger guarantee than enumerating Fusion's reserved words.
 
-**R8 `verify-stub-intact`** — the stub is present (absence means nothing verified while preflight
-still says PASS), and the `run` rebinding is the last statement (anything after it wins, and
-verification silently never executes).
+**R8 `verify-stub-intact`** — one invariant: **the file ends with the stub, unmodified.** A
+normalised suffix comparison against `fusionhelper.verify.STUB_TEXT` gives the verdict; the AST
+and a sentinel comment are used only to diagnose *which* failure it is, so the message stays
+actionable rather than a bare "stub check failed".
+
+```python
+ok = _norm(source).endswith(_norm(verify.STUB_TEXT))
+```
+
+Normalisation absorbs CRLF, trailing blank lines and trailing whitespace — the things an editor
+or generator varies without meaning to. CRLF is not incidental: the script is written on Windows
+and a naive comparison would fail on every real file.
+
+This deliberately makes the check **indifferent to the stub's syntactic shape**, so it passes both
+`def run(_context):` and `run = _fh_wrap(run)`. The alternative — matching an AST pattern — would
+have coupled the lint rule to a choice that belongs to whoever owns the stub.
+
+Why the rule earns its place, which is not obvious from the check's shape. Ordering failures split
+cleanly:
+
+- Stub placed *before* the user's `def run` → `_fh_user_run = run` runs before `run` exists →
+  `NameError` at module load. **Loud**, and the repair loop handles it.
+- A `def run` appended *after* the stub → the later definition wins, the wrapper is discarded, the
+  script builds geometry and prints nothing. **Silent**, and it looks exactly like a script whose
+  verification passed quietly.
+
+Only the second needs a gate — and it is this component's own failure mode appearing in its own
+scaffolding: a preflight PASS asserting "this model was verified" when nothing verified it.
+
+If the stub is ever to be hand-editable, R8 degrades cleanly to a position check (the last
+top-level statement's `lineno` at or after the sentinel), keeping the silent case and giving up
+only modification detection.
 
 ### Suppression
 

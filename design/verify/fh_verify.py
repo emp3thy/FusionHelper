@@ -1,28 +1,38 @@
 # fh_verify.py --- FusionHelper verification block, contract v1
 #
 # Installed by the fusionhelper package to %LOCALAPPDATA%\FusionHelper\fh_verify.py.
-# NEVER pasted into a generated script: generated scripts carry a ~16-line stub that
-# exec()s this file at run time. fusion_mcp_execute takes the script as a *string*, so
-# every byte of an inlined block would cost Claude context on every repair attempt.
+# NEVER pasted into a generated script: generated scripts carry a ~20-line stub that
+# exec()s this file at run time. Two reasons, both hard:
+#   1. fusion_mcp_execute takes the script as a *string*, so every byte of an inlined
+#      block would cost Claude context on every repair attempt (~9,000 tokens x N).
+#   2. No user site-packages is importable inside Fusion, so `import fusionhelper`
+#      cannot work. exec() of a read file bypasses the import system entirely.
+#
+# Runs on CPython 3.14 inside Fusion360.exe. Stdlib only, no package imports.
+#
+# OUTPUT PROTOCOL --- incremental, because a failing script never reaches its last line.
+#   FH_CHECK1   {...}  one per check, printed as that check completes
+#   FH_GUARD1   {...}  restore manifest, printed BEFORE any parameter is perturbed
+#   FH_VERDICT1 {...}  final roll-up (does not repeat findings)
+# The MCP folds stdout into the `error` field when a script fails, so lines printed
+# before a failure survive. That is what makes the guard manifest recoverable.
 #
 # Entry points:
-#   fh_verify(decl_path=None, decl=None, refs=None, attempt=1, **opts) -> str
-#       one-line JSON verdict, prefixed 'FH_VERDICT1 '
-#   fh_state() -> str
-#       cheap state probe (timeline count + health only). Used after a raw build
-#       exception and to drive undo-to-depth. No rebuilds.
+#   fh_verify(clearances, face_specs, datum_heights_cm, digest, refs, attempt, **opts)
+#   fh_state()   cheap probe, no rebuilds: timeline depth, health, bbox
 
 import adsk.core
 import adsk.fusion
 import json
 import math
-import os
 import re
 import time
 import traceback
 
 FH_CONTRACT = 1
 VERDICT_PREFIX = 'FH_VERDICT1 '
+CHECK_PREFIX = 'FH_CHECK1 '
+GUARD_PREFIX = 'FH_GUARD1 '
 
 # Change detection thresholds, in internal units (cm / cm2 / cm3).
 # A genuinely dead parameter reproduces byte-identical metrics (probe: volume equal to
@@ -30,6 +40,11 @@ VERDICT_PREFIX = 'FH_VERDICT1 '
 # The margin between signal and noise is ~6 orders of magnitude, so these are not delicate.
 ABS_TOL = 1e-7
 REL_TOL = 1e-9
+
+# measureMinimumDistance returns 0.00000 for BOTH "touching" and "interpenetrating by
+# 5 mm" (verified). A zero is therefore uninformative on its own and must be resolved
+# against the interference result. See _judge_clearance.
+ZERO_MM = 1e-4
 
 # Perturbation sizing, internal units.
 LEN_STEP_FRAC = 0.05
@@ -42,7 +57,7 @@ MAX_FINDINGS_PER_CHECK = 5
 MAX_FINDINGS_TOTAL = 12
 MSG_CLIP = 180
 
-CHECKS = ('constraints', 'liveness', 'timeline', 'interference', 'clearance')
+CHECKS = ('constraints', 'timeline', 'interference', 'clearance', 'liveness')
 
 # Tokens that appear in a dimension expression without making it parametric.
 _UNIT_TOKENS = {'mm', 'cm', 'm', 'um', 'nm', 'in', 'ft', 'yd', 'mil', 'thou',
@@ -95,10 +110,6 @@ def _mm(cm, p=3):
     return _n(None if cm is None else cm * 10.0, p)
 
 
-def _mm2(cm2, p=2):
-    return _n(None if cm2 is None else cm2 * 100.0, p)
-
-
 def _mm3(cm3, p=2):
     return _n(None if cm3 is None else cm3 * 1000.0, p)
 
@@ -122,6 +133,24 @@ def _num_differs(a, b):
         return a is not b
     d = abs(a - b)
     return d > ABS_TOL and d > REL_TOL * max(abs(a), abs(b), 1.0)
+
+
+def _cm_str_to_mm(v):
+    """Declaration numerics arrive as decimal strings ALREADY IN CM (Agent D's
+    compiler). Convert once, here, at the boundary; nothing downstream sees cm."""
+    if v is None:
+        return None
+    try:
+        return float(str(v).strip()) * 10.0
+    except Exception:
+        return None
+
+
+def _print(line):
+    try:
+        print(line)
+    except Exception:
+        pass
 
 
 # --------------------------------------------------------------------- model snapshot
@@ -220,12 +249,13 @@ class Ctx(object):
         self.refs = refs or {}
         self.opts = opts or {}
         self.findings = []
-        self.status = {}          # check -> pass | warn | fail | skip
-        self.skips = {}           # check -> reason
-        self.counts = {}          # check -> findings emitted (for truncation)
-        self.t0 = time.time()
-        for c in CHECKS:
-            self.status[c] = 'pass'
+        self.status = dict((c, 'pass') for c in CHECKS)
+        self.skips = {}
+        self.counts = {}
+        self.emitted = set()
+        # Cross-check state: clearance needs to know what interference concluded.
+        self.interference_ran = False
+        self.clash_bodies = set()
 
     def skip(self, check, reason):
         self.status[check] = 'skip'
@@ -244,6 +274,24 @@ class Ctx(object):
                 f[k] = v
         self.findings.append(f)
 
+    def emit_check(self, check):
+        """Print this check's result the moment it completes. A script that dies at
+        check 4 still surfaces checks 1-3; a consolidated final print would lose them."""
+        if check in self.emitted:
+            return
+        self.emitted.add(check)
+        line = {'c': check, 's': self.status[check]}
+        if check in self.skips:
+            line['why'] = self.skips[check]
+        fs = [dict((k, v) for k, v in f.items() if k != 'check')
+              for f in self.findings if f['check'] == check]
+        if fs:
+            line['f'] = fs
+        total = self.counts.get(check, 0)
+        if total > len(fs):
+            line['more'] = total - len(fs)
+        _print(CHECK_PREFIX + json.dumps(line, separators=(',', ':')))
+
     def failed(self):
         return any(v == 'fail' for v in self.status.values())
 
@@ -257,10 +305,8 @@ def check_constraints(ctx):
     except Exception:
         param_names = set()
 
-    comps = []
     try:
-        for c in des.allComponents:
-            comps.append(c)
+        comps = list(des.allComponents)
     except Exception:
         comps = [des.rootComponent]
 
@@ -323,8 +369,7 @@ def _loose_entities(sk):
                     continue          # sketch origin
             except Exception:
                 continue
-            out.append({'i': i, 't': 'SketchPoint',
-                        'at': [_mm(g.x), _mm(g.y)]})
+            out.append({'i': i, 't': 'SketchPoint', 'at': [_mm(g.x), _mm(g.y)]})
     except Exception:
         pass
     return out
@@ -439,6 +484,10 @@ def _pair_key(a, b):
     return '|'.join(sorted([a or '', b or '']))
 
 
+def _leaf(name):
+    return (name or '').split('/')[-1]
+
+
 def check_interference(ctx):
     des = ctx.des
     bodies = [b for _, b in _all_bodies(des) if _is_solid(b)]
@@ -460,6 +509,7 @@ def check_interference(ctx):
     if res is None:
         ctx.skip('interference', 'analyze_returned_none')
         return
+    ctx.interference_ran = True
     exempt = 0
     for i in range(res.count):
         r = res.item(i)
@@ -468,6 +518,11 @@ def check_interference(ctx):
         if _pair_key(n1, n2) in allowed:
             exempt += 1
             continue
+        # Recorded even when the finding list is truncated: the clearance check
+        # consults this set, and truncation must not silently downgrade a zero
+        # clearance from error to warning.
+        ctx.clash_bodies.add(_leaf(n1))
+        ctx.clash_bodies.add(_leaf(n2))
         rec = {'pair': [n1, n2]}
         try:
             ib = r.interferenceBody
@@ -525,80 +580,223 @@ def _clash_count(des):
         return -1
 
 
-# -------------------------------------------------------------------- check: clearance
-
-_LEN_UNITS = {'mm': 1.0, 'cm': 10.0, 'm': 1000.0, 'in': 25.4, 'ft': 304.8}
-
-
-def _parse_len_mm(v):
-    """Declaration lengths arrive as '0.8 mm' or as a bare number meaning mm."""
-    if v is None:
-        return None
-    if isinstance(v, (int, float)):
-        return float(v)
-    m = re.match(r'\s*([-+0-9.eE]+)\s*([a-zA-Z]*)\s*$', str(v))
-    if not m:
-        return None
-    try:
-        val = float(m.group(1))
-    except Exception:
-        return None
-    return val * _LEN_UNITS.get(m.group(2) or 'mm', 1.0)
-
+# -------------------------------------------------------------- reference resolution
 
 def _resolve_role(des, refs, role):
+    """role -> (entities, err).
+
+    Design.findEntityByToken returns a LIST. Where a face has been split by later
+    features it returns every resulting piece, the first being the "most logical
+    match". A blind [0] is therefore silently wrong in exactly the case durable
+    tokens exist to protect against, so every caller gets the whole list and decides.
+    """
     tok = refs.get(role)
     if not tok:
-        return None, 'not_registered'
+        return [], 'not_registered'
     try:
         found = des.findEntityByToken(tok)
     except Exception as e:
-        return None, _clip(str(e), 80)
-    if not found:
-        return None, 'token_unresolved'
+        msg = str(e)
+        return [], ('stale_brep' if classify(msg) == 'ref.stale_brep' else _clip(msg, 80))
+    if found is None:
+        return [], 'token_unresolved'
     try:
-        return (found[0] if len(found) else None), None
+        ents = [found[i] for i in range(len(found))]
     except TypeError:
-        return found, None
+        ents = [found]
+    if not ents:
+        return [], 'token_unresolved'
+    return ents, None
+
+
+def _owning_body(entity):
+    """Body name for a face/edge/body, for cross-referencing against clash pairs."""
+    try:
+        return entity.body.name
+    except Exception:
+        pass
+    try:
+        n = entity.name
+        return n if isinstance(n, str) else None
+    except Exception:
+        return None
+
+
+# -------------------------------------------------------------------- check: clearance
+
+def _clearance_items(decl):
+    """Accept a list of dicts or a dict of name -> dict; Agent D's exact shape is
+    still to be confirmed, so parse defensively rather than assume."""
+    raw = decl.get('clearances')
+    if not raw:
+        return []
+    if isinstance(raw, dict):
+        return [dict(v, _name=k) for k, v in raw.items() if isinstance(v, dict)]
+    return [c for c in raw if isinstance(c, dict)]
+
+
+def _measure_pair(ctx, a_role, b_role):
+    """Minimum distance in mm over every resolved piece of both roles.
+
+    Returns (mm, info, err). `info` records multiplicity and the spread across
+    pieces, because when a role resolves to several faces the answer depends on
+    which one was meant, and that is worth surfacing rather than hiding.
+    """
+    des = ctx.des
+    ea, err_a = _resolve_role(des, ctx.refs, a_role)
+    if err_a:
+        return None, {'role': a_role}, err_a
+    eb, err_b = _resolve_role(des, ctx.refs, b_role)
+    if err_b:
+        return None, {'role': b_role}, err_b
+    mm_values = []
+    for x in ea:
+        for y in eb:
+            try:
+                d = ctx.app.measureManager.measureMinimumDistance(x, y).value
+            except Exception as e:
+                msg = str(e)
+                return None, {}, ('stale_brep' if classify(msg) == 'ref.stale_brep'
+                                  else _clip(msg, 100))
+            v = _mm(d)
+            if v is not None:
+                mm_values.append(v)
+    if not mm_values:
+        return None, {}, 'measure_failed'
+    info = {'bodies': [_owning_body(ea[0]), _owning_body(eb[0])]}
+    if len(ea) > 1 or len(eb) > 1:
+        info['pieces'] = [len(ea), len(eb)]
+        info['spread_mm'] = [min(mm_values), max(mm_values)]
+    return min(mm_values), info, None
 
 
 def check_clearance(ctx):
-    decls = ctx.decl.get('clearances') or []
-    if not decls:
-        ctx.skip('clearance', 'none_declared')
+    items = _clearance_items(ctx.decl)
+    specs = ctx.decl.get('face_specs') or {}
+    _check_datums(ctx)
+    _check_declared_roles(ctx, specs, items)
+    if not items:
+        if ctx.status['clearance'] == 'pass':
+            ctx.skip('clearance', 'none_declared')
         return
-    des, refs = ctx.des, ctx.refs
-    available = sorted(refs.keys())
-    for c in decls:
+    for c in items:
         try:
             a_role, b_role = c['between'][0], c['between'][1]
         except Exception:
-            ctx.add('clearance', 'clearance.malformed', 'error', decl=_clip(str(c), 80))
+            ctx.add('clearance', 'decl.malformed', 'error', decl=_clip(str(c), 80))
             continue
-        ea, err_a = _resolve_role(des, refs, a_role)
-        eb, err_b = _resolve_role(des, refs, b_role)
-        if ea is None or eb is None:
-            ctx.add('clearance', 'ref.unresolved', 'error',
-                    role=(a_role if ea is None else b_role),
-                    reason=(err_a if ea is None else err_b),
-                    registered=available[:8])
+        mm, info, err = _measure_pair(ctx, a_role, b_role)
+        if err:
+            code = ('R_FACE_UNRESOLVED' if err in ('not_registered', 'token_unresolved')
+                    else 'ref.stale_brep' if err == 'stale_brep'
+                    else 'clearance.measure_failed')
+            ctx.add('clearance', code, 'error', between=[a_role, b_role],
+                    role=info.get('role'), reason=err,
+                    registered=sorted(ctx.refs.keys())[:8])
+            continue
+        if 'pieces' in info:
+            # The role resolved to several faces: it was split after registration.
+            # Only an error if which piece was meant would change the verdict.
+            lo_mm = _cm_str_to_mm(c.get('min'))
+            straddles = (lo_mm is not None and
+                         info['spread_mm'][0] < lo_mm <= info['spread_mm'][1])
+            ctx.add('clearance', 'R_FACE_AMBIGUOUS', 'error' if straddles else 'warn',
+                    between=[a_role, b_role], pieces=info['pieces'],
+                    spread_mm=info['spread_mm'],
+                    note='pieces straddle the threshold' if straddles else None)
+        _judge_clearance(ctx, c, a_role, b_role, mm, info)
+
+
+def _judge_clearance(ctx, c, a_role, b_role, mm, info, check='clearance', prefix=''):
+    lo = _cm_str_to_mm(c.get('min'))
+    hi = _cm_str_to_mm(c.get('max'))
+    declared = c.get('min') if lo is not None else c.get('max')
+
+    if mm is not None and mm <= ZERO_MM:
+        # measureMinimumDistance cannot distinguish touching from interpenetrating,
+        # so a zero is resolved against the interference result and never passes.
+        bodies = set(b for b in (info.get('bodies') or []) if b)
+        if bodies & ctx.clash_bodies:
+            ctx.add(check, prefix + 'R_CLEARANCE_ZERO', 'error',
+                    between=[a_role, b_role], measured_mm=0, declared_cm=declared,
+                    bodies=sorted(bodies),
+                    note='interpenetrating: interference reports a clash on these bodies')
+        elif not ctx.interference_ran:
+            ctx.add(check, prefix + 'R_CLEARANCE_ZERO', 'error',
+                    between=[a_role, b_role], measured_mm=0, declared_cm=declared,
+                    note='interference not analysed; touching and interpenetrating are indistinguishable')
+        elif lo is not None and lo > ZERO_MM:
+            ctx.add(check, prefix + 'R_CLEARANCE_VIOLATED', 'error',
+                    between=[a_role, b_role], min_mm=_n(lo), measured_mm=0,
+                    short_by_mm=_n(lo), note='contact where a gap was declared')
+        else:
+            ctx.add(check, prefix + 'R_CLEARANCE_ZERO', 'warn',
+                    between=[a_role, b_role], measured_mm=0, declared_cm=declared,
+                    note='touching; interference clean, but the distance oracle is blind here')
+        return
+
+    if mm is None:
+        return
+    if lo is not None and mm < lo - 1e-6:
+        ctx.add(check, prefix + 'R_CLEARANCE_VIOLATED', 'error',
+                between=[a_role, b_role], min_mm=_n(lo), measured_mm=mm,
+                short_by_mm=_n(lo - mm))
+    elif hi is not None and mm > hi + 1e-6:
+        ctx.add(check, prefix + 'R_CLEARANCE_VIOLATED', 'error',
+                between=[a_role, b_role], max_mm=_n(hi), measured_mm=mm,
+                over_by_mm=_n(mm - hi))
+
+
+def _check_declared_roles(ctx, specs, items):
+    """Every role the declaration names must have been registered by fh_ref during
+    the build. Catching this here turns a silent miss into a named one."""
+    needed = set(specs or ())
+    for c in items:
+        try:
+            needed.update(c['between'][:2])
+        except Exception:
+            pass
+    missing = sorted(r for r in needed if r not in ctx.refs)
+    if missing:
+        ctx.add('clearance', 'R_FACE_UNRESOLVED', 'error', roles=missing[:6],
+                registered=sorted(ctx.refs.keys())[:8],
+                note='declared role never passed to fh_ref during the build')
+
+
+def _check_datums(ctx):
+    """Declared datum offsets versus the construction planes actually built.
+
+    Reads the offset from the plane's own definition rather than assuming an axis --
+    the XZ inversion makes any hardcoded axis assumption unsafe.
+    """
+    declared = ctx.decl.get('datum_heights_cm') or {}
+    if not declared:
+        return
+    planes = {}
+    try:
+        for comp in ctx.des.allComponents:
+            for i in range(comp.constructionPlanes.count):
+                pl = comp.constructionPlanes.item(i)
+                planes[pl.name] = pl
+    except Exception:
+        pass
+    for name in sorted(declared):
+        pl = planes.get(name)
+        if pl is None:
+            ctx.add('clearance', 'R_DATUM_MISSING', 'error', datum=name,
+                    built=sorted(planes.keys())[:8])
+            continue
+        want_mm = _cm_str_to_mm(declared[name])
+        if want_mm is None:
             continue
         try:
-            dist_mm = _mm(ctx.app.measureManager.measureMinimumDistance(ea, eb).value)
-        except Exception as e:
-            ctx.add('clearance', 'clearance.measure_failed', 'error',
-                    between=[a_role, b_role], msg=_clip(str(e), 120))
-            continue
-        lo = _parse_len_mm(c.get('min'))
-        hi = _parse_len_mm(c.get('max'))
-        if lo is not None and dist_mm < lo - 1e-6:
-            ctx.add('clearance', 'clearance.violated', 'error',
-                    between=[a_role, b_role], min_mm=_n(lo),
-                    measured_mm=dist_mm, short_by_mm=_n(lo - dist_mm))
-        elif hi is not None and dist_mm > hi + 1e-6:
-            ctx.add('clearance', 'clearance.exceeded', 'error',
-                    between=[a_role, b_role], max_mm=_n(hi),
-                    measured_mm=dist_mm, over_by_mm=_n(dist_mm - hi))
+            got_mm = _mm(pl.definition.offset.value)
+        except Exception:
+            continue          # not an offset-defined plane; the existence check stands
+        if got_mm is not None and abs(got_mm - want_mm) > 1e-4:
+            ctx.add('clearance', 'R_DATUM_MISSING', 'error', datum=name,
+                    declared_mm=_n(want_mm), built_mm=got_mm,
+                    note='construction plane offset does not match the declaration')
 
 
 # --------------------------------------------------------------------- check: liveness
@@ -648,6 +846,9 @@ def _perturbed_expr(orig, step_txt, unit):
     return '(%s) + %s%s' % (orig, step_txt, (' ' + unit) if unit else '')
 
 
+_STRICT_RECOMPUTE = False       # see notes: computeAll() is not verified as required
+
+
 def _settle(des):
     adsk.doEvents()
     if _STRICT_RECOMPUTE:
@@ -655,9 +856,6 @@ def _settle(des):
             des.computeAll()
         except Exception:
             pass
-
-
-_STRICT_RECOMPUTE = False       # see notes: computeAll() is not verified as required
 
 
 def _dependency_map(params):
@@ -675,6 +873,10 @@ def _dependency_map(params):
     return referenced_by, roots
 
 
+def _unhealthy_keys(des):
+    return set((r.get('i'), r.get('name')) for r in _timeline_problems(des, limit=40))
+
+
 def check_liveness(ctx):
     des = ctx.des
     if ctx.opts.get('liveness') is False:
@@ -688,11 +890,13 @@ def check_liveness(ctx):
     try:
         params = _user_params(des)
     except Exception as e:
-        ctx.skip('liveness', 'no_user_parameters: ' + _clip(str(e), 60))
+        # _clip returns None for a falsy message, and an exception with no message
+        # is entirely possible. Concatenating None here would turn a HANDLED failure
+        # into an unhandled TypeError inside the handler, destroying the verdict.
+        ctx.skip('liveness', 'no_user_parameters: ' + (_clip(str(e), 60) or type(e).__name__))
         return
-    expected = ctx.decl.get('parameters') or {}
-    params = [p for p in params
-              if not _decl_flag(expected, p.name, 'expect_live') is False]
+    opted_out = set(ctx.decl.get('expect_dead') or ())
+    params = [p for p in params if p.name not in opted_out]
     only = ctx.opts.get('only_params')
     if only:
         params = [p for p in params if p.name in set(only)]
@@ -706,6 +910,13 @@ def check_liveness(ctx):
     sick0 = _unhealthy_keys(des)
     detail = {}
 
+    # Printed BEFORE anything is perturbed. Python `finally` covers exceptions but
+    # not a native crash or a kill, and a failing script never reaches its cleanup.
+    # Because the MCP folds stdout into the error field on failure, this manifest
+    # survives, and the document can be restored by hand from the transcript.
+    _print(GUARD_PREFIX + json.dumps(
+        {'restore': dict((k, _clip(v, 60)) for k, v in saved.items())},
+        separators=(',', ':')))
     try:
         if ctx.opts.get('canary', True) and len(params) > 1:
             _edit_canary(ctx, des, params, roots, base, detail)
@@ -717,13 +928,13 @@ def check_liveness(ctx):
         per = None
         for idx, p in enumerate(order):
             if per is not None:
-                projected = per * (len(order) - idx)
-                if (time.time() - t_start) + projected > budget:
+                if (time.time() - t_start) + per * (len(order) - idx) > budget:
                     untested = [q.name for q in order[idx:]]
                     break
             t_p = time.time()
             _test_one(ctx, des, p, base, sick0)
-            per = max(time.time() - t_p, 1e-6) if per is None else max(per, time.time() - t_p)
+            dt = time.time() - t_p
+            per = dt if per is None else max(per, dt)
             tested.append(p.name)
         detail['tested'] = len(tested)
         detail['of'] = len(order)
@@ -734,17 +945,9 @@ def check_liveness(ctx):
                     tested=len(tested), of=len(order), untested=untested[:12])
     finally:
         _restore_all(ctx, des, params, saved, base)
+        _print(GUARD_PREFIX + '{"restore":"released"}')
 
     ctx.opts['_liveness_detail'] = detail
-
-
-def _decl_flag(expected, name, key):
-    v = expected.get(name)
-    return v.get(key) if isinstance(v, dict) else None
-
-
-def _unhealthy_keys(des):
-    return set((r.get('i'), r.get('name')) for r in _timeline_problems(des, limit=40))
 
 
 def _test_one(ctx, des, p, base, sick0=frozenset()):
@@ -769,14 +972,13 @@ def _test_one(ctx, des, p, base, sick0=frozenset()):
                  if (r.get('i'), r.get('name')) not in sick0]
         if broke:
             # Live, but fragile: a 5% nudge already breaks it. Worth saying.
-            ctx.add('liveness', 'param.fragile', 'warn',
-                    param=p.name, step=(step_txt + ' ' + unit).strip(),
+            ctx.add('liveness', 'param.fragile', 'warn', param=p.name,
+                    step=(step_txt + ' ' + unit).strip(),
                     feature=broke[0].get('name'), msg=broke[0].get('msg'))
             return
         if not _snapshot_differs(base, after):
-            ctx.add('liveness', 'param.dead', 'error',
-                    param=p.name, step=(step_txt + ' ' + unit).strip(),
-                    expr=_clip(orig, 40))
+            ctx.add('liveness', 'param.dead', 'error', param=p.name,
+                    step=(step_txt + ' ' + unit).strip(), expr=_clip(orig, 40))
     finally:
         try:
             p.expression = orig
@@ -786,10 +988,14 @@ def _test_one(ctx, des, p, base, sick0=frozenset()):
 
 
 def _edit_canary(ctx, des, params, roots, base, detail):
-    """Perturb every root parameter at once, then look for a clash that only appears
-    after an edit. This is the P5 failure mode exactly: geometry pinned to literal
-    coordinates does not follow when the parts around it grow. Costs two rebuilds.
-    Roots only, so derived parameters are not perturbed twice.
+    """Perturb every root parameter at once, then re-check interference AND the
+    declared clearances. This is the P5 failure mode exactly: geometry pinned to
+    literal coordinates does not follow when the parts around it grow, so a clash
+    or a closed gap appears only after an edit. Costs two rebuilds.
+
+    Every reference is re-resolved from its token inside the perturbed state --
+    nothing resolved before the rebuild is reused after it, because a held BRep
+    object dies with InternalValidationError across a rebuild.
     """
     by_name = dict((p.name, p) for p in params)
     targets = [by_name[n] for n in roots if n in by_name]
@@ -808,8 +1014,7 @@ def _edit_canary(ctx, des, params, roots, base, detail):
         after = _snapshot(des)
         detail['canary'] = 'ran'
         if not _snapshot_differs(base, after):
-            ctx.add('liveness', 'model.inert', 'error',
-                    params=len(targets),
+            ctx.add('liveness', 'model.inert', 'error', params=len(targets),
                     note='no root parameter changed any geometry')
             return
         clash_after = _clash_count(des)
@@ -817,6 +1022,16 @@ def _edit_canary(ctx, des, params, roots, base, detail):
             ctx.add('liveness', 'edit.introduces_clash', 'error',
                     clashes_before=max(clash_before, 0), clashes_after=clash_after,
                     note='geometry does not follow a parameter edit')
+        for c in _clearance_items(ctx.decl):
+            try:
+                a_role, b_role = c['between'][0], c['between'][1]
+            except Exception:
+                continue
+            mm, info, err = _measure_pair(ctx, a_role, b_role)
+            if err or mm is None:
+                continue          # already reported at nominal; do not double-report
+            _judge_clearance(ctx, c, a_role, b_role, mm, info,
+                             check='liveness', prefix='EDIT_')
         for rec in _timeline_problems(des, limit=2):
             if rec['state'] == 'error':
                 ctx.add('liveness', 'edit.breaks_feature', 'warn',
@@ -855,18 +1070,6 @@ def _restore_all(ctx, des, params, saved, base):
 
 # ----------------------------------------------------------------------------- verdict
 
-def _load_decl(decl, decl_path):
-    if decl is not None:
-        return decl, None
-    if not decl_path:
-        return {}, None
-    try:
-        with open(decl_path, encoding='utf-8') as f:
-            return json.load(f), None
-    except Exception as e:
-        return {}, _clip(str(e), 120)
-
-
 def _roll_up(ctx):
     vals = ctx.status.values()
     if any(v == 'fail' for v in vals):
@@ -888,65 +1091,70 @@ HINTS = {
     'param.dead': 'parameter drives nothing: bind a sketch dimension or a feature extent to it',
     'model.inert': 'no parameter drives any geometry: profile is at literal Point3D coordinates',
     'edit.introduces_clash': 'geometry is placed by coordinates, not datums: re-place against named construction planes',
+    'EDIT_R_CLEARANCE_VIOLATED': 'gap holds at nominal and closes on edit: the gap is not parameterised',
+    'EDIT_R_CLEARANCE_ZERO': 'parts touch only after an edit: re-place against datums',
     'model.not_restored': 'call fusion_mcp_update undo until timeline count returns to its pre-run value',
     'param.restore_failed': 'undo, then re-run; do not build on this document state',
     'interference.clash': 'bodies overlap: move or resize against the declared chain, do not nudge coordinates',
-    'clearance.violated': 'declared clearance not met: change the parameter that sets the gap',
-    'ref.unresolved': 'register the face at authoring time with fh_ref(role, entity)',
+    'R_CLEARANCE_VIOLATED': 'declared clearance not met: change the parameter that sets the gap',
+    'R_CLEARANCE_ZERO': 'distance 0 means touching OR interpenetrating: read the interference finding',
+    'R_FACE_UNRESOLVED': 'register the face at authoring time with fh_ref(role, entity)',
+    'R_FACE_AMBIGUOUS': 'token resolved to several faces: the face was split after registration',
+    'R_DATUM_MISSING': 'declared datum plane not built, or built at a different offset',
     'timeline.reference_failure': 'a feature can no longer find its reference: check the profile fits the target body',
     'ref.stale_brep': 'BRep object held across a rebuild: capture entityToken and re-resolve',
 }
 
 
-def fh_verify(decl_path=None, decl=None, refs=None, attempt=1, **opts):
+def fh_verify(clearances=None, face_specs=None, datum_heights_cm=None, digest=None,
+              interference_allowed=None, expect_dead=None, refs=None, attempt=1, **opts):
     t0 = time.time()
     try:
-        decl_obj, decl_err = _load_decl(decl, decl_path)
-        ctx = Ctx(decl_obj, refs, opts)
-        if decl_err:
-            ctx.add('clearance', 'decl.unreadable', 'warn', msg=decl_err)
+        decl = {'clearances': clearances, 'face_specs': face_specs,
+                'datum_heights_cm': datum_heights_cm,
+                'interference_allowed': interference_allowed,
+                'expect_dead': expect_dead}
+        ctx = Ctx(decl, refs, opts)
 
+        # Order is load-bearing: interference must precede clearance, because a
+        # measured distance of 0 is only interpretable against the clash result.
         for fn, name in ((check_constraints, 'constraints'),
                          (check_timeline, 'timeline'),
                          (check_interference, 'interference'),
-                         (check_clearance, 'clearance')):
+                         (check_clearance, 'clearance'),
+                         (check_liveness, 'liveness')):
             try:
                 fn(ctx)
             except Exception as e:
                 ctx.add(name, 'check.crashed', 'warn', msg=_clip(str(e), 140))
-        try:
-            check_liveness(ctx)
-        except Exception as e:
-            ctx.add('liveness', 'check.crashed', 'warn', msg=_clip(str(e), 140))
+            ctx.emit_check(name)
 
-        base_snapshot = _snapshot(ctx.des)
         verdict = {
             'v': FH_CONTRACT,
             'status': _roll_up(ctx),
             'attempt': attempt,
             'units': 'mm',
             'checks': dict(ctx.status),
-            'model': _model_summary(base_snapshot),
+            'model': _model_summary(_snapshot(ctx.des)),
             'stats': {'timeline': _timeline_count(ctx.des),
                       'params': _param_count(ctx.des),
                       'sec': _n(time.time() - t0, 1)},
         }
+        if digest:
+            verdict['decl'] = digest
         if ctx.skips:
             verdict['skipped'] = ctx.skips
         det = ctx.opts.get('_liveness_detail')
         if det and det.get('mode') == 'sampled':
             verdict['liveness'] = det
-        if ctx.findings:
-            verdict['findings'] = ctx.findings
-            n_emitted = sum(ctx.counts.values())
-            if n_emitted > len(ctx.findings):
-                verdict['truncated'] = n_emitted - len(ctx.findings)
-            codes = []
-            for f in ctx.findings:
-                if f['sev'] == 'error' and f['code'] in HINTS and f['code'] not in codes:
-                    codes.append(f['code'])
-            if codes:
-                verdict['hints'] = dict((c, HINTS[c]) for c in codes[:4])
+        # Findings are NOT repeated here -- they were printed per check as each
+        # completed. Only the codes needed to look up remediation are carried.
+        codes = []
+        for f in ctx.findings:
+            if f['sev'] == 'error' and f['code'] in HINTS and f['code'] not in codes:
+                codes.append(f['code'])
+        if codes:
+            verdict['hints'] = dict((c, HINTS[c]) for c in codes[:4])
         return VERDICT_PREFIX + json.dumps(verdict, separators=(',', ':'))
     except Exception:
         # Deliberate deviation from "do not catch exceptions": by the time this runs
@@ -984,8 +1192,7 @@ def fh_state():
                'model': _model_summary(_snapshot(des))}
         probs = _timeline_problems(des)
         if probs:
-            out['findings'] = [dict(p, check='timeline',
-                                    code=p.pop('code', 'timeline.unhealthy'),
+            out['findings'] = [dict(p, code=p.pop('code', 'timeline.unhealthy'),
                                     sev='error' if p.get('state') == 'error' else 'warn')
                                for p in probs]
         return VERDICT_PREFIX + json.dumps(out, separators=(',', ':'))
