@@ -1,0 +1,319 @@
+# FusionHelper — Probe Results
+
+Empirical probes run against a live Autodesk Fusion 360 install via the official
+Fusion MCP server, to decide FusionHelper's architecture from measurement rather
+than from literature inference.
+
+- **Date:** 2026-07-27
+- **Fusion API version:** 2703.1.20
+- **MCP endpoint:** `http://127.0.0.1:27182/mcp` (`MCP Server Adapter v1.0.0`, protocol `2025-06-18`)
+- **Method:** `fusion_mcp_execute` with `featureType: "script"` — arbitrary Python against the live Fusion API
+- **Constraints honoured:** scratch documents only; the user's `claude trophy v5` document was never modified or saved; nothing saved.
+
+---
+
+## P1 — Does a generated script build a genuinely parametric model?
+
+**Verdict: PASS**
+
+Built a plate with three named user parameters (`plate_w`, `plate_d`, `plate_t`), all
+created with `ValueInput.createByString`, a constrained sketch, and an extrude whose
+extent is bound to `plate_t`.
+
+Then edited the parameters and recomputed:
+
+```
+before: bbox=(6.0000, 4.0000, 0.5000)  vol=12.0000
+plate_w: "60 mm" -> "80 mm"
+plate_t: "5 mm"  -> "8 mm"
+after:  bbox=(8.0000, 4.0000, 0.8000)  vol=25.6000
+EXPECT: bbox=(8.0000, 4.0000, 0.8000)
+width rebuilt correctly:     True
+depth unchanged as expected: True
+thickness rebuilt correctly: True
+timeline features: 2  unhealthy: 0
+```
+
+**Findings**
+
+- A generated script produces a real parametric model with a live timeline that
+  rebuilds correctly on parameter edit.
+- `ValueInput.createByString('plate_t')` binds the extrude extent to the parameter
+  and survives the edit.
+- **The model rebuilt correctly even though the sketch was never fully constrained.**
+  `isFullyConstrained` is therefore a *risk indicator*, not a correctness gate — a
+  distinction that matters for how the gate should be reported to the user.
+- `addTwoPointRectangle` produced **zero** geometric constraints. The UI silently
+  infers horizontal/vertical/perpendicular while drawing; the API infers nothing.
+  Four independent lines that merely look like a rectangle.
+
+---
+
+## P2 — Does `isFullyConstrained` work as a gate?
+
+**Verdict: PASS**
+
+Applied constraints incrementally to a fresh rectangle, reading the flag at each step:
+
+```
+step0 rect drawn:        fullyConstrained=False  geom=0  dims=0
+step1 origin pinned:     fullyConstrained=False  geom=1
+step2 H/V applied (2H,2V): fullyConstrained=False  geom=5
+step3 width dim:         fullyConstrained=False  dims=1
+step4 depth dim:         fullyConstrained=True   dims=2
+```
+
+**Findings**
+
+- The flag transitions `False -> True` at exactly the point the last degree of
+  freedom is removed. It is a usable, machine-checkable gate.
+- DOF arithmetic confirmed: rectangle corners are **shared** sketch points
+  (8 endpoint slots resolve to 4 unique points, `sketchPoints.count == 5`
+  including the origin), so 8 DOF. Coincident-to-origin removes 2, two horizontal
+  plus two vertical constraints remove 4, two dimensions remove 2. Zero remain.
+
+**Working recipe for a fully-constrained rectangle**
+
+1. `sketchLines.addTwoPointRectangle(...)`
+2. `geometricConstraints.addCoincident(corner, sketch.originPoint)`
+3. `addHorizontal` on both horizontal lines, `addVertical` on both vertical lines
+4. Two `addDistanceDimension` calls, each bound via `dim.parameter.expression = '<param>'`
+
+---
+
+## P3 — What is the safe constraint-then-dimension sequence?
+
+**Verdict: PASS**
+
+Deliberately over- and mis-constrained an already fully-constrained sketch.
+(Exceptions were caught in this probe only, because characterising the failure *is*
+the test.)
+
+| Case | Result |
+|---|---|
+| Redundant dimension | `RuntimeError: 3 : Already has same dimension on referenced geometry!` |
+| Redundant geometric constraint | `RuntimeError: 3 : failed to create offset: Constraint has already been applied to the selected sketch object.` |
+| Conflicting constraint (vertical on a horizontal line) | `RuntimeError: 3 : failed to create offset: VCS_SKETCH_SOLVING_FAILED - Failed to solve. Please try revising dimensions or constraints.` |
+
+State after all three failures:
+
+```
+fullyConstrained=True
+sketch healthState=0  msg=
+unhealthy timeline features: 0
+```
+
+**Findings**
+
+- **Over-constraint is fail-safe.** All three raise *before* mutating; the sketch was
+  left fully constrained and healthy. The generator can attempt-and-recover rather
+  than having to predict DOF perfectly in advance.
+- The three failure modes carry **distinguishable messages**, so they can drive a
+  remediation table (redundant vs conflicting need different responses).
+- Safe sequence: apply geometric constraints first, check `isFullyConstrained`, then
+  add dimensions only while it still reads `False`.
+
+---
+
+## P4 — Do index-picked faces break where named/durable references survive?
+
+**Verdict: PASS**
+
+Two edits against the same block, tracking a captured reference to the top face.
+
+**Edit A — dimensional only** (`w` 60→95 mm, `t` 10→25 mm):
+
+```
+faces whose index now points at a DIFFERENT orientation: 0
+entityToken round-trip after rebuild: found=True ... still the TOP face=True
+```
+
+**Edit B — topological** (added a chamfer; face count 6 → 7):
+
+```
+captured face[4]: area=38.0   normal=(0.0,0.0,1.0)   <- the TOP face
+face[4] now:      area=9.955  normal=(-1.0,0.0,0.0)
+INDEX PICK still points at the same face orientation: False
+ENTITY TOKEN resolves after topology change: True ... still TOP=True
+GEOMETRIC PREDICATE finds top face at index 5 (was 4)
+```
+
+| Edit type | Index pick | `entityToken` | Geometric predicate |
+|---|---|---|---|
+| Dimensional | survives | survives | survives |
+| **Topological (face count changes)** | **breaks** | survives | survives |
+
+**Findings**
+
+- The common claim that index picks always break on parameter change is **too broad**.
+  Pure dimensional edits left all six face indices stable.
+- The actual trigger is a **change in face count**. After the chamfer, `face[4]`
+  silently became a different face with a different orientation — a shell or fillet
+  authored against it would cut the wrong face.
+- `entityToken` survived both edit classes and resolved via
+  `Design.findEntityByToken()` to the correct face.
+- Selection by geometric predicate (normal direction) survived both and correctly
+  tracked the top face from index 4 to index 5.
+
+**Generator rule:** never select topology by index. Use `entityToken` for references
+that must persist, or re-derive by geometric predicate at authoring time. The risk is
+proportional to how much a feature changes face count, not to parameter edits as such.
+
+---
+
+## P5 — Datums + parameters vs raw coordinates
+
+**Verdict: PASS** — the decisive probe.
+
+The same bracket was built twice on the same plate, in one document:
+
+- **BracketA — raw coordinates.** Placement plane offset by `ValueInput.createByReal(1.0)`,
+  sketch rectangle at literal coordinates, extrude depth `createByReal(2.0)`. No
+  constraints, nothing bound to a parameter. This is what an LLM produces naturally:
+  it computes where things go from the current values and writes the numbers down.
+- **BracketB — named datum + parameter-bound dimensions.** Placement plane offset by
+  `ValueInput.createByString('plate_t')`, fully-constrained sketch, every dimension
+  bound to an expression (`plate_w`, `brk_w`, `plate_d - brk_w`), extrude bound to `brk_h`.
+
+At build time both were **identical and correct** — both seated on the plate top at
+`z=1.00`, both flush with its right edge at `x=10.00`.
+
+Then `plate_w` 100→140 mm and `plate_t` 10→18 mm:
+
+```
+Plate    x=[0.00,14.00] z=[0.00,1.80]   (right edge x=14.00, top z=1.80)
+BracketA x=[8.00,10.00] z=[1.00,3.00]   <- raw coordinates
+BracketB x=[12.00,14.00] z=[1.80,3.80]  <- datum + params
+
+alignment to plate RIGHT EDGE:  BracketA off by 40.0 mm   BracketB off by 0.0 mm
+seating on plate TOP FACE:      BracketA off by 8.0 mm    BracketB off by 0.0 mm
+
+timeline features=8  UNHEALTHY=0
+```
+
+**Findings**
+
+- The raw-coordinate bracket ended **40 mm off the edge and 8 mm sunk into the plate** —
+  embedded in the material it was supposed to sit on.
+- The datum bracket was off by **0.0 mm on both axes**.
+- **Fusion reported zero errors.** No feature failed, nothing warned. The defect is
+  entirely silent and would survive a visual check from an unlucky angle.
+- This is the core justification for the discipline layer: it is not that raw
+  coordinates are harder to get right, it is that when they go wrong *nothing tells you*.
+
+---
+
+## P7 — Does `analyzeInterference` report clash volume?
+
+**Verdict: PASS**
+
+Run against the P5 model immediately after the parameter edit, where BracketA had
+become embedded in the plate:
+
+```
+interference result count: 1
+CLASH: Plate vs Body2  volume=3.2000 cm3
+```
+
+**Findings**
+
+- `Design.createInterferenceInput(collection)` → `Design.analyzeInterference(input)`
+  works on the live model and correctly attributed the clashing pair.
+- `InterferenceInput.areCoincidentFacesIncluded = False` is essential — otherwise
+  legitimately touching faces (a bracket correctly seated on a plate) read as
+  interference.
+- The interference oracle caught exactly the defect the timeline was silent about.
+  **Numeric verification detected what the application's own error reporting did not.**
+- `createInterferenceInput` raises `RuntimeError: 3 : invalid input collections` when
+  given fewer than two bodies — guard the call.
+
+---
+
+## P6 — Does a named parameter table prevent repeated literals?
+
+**Verdict: PASS**
+
+Four holes created in one sketch, every diameter dimension bound to the single
+parameter `hole_d`:
+
+```
+hole0 expression="hole_d" value=8.00 mm
+hole1 expression="hole_d" value=8.00 mm
+hole2 expression="hole_d" value=8.00 mm
+hole3 expression="hole_d" value=8.00 mm
+--- single edit: hole_d 8mm -> 13mm ---
+hole0 now 13.00 mm   hole1 now 13.00 mm   hole2 now 13.00 mm   hole3 now 13.00 mm
+all four followed one edit: True
+```
+
+**Findings**
+
+- One edit propagated to all four features. There is no opportunity for drift because
+  the value is stated once and referenced, never restated.
+- Contrast with the real-world failure observed in the user's own `claude trophy v5`
+  document: parameters `d18`, `d19`, `d20`, `d21` each independently holding `"15 mm"` —
+  one design intent expressed four times, so editing one does not move the others.
+- "Parameters holding a bare literal: 5 of 12" is the expected shape, not a failure:
+  the four **root** parameters legitimately hold literals; everything downstream
+  references them by name.
+
+---
+
+## P8 — Does a parameter sweep surface errored features?
+
+**Verdict: PASS, with an important limitation**
+
+Each parameter was driven to an extreme, the timeline scanned for unhealthy features,
+then the baseline restored.
+
+| Configuration | Result |
+|---|---|
+| `hole_d = 30 mm` | healthy |
+| `hole_d = 60 mm` (holes exceed sensible spacing on an 80 mm plate) | healthy |
+| `plate_t = 0.4 mm` | healthy |
+| `plate_w = 30 mm` (plate narrower than the hole pattern) | **ERRORED** — `HoleCuts`: *"The extrusion profile falls outside the boundary of the selected body… 2 Reference Failures"* |
+
+**Findings**
+
+- The sweep does surface latent defects invisible at nominal values, and the error
+  message is specific enough to act on (it names the feature and the cause).
+- **Only 1 of 4 extreme configurations was caught.** Fusion tolerated 60 mm holes on an
+  80 mm plate and a 0.4 mm plate thickness without complaint.
+- Therefore: a parameter sweep detects **reference failures** — geometry that can no
+  longer be constructed. It does **not** detect geometry that is constructible but
+  absurd. Those need separate assertions (minimum wall thickness, edge distance,
+  clearance) checked against declared intent.
+- This is the same lesson as P5 from a different direction: Fusion's own health
+  reporting is an incomplete oracle, and independent numeric checks are required.
+
+---
+
+## Status — all probes complete
+
+| Probe | Verdict | Key result |
+|---|---|---|
+| P1 parametric rebuild | **PASS** | Generated scripts produce genuinely parametric models |
+| P2 `isFullyConstrained` gate | **PASS** | Flips `False`→`True` exactly when the last DOF is removed |
+| P3 safe constraint sequence | **PASS** | Over-constraint is fail-safe; three distinguishable errors |
+| P4 durable vs index references | **PASS** | Index picks break on *topology* change, not dimensional change |
+| P5 datums vs raw coordinates | **PASS** | 40 mm / 8 mm drift vs 0.0 mm — and Fusion reported no error |
+| P6 parameter table | **PASS** | One edit propagated to all four features |
+| P7 `analyzeInterference` | **PASS** | 3.2 cm³ clash correctly detected and attributed |
+| P8 parameter sweep | **PASS** | Catches reference failures, not absurd-but-constructible geometry |
+
+## What this means for the design
+
+1. **The discipline layer is validated empirically, not by analogy.** P5 is the whole
+   argument: identical output at build time, 40 mm divergence after one edit, and no
+   error raised either way.
+2. **Silent failure is the dominant risk.** In P5 and in three of four P8 sweeps, Fusion
+   built wrong or nonsensical geometry and reported perfect health. Any verification
+   that relies on Fusion's own error reporting is insufficient by construction.
+3. **The numeric oracles work and are cheap.** `isFullyConstrained`, `analyzeInterference`,
+   and bounding-box assertions each caught something the timeline did not.
+4. **Generator rules now have evidence behind them:** never `createByReal`; never select
+   topology by index; bind every dimension to a named parameter; apply geometric
+   constraints before dimensions and check the gate between them.
+5. **An external constraint solver was not needed for any of this.** Every result above
+   came from Fusion's own solver plus disciplined script generation — consistent with the
+   research finding that the cheap structural intervention outperforms the expensive one.
