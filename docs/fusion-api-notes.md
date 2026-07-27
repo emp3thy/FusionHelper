@@ -1,0 +1,481 @@
+# Fusion 360 API — Verified Working Notes
+
+Everything here was **executed against a live Fusion 360 install** on 2026-07-27 unless
+explicitly marked otherwise. Documentation claims that were not verified are labelled.
+
+- **Fusion API version:** 2703.1.20 (`%APPDATA%\Autodesk\Autodesk Fusion 360\API\version.txt`)
+- **Platform:** Windows 11
+- **Licence:** paid subscription
+- **Transport:** official Autodesk Fusion MCP
+
+---
+
+## 1. The official Fusion MCP server
+
+**It is built into Fusion, not an add-in.** Toggled at **Preferences > General > API >
+"Fusion MCP Server"**. An empty `API\AddIns` folder is therefore not evidence of absence.
+
+| | |
+|---|---|
+| Endpoint | `http://127.0.0.1:27182/mcp` |
+| Transport | streamable-HTTP JSON-RPC. Plain `GET` returns 404 — `POST` an `initialize` call |
+| Identifies as | `MCP Server Adapter v1.0.0`, protocol `2025-06-18` |
+| Capabilities | `tools`, `resources`. **No `prompts`** (`prompts/list` → `-32601 Method not found`) |
+| Lifetime | Only alive while Fusion is running |
+| Licence | **Paid subscription required.** Third-party AI integration is blocked on Personal use |
+
+### The four tools
+
+**`fusion_mcp_execute`** — `featureType: "script" | "document"`
+
+The decisive one: `featureType: "script"` executes **arbitrary Python against the full Fusion
+API in the live active document**. There is no reduced verb set to design around.
+
+- Script must define `def run(_context: str):`
+- `print()` output is returned as the tool result
+- Exceptions are returned as the error message
+- Autodesk's own embedded guidance, verbatim: *"IMPORTANT: Do NOT catch exceptions in your
+  run function. If you catch exceptions, you cannot determine if your script failed, where it
+  failed, or why it failed."*
+- And: *"After running a script, verify the results by reading the document or viewing a
+  snapshot of the current view."*
+- `featureType: "document"` does open / close / save by `fileId`. **Do not save unless the
+  user explicitly asks** — Autodesk's own instruction in the tool description.
+
+**`fusion_mcp_read`** — `queryType: apiDocumentation | screenshot | document | projects`
+
+- `apiDocumentation` — regex search over the real API with typed signatures, filterable by
+  namespace/class (`adsk.fusion.Extrude`) and category. **An in-loop hallucination check.**
+- `screenshot` — base64 PNG, 32–4096 px, with `direction` taking `front`, `back`, `top`,
+  `bottom`, `left`, `right`, `iso-top-left`, `iso-top-right`, `iso-bottom-left`,
+  `iso-bottom-right`, `current`. **Verified: the PNG arrives as a genuine vision block in
+  Claude Code**, not stringified text — claude-code issue #31208 does not apply to this server.
+- The `queryType` field description mentions polymorphic entityToken queries and entity
+  enumeration, but **the enum has only those four values**. The description is stale relative
+  to the schema. There is no direct geometric query tool — geometric read-back comes from
+  running a script that prints.
+
+**`fusion_mcp_update`** — `undo` / `redo` only. Returns `canUndo` / `canRedo`. A cheap rollback
+for a failed generation attempt.
+
+**`fusion_mcp_electronics_read`** — PCB/schematic read. Not relevant here.
+
+---
+
+## 2. Units
+
+**The API is always centimetres. The UI is whatever the user set.** Verified: a body measuring
+7.52 API units displayed as 75.2 mm.
+
+Every public Fusion MCP repo independently names this as their top error source. Mitigation:
+never pass raw floats for dimensions — `ValueInput.createByString('60 mm')` parses units
+explicitly and sidesteps the whole problem.
+
+---
+
+## 3. User parameters — the single most important rule
+
+```python
+up = des.userParameters
+up.add('outer_w', adsk.core.ValueInput.createByString('60 mm'), 'mm', 'outer width')
+up.add('wall_t',  adsk.core.ValueInput.createByString('outer_w / 20'), 'mm', 'derived')
+```
+
+Derived parameters work and stay live: with `outer_h` at 10 mm, `wall_t` computed 0.20 cm;
+after `outer_h` → 18 mm it recomputed to 0.36 cm with no intervention.
+
+### `createByString` vs `createByReal`
+
+> **`ValueInput.createByString('wall_t * 2')` stores the expression verbatim and stays live.
+> `ValueInput.createByReal(0.6)` bakes a literal number.**
+
+Autodesk's docs, verbatim: *"If you pass in a string, that string is used as the equation of
+the parameter that's created… If you pass in a real value, an equation is computed by Fusion."*
+
+A generator emitting `createByReal` produces a model that passes visual inspection and **dies
+on the user's first parameter edit**. Pyright cannot catch this — both return `ValueInput`. It
+needs a dedicated lint rule.
+
+### Binding — two mechanisms, both required
+
+```python
+# (a) sketch dimension -> parameter
+dim = sk.sketchDimensions.addDistanceDimension(
+        line.startSketchPoint, line.endSketchPoint,
+        adsk.fusion.DimensionOrientations.HorizontalDimensionOrientation,
+        adsk.core.Point3D.create(3, -1.5, 0))
+dim.parameter.expression = 'outer_w'          # <-- the binding
+
+# (b) feature extent -> parameter
+inp = ext.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+inp.setDistanceExtent(False, adsk.core.ValueInput.createByString('plate_t'))   # <-- the binding
+```
+
+### The two dead-timeline traps
+
+**Trap 1 — nothing bound.** Geometry placed at literal coordinates drifts out of position when
+other parameters change. Probe P5: a bracket ended 40 mm off the plate edge and 8 mm embedded
+in it, with **zero errors reported**.
+
+**Trap 2 — partially bound.** A profile drawn at literal `Point3D` coordinates with *only* the
+extrude extent bound. Changing the width parameter produced **byte-identical geometry** —
+identical volume to four decimal places, all 12 faces unchanged. The timeline looks parametric
+and is partly dead.
+
+> **Rule: geometry is parameter-driven ONLY where a sketch dimension exists AND its
+> `.parameter.expression` names a parameter.** Literal `Point3D` values are seed positions
+> only. Neither the eye nor pyright detects trap 2 — only perturbing each parameter and
+> re-measuring will.
+
+### Parameter naming traps (undocumented)
+
+`userParameters.add()` throws `RuntimeError: 3 : param name is not valid` for:
+
+| Rejected | Why |
+|---|---|
+| `W`, `H`, `R`, `T`, `mm`, `in`, `deg` | unit symbols |
+| `PI`, `abs`, `cos`, `min`, `if` | functions and constants |
+| `0box`, `box w`, `box-w` | malformed |
+| **duplicates** | **same misleading message** |
+
+Accepted: `D`, `L`, `X`, `Y`, `Z`, `w`, `h`, `t`, `d1`, `W1`, `Wd`, `width`, `Width`, `box_w`,
+`_w`, `w_`, `b0x`, `pi`, `e`, `class`. **Naming is case-sensitive** — `W` rejected, `w`
+accepted; `PI` rejected, `pi` accepted.
+
+**Policy: multi-character `snake_case` names, which avoids the entire class.**
+
+---
+
+## 4. Sketches and constraints
+
+### The API adds no auto-inferencing
+
+`addTwoPointRectangle` produces **zero geometric constraints** — four independent lines that
+merely look like a rectangle. The UI silently infers horizontal/vertical/perpendicular while
+you draw; the API infers nothing. Every constraint is the generator's explicit responsibility.
+
+This is an *advantage* for a declarative generator — no surprise constraints to fight.
+
+### Recipe for a fully-constrained rectangle
+
+Verified to reach `isFullyConstrained == True`:
+
+1. `sketchLines.addTwoPointRectangle(p0, p1)`
+2. `geometricConstraints.addCoincident(corner, sketch.originPoint)`
+3. `addHorizontal` on both horizontal lines, `addVertical` on both vertical lines
+4. Two `addDistanceDimension` calls, each bound via `dim.parameter.expression`
+
+DOF arithmetic: rectangle corners are **shared** sketch points (8 endpoint slots → 4 unique
+points; `sketchPoints.count == 5` including the origin), so 8 DOF. Coincident removes 2, the
+four H/V constraints remove 4, the two dimensions remove 2. Zero remain, and the flag flips on
+the last one.
+
+**Tip:** chaining lines by passing the previous line's `endSketchPoint` as the next line's
+start auto-creates the coincident constraint, so explicit corner coincidents become unnecessary.
+
+### The solver snaps sloppy seeds to exact
+
+A deliberately jittered, non-axis-aligned profile seeded at
+`(0.1,−0.2) → (4.3,0.15) → (4.1,2.4) → (−0.2,2.6)` resolved after constraining to exactly
+`(0,0) → (4,0) → (4,2.5) → (0,2.5)`.
+
+**Generated coordinates only need to be approximately right.** This is why no external solver
+is needed to compute exact placement.
+
+### Constraint vocabulary
+
+`sketch.geometricConstraints` — 24 methods: `addCoincident`, `addCollinear`, `addConcentric`,
+`addEqual`, `addHorizontal`, `addHorizontalPoints`, `addVertical`, `addVerticalPoints`,
+`addMidPoint`, `addParallel`, `addPerpendicular`, `addSymmetry`, `addTangent`, `addSmooth`,
+`addOffset2`, `addTwoSidesOffset`, `addPolygon`, `addCircularPattern`, `addRectangularPattern`,
+`addCoincidentToSurface`, `addLineOnPlanarSurface`, `addLineParallelToPlanarSurface`,
+`addPerpendicularToSurface`.
+
+`sketch.sketchDimensions` — 12 methods: `addDistanceDimension`, `addAngularDimension`,
+`addRadialDimension`, `addDiameterDimension`, `addOffsetDimension`,
+`addConcentricCircleDimension`, `addEllipseMajorRadiusDimension`,
+`addEllipseMinorRadiusDimension`, `addLinearDiameterDimension`, `addTangentDistanceDimension`,
+`addDistanceBetweenLineAndPlanarSurfaceDimension`, `addDistanceBetweenPointAndSurfaceDimension`.
+
+**There is no "declare constraints and let Fusion place the geometry" entry point.** Geometry
+must be created at seed coordinates first, then constrained. This suits the design: the seed
+is approximate, the constraints are authoritative, and the constraint model survives into
+Fusion natively rather than being flattened.
+
+### Constraint state — no DOF count, but per-entity flags
+
+There is **no degrees-of-freedom API**. `isFullyConstrained` appears at exactly three sites
+across 888 classes in `fusion.py` and 339 in `core.py`.
+
+But both levels exist:
+
+```python
+sketch.isFullyConstrained          # whole-sketch boolean
+sketchEntity.isFullyConstrained    # PER-ENTITY boolean
+```
+
+Verified: after applying origin-coincident plus H/V but before dimensioning, per-line states
+read `[True, False, False, True]` — pinpointing entities 1 and 2 as the loose ones. **A count
+is not actionable; naming the entity is.**
+
+### Over-constraint is fail-safe
+
+| Case | Error |
+|---|---|
+| Redundant dimension | `RuntimeError: 3 : Already has same dimension on referenced geometry!` |
+| Redundant constraint | `RuntimeError: 3 : failed to create offset: Constraint has already been applied to the selected sketch object.` |
+| Conflicting constraint | `RuntimeError: 3 : failed to create offset: VCS_SKETCH_SOLVING_FAILED - Failed to solve. Please try revising dimensions or constraints.` |
+
+**All three raise before mutating.** After all three failures the sketch remained
+`isFullyConstrained=True`, `healthState=0`, with zero unhealthy timeline features. The
+generator can attempt-and-recover rather than predicting DOF perfectly in advance, and the
+three messages are distinguishable enough to drive different responses.
+
+**Safe sequence:** geometric constraints → check `isFullyConstrained` → add dimensions only
+while it still reads `False`.
+
+Other notes: constraints work only *within* a single sketch — cross-sketch relationships need
+`sketch.project2()` (`project` is retired) or `include()`. `addCoincident()` returns `null` on
+failure. `isComputeDeferred = True` speeds bulk creation but Autodesk warns it *"can result in
+the creation of a bad model"* on sketches already consumed by features — fresh sketches only.
+
+---
+
+## 5. Sketch-plane axis mapping — the XZ inversion
+
+Measured via `sketch.sketchToModelSpace()`:
+
+| sketch plane | sketch +X → world | sketch +Y → world | plane normal |
+|---|---|---|---|
+| **XY** | `(1, 0, 0)` | `(0, 1, 0)` | `(0, 0, 1)` |
+| **XZ** | `(1, 0, 0)` | **`(0, 0, −1)`** | `(0, 1, 0)` |
+| **YZ** | **`(0, 0, −1)`** | `(0, 1, 0)` | `(1, 0, 0)` |
+
+> **On the XZ plane, `world_z = −sketch_y`. On YZ, `world_z = −sketch_x`.**
+
+Geometry drawn "upright" on XZ lands upside-down in world Z. To place a feature at world
+height *h* on XZ, sketch it at `y = −h`. Autodesk has confirmed on their forums that this is
+by design — forced by the simultaneous requirements that positive extrusion on XZ go toward
++Y and that all frames remain right-handed.
+
+This is the discrepancy two public Fusion MCP repos disagree about, one documenting Y-up and
+the other Z-up.
+
+**Extrude direction is clean:** a positive distance always follows the plane normal.
+
+### Querying orientation
+
+```python
+o = app.preferences.generalPreferences.defaultModelingOrientation
+# adsk.core.DefaultModelingOrientations.YUpModelingOrientation == 0
+# adsk.core.DefaultModelingOrientations.ZUpModelingOrientation  == 1
+```
+
+**Caveat:** this machine reads **0 (YUp)**, yet the construction planes still measured exactly
+as tabled above (XY normal = `+Z`). The orientation preference did **not** remap the API's
+construction planes in this configuration. ZUp was not tested — it would mean changing a user
+preference.
+
+**Policy: derive placement from `sketchToModelSpace()` at runtime. Never hardcode the table.**
+
+---
+
+## 6. Topological naming
+
+### What actually breaks, and when
+
+| Edit type | Index pick | `entityToken` | Geometric predicate |
+|---|---|---|---|
+| Dimensional (`w` 60→95 mm) | **survives** | survives | survives |
+| **Topological (chamfer, faces 6 → 7)** | **breaks** | survives | survives |
+
+The break is unambiguous. Before a chamfer, `face[4]` was the top face (area 38.0, normal
+`+Z`). After, `face[4]` had area 9.955 and normal `−X` — a side face. The top face moved to
+index 5. A shell or fillet authored against index 4 would cut the wrong face.
+
+**The received wisdom that index picks always break is too broad.** Pure dimensional edits
+left all six face indices stable. **The trigger is a change in face count.**
+
+### BRep objects die across a rebuild
+
+```
+held BRepFace after rebuild: DEAD -> RuntimeError: 2 : InternalValidationError : asmFace
+token re-resolve after rebuild: found=True
+```
+
+A `BRepFace` held in a Python variable is invalid after a parameter change. The message suffix
+varies (`asmFace`, `pFace` both observed) — **match on `InternalValidationError`, not the
+suffix.**
+
+### Durable referencing
+
+- `BRepFace.tempId` — Autodesk's docs: *"only good while the document remains open and as long
+  as the owning BRepBody is not modified in any way."* Useless for durable references.
+- `entityToken` + `Design.findEntityByToken()` — survives both dimensional and topological
+  edits. **Never string-compare tokens**; the string for a given entity can differ over time,
+  and two strings can resolve to the same entity. Always round-trip.
+- Geometric predicate (normal direction, centroid, area, edge length) evaluated at authoring
+  time — survives both.
+
+### Generator rules
+
+- Sketch on **named construction planes the script creates**, never on `body.faces[n]`.
+- Where a topology pick is unavoidable, select by **geometric predicate**, never by index.
+- Prefer parameterised sketch geometry over post-hoc dress-up features.
+- Keep fillets and chamfers **last and minimal**, so when they break the rest still stands.
+- Name every feature and construction plane.
+
+---
+
+## 7. Verification oracles
+
+### Interference
+
+```python
+coll = adsk.core.ObjectCollection.create()
+for b in bodies:
+    coll.add(b)
+ii = des.createInterferenceInput(coll)
+ii.areCoincidentFacesIncluded = False        # ESSENTIAL
+res = des.analyzeInterference(ii)
+for i in range(res.count):
+    r = res.item(i)
+    print(r.entityOne.name, r.entityTwo.name, r.interferenceBody.volume)
+```
+
+- Verified: correctly reported a 3.2 cm³ clash and attributed the pair. A separate control
+  measured 1.80000 cm³ against an analytic overlap of exactly 1.0 × 1.5 × 1.2 cm; a 3 cm gap
+  correctly returned count 0.
+- **`areCoincidentFacesIncluded = False` is essential** — otherwise a bracket correctly seated
+  on a plate reads as interference.
+- **Guard the call:** fewer than two bodies raises `RuntimeError: 3 : invalid input collections`.
+- `InterferenceResults.createBodies(...)` can materialise overlap volumes as real bodies to
+  show the user *where* the clash is. (Requires `DirectDesignType`; reading `.volume` does not.)
+
+Non-destructive alternative, if you want interference without an `ObjectCollection`:
+`TemporaryBRepManager.get().copy(body)` then
+`booleanOperation(a, b, BooleanTypes.IntersectionBooleanType)` and read `.volume`. Operates on
+temporary bodies; the document is untouched. Verified working.
+
+### Measurement
+
+```python
+app.measureManager.measureMinimumDistance(geom1, geom2).value   # cm
+app.measureManager.measureAngle(...)
+app.measureManager.getOrientedBoundingBox(geometry, lengthVector, widthVector)
+```
+
+Verified: 3.00000 cm for a separated pair, 0.00000 when overlapping. Good clearance oracle.
+
+### Timeline health
+
+Every timeline feature exposes `healthState` (`0=Healthy, 1=Warning, 2=Error, 3=Suppressed`)
+and `errorOrWarningMessage`. A post-rebuild sweep is a cheap integrity check.
+
+**But it is an incomplete oracle.** In probe P5, geometry that was 40 mm out of position and
+embedded in another body reported **zero unhealthy features**. In P8, 60 mm holes on an 80 mm
+plate reported healthy. Fusion reports *reference* failures — geometry it cannot construct —
+not geometry that is constructible and wrong.
+
+### Mass properties
+
+`physicalProperties` on Design, Component and body level: `mass`, `volume`, `area`,
+`centerOfMass`.
+
+---
+
+## 8. Static validation before execution
+
+Autodesk ships type stubs at `%APPDATA%\Autodesk\Autodesk Fusion 360\API\Python\defs\adsk\`:
+
+| module | size | classes |
+|---|---|---|
+| `fusion.py` | 2.80 MB | 888 |
+| `core.py` | 952 KB | 339 |
+| `cam.py` | 403 KB | 225 |
+| `electron.py` | 152 KB | 130 |
+
+Header: *"This file is automatically generated for code intellisense only."* They carry full
+parameter and return type annotations plus docstrings, and are dated to the installed API build.
+
+**Verified with pyright 1.1.408: 7 of 7 hallucinated API calls caught, 0 false positives,
+~0.3 s, no Fusion round-trip.** Caught: `userParameters.addd`, `ValueInput.createByExpression`,
+**`geometricConstraints.addFixed`** (a plausible-looking constraint type that does not exist),
+`isFullyConstrainedd`, `sketchCurves.sketchPolylines`, an attribute on the wrong receiver, and
+the module `adsk.geometry`.
+
+### Required configuration
+
+The `reportArgumentType` suppression is **not optional**. Fusion enums are plain classes with
+`int` class attributes while parameters are annotated with the enum *class* type, so every
+enum argument raises a false positive and drowns the signal.
+
+```json
+{
+  "include": ["."],
+  "extraPaths": ["C:\\Users\\<user>\\AppData\\Roaming\\Autodesk\\Autodesk Fusion 360\\API\\Python\\defs"],
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "error",
+  "reportAttributeAccessIssue": "error",
+  "reportArgumentType": "none"
+}
+```
+
+With this config: 0 errors on valid code, still 7/7 on bad code.
+
+**Cannot catch:** `createByReal` vs `createByString` (both return `ValueInput`), index picks,
+hardcoded axes, unbound dimensions. Those need the lint rules.
+
+---
+
+## 9. Other constraints and gotchas
+
+- **Custom Features are effectively off-limits.** Autodesk's docs: *"This re-compute
+  functionality is currently limited to one specific case… should not be used for any other
+  cases and will likely fail."* Emit plain native features.
+- **Main-thread only.** The MCP handles this; a self-built bridge must marshal via `CustomEvent`.
+- **`adsk.doEvents()` on long builds.** One report of 30 components / 200 bodies taking >15
+  hours without it. Also needed after a parameter change before re-measuring.
+- **A design must be open** before `fusion_mcp_execute` works.
+- **Large sketches freeze the UI.** Named causes: duplicate entities, stacked patterns/mirrors
+  in one sketch. Prefer several small sketches to one huge one.
+- **STEP import arrives as a `BaseFeature`** — *"a non-parametric island within a parametric
+  part… its content never changes as the result of a recompute."* Enabling history afterwards
+  does not parameterise it. STEP is an output format, not a handoff format.
+- **F3D/F3Z preserve everything but are proprietary** — no third-party writer exists.
+- **As-built joints are much easier than geometric joints** — they mate components where they
+  already sit, so if occurrences are already correctly placed they are near-free. Geometric
+  joints need face references and inherit topological-naming risk.
+- One unreproducible `RuntimeError: 3 : invalid expression` occurred in a document polluted
+  with ~21 accumulated probe parameters, and did not recur in a clean document. Cause
+  unidentified. Practical guard: distinct `snake_case` names, don't accumulate junk parameters.
+
+### Personal licence (not supported in v1, recorded for portability)
+
+| | Personal | Paid |
+|---|---|---|
+| Scripts / add-ins | Yes | Yes |
+| Official Fusion MCP | **No** | Yes |
+| STEP export | Yes | Yes |
+| Active editable documents | **10** | Unlimited |
+
+Degradation path: identical generated script, delivered by a self-authored watcher add-in
+(auto-starts via `runOnStartup` in the manifest, polls a queue folder, marshals onto the main
+thread via `CustomEvent`, writes a JSON log). Confirmed working on Personal by an existing
+open-source project. The generator is unaffected — same script, different transport.
+
+---
+
+## 10. Recommended verification block
+
+Appended to every generated script. All five verified working and returning via `print()`:
+
+1. `sketch.isFullyConstrained` per sketch; on failure iterate `SketchEntity.isFullyConstrained`
+   to name the loose entities.
+2. Perturb each user parameter, `adsk.doEvents()`, re-measure bbox and volume, restore.
+   **The only check that catches the partially-bound dead-timeline case.**
+3. Sweep `timeline.item(i).healthState` and `errorOrWarningMessage`.
+4. `analyzeInterference` across body pairs with `areCoincidentFacesIncluded = False`.
+5. `measureMinimumDistance` for declared clearances.
+
+Plus the offline pyright gate before the script is ever sent.
