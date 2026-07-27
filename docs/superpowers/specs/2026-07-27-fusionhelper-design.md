@@ -209,7 +209,7 @@ any ancestor `pyrightconfig.json` or `pyproject.toml` `[tool.pyright]`.
   "include": ["script.py"],
   "extraPaths": ["<discovered defs path>"],
   "typeCheckingMode": "basic",
-  "pythonVersion": "3.12",
+  "pythonVersion": "3.14",
   "reportMissingImports": "error",
   "reportAttributeAccessIssue": "error",
   "reportArgumentType": "none",

@@ -469,7 +469,7 @@ ancestor `pyrightconfig.json` or `pyproject.toml` `[tool.pyright]`) and generate
   "include": ["script.py"],
   "extraPaths": ["<discovered defs path>"],
   "typeCheckingMode": "basic",
-  "pythonVersion": "3.12",
+  "pythonVersion": "3.14",
   "reportMissingImports": "error",
   "reportAttributeAccessIssue": "error",
   "reportArgumentType": "none",
@@ -479,6 +479,14 @@ ancestor `pyrightconfig.json` or `pyproject.toml` `[tool.pyright]`) and generate
 
 `reportSelfClsParameterName: "none"` suppresses noise from Autodesk's stubs declaring
 static-looking methods inside classes. With this config: 0 errors on valid code, 7/7 on bad code.
+
+**`pythonVersion` must match Fusion's runtime, which is CPython 3.14** — measured, not assumed
+(`sys.executable` is `Fusion360.exe`; `sys.version` reports 3.14.0). An earlier draft pinned 3.12
+on the assumption that Fusion shipped it. That is the wrong direction of error: pinning *below*
+the runtime makes the gate reject syntax Fusion would happily execute, so a correct script fails
+preflight and a repair loop is sent to "fix" working code. Pinning *above* the runtime is the
+opposite hazard — it would admit syntax that fails inside Fusion. Match it, or discover it the way
+`extraPaths` is discovered.
 
 **Stub sentinel.** After parsing output and before reporting anything, check for
 `Import "adsk(\.\w+)? could not be resolved"`. If present, the stub path did not take effect —
