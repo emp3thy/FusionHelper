@@ -1,12 +1,24 @@
 {
-  "include": [
-    "."
+  "_comment": [
+    "EXAMPLE ONLY. preflight generates this programmatically with json.dump and",
+    "writes it beside a staged copy of the script in an isolated temp directory.",
+    "Never hand-maintain it: a malformed config makes pyright fall back to defaults",
+    "and exit NORMALLY, silently disabling the gate.",
+    "'include' must name the single staged file. With ['.'] pyright analysed 4 files",
+    "and produced 1168 diagnostics instead of 1 and 7, and the cost scales with the",
+    "directory size.",
+    "'extraPaths' is discovered at runtime, never hardcoded: %APPDATA% can be",
+    "redirected, and the path differs on macOS.",
+    "'reportArgumentType: none' is required. Fusion enums are plain classes with int",
+    "attributes while parameters are annotated with the enum class type, so every",
+    "enum argument would otherwise raise a false positive and drown the signal."
   ],
-  "extraPaths": [
-    "C:\\Users\\gethi\\AppData\\Roaming\\Autodesk\\Autodesk Fusion 360\\API\\Python\\defs"
-  ],
+  "include": ["script.py"],
+  "extraPaths": ["<discovered at runtime: %APPDATA%/Autodesk/Autodesk Fusion 360/API/Python/defs>"],
   "typeCheckingMode": "basic",
+  "pythonVersion": "3.12",
   "reportMissingImports": "error",
   "reportAttributeAccessIssue": "error",
-  "reportArgumentType": "none"
+  "reportArgumentType": "none",
+  "reportSelfClsParameterName": "none"
 }
