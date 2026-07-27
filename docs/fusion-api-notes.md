@@ -517,7 +517,38 @@ hardcoded axes, unbound dimensions. Those need the lint rules.
   cases and will likely fail."* Emit plain native features.
 - **Main-thread only.** The MCP handles this; a self-built bridge must marshal via `CustomEvent`.
 - **`adsk.doEvents()` on long builds.** One report of 30 components / 200 bodies taking >15
-  hours without it. Also needed after a parameter change before re-measuring.
+  hours without it. **It is *not* required as a rebuild barrier** — see below.
+
+### Recompute is synchronous on expression assignment
+
+Measured directly:
+
+```
+volume before change:              9.000000
+volume immediately, NO doEvents:  13.500000   changed=True
+volume after doEvents():          13.500000   changed=True
+volume after computeAll():        13.500000   further change=False
+```
+
+Assigning `param.expression` recomputes the model **before the next statement executes**.
+`doEvents()` adds nothing, and `Design.computeAll()` (which does exist) adds nothing further.
+
+This matters for any verification that perturbs a parameter and re-measures: there is no risk
+of reading a stale value and wrongly concluding a parameter drives nothing. Keep the
+`doEvents()` call anyway — it costs nothing and keeps the UI responsive during a long sweep —
+but do not rely on it being what makes the rebuild happen.
+
+**Consecutive expression writes coalesce correctly**, including the interleaved case:
+
+```
+two writes, one doEvents:     boxQ2 9.0000 -> 15.0000   boxQ3 9.0000 -> 15.0000   both took effect
+restore w2 AND perturb w3 with no settle between:
+  boxQ2 restored to baseline exactly:  True  (9.0000)
+  boxQ3 moved to its new value:        True  (21.0000)
+```
+
+So a parameter sweep that restores parameter *i* and perturbs parameter *i+1* before a single
+settle is safe, making the sweep **N+1 rebuilds rather than 2N**.
 - **A design must be open** before `fusion_mcp_execute` works.
 - **Large sketches freeze the UI.** Named causes: duplicate entities, stacked patterns/mirrors
   in one sketch. Prefer several small sketches to one huge one.
