@@ -317,3 +317,130 @@ then the baseline restored.
 5. **An external constraint solver was not needed for any of this.** Every result above
    came from Fusion's own solver plus disciplined script generation — consistent with the
    research finding that the cheap structural intervention outperforms the expensive one.
+
+---
+
+# Addendum — independent second run
+
+A parallel set of experiments was run in separate scratch documents. Findings below were
+re-verified directly rather than accepted as reported.
+
+## Reconciled conflict: do index picks reorder?
+
+The second run reported that it **could not** reproduce an index-reordering failure —
+face count stayed constant at 12 across its rebuilds, and it concluded "avoid index picks"
+was prudent rather than proven.
+
+This does not contradict P4; it confirms the same boundary from the other side. That run
+only performed **dimensional** edits, which P4 also found safe. P4 forced a **topology**
+change (a chamfer, face count 6 → 7) and the index pick broke immediately: `face[4]` went
+from the top face (area 38.0, normal `+Z`) to a side face (area 9.955, normal `−X`).
+
+**Resolution: index picks survive dimensional edits and break when face count changes.**
+Both runs agree once the edit class is distinguished. The rule stands, with a precise trigger.
+
+## New finding — per-entity constraint diagnostics
+
+There is **no degrees-of-freedom API** in Fusion (searched across 888 classes in
+`fusion.py` and 339 in `core.py`; `isFullyConstrained` appears at exactly three sites).
+But `SketchEntity.isFullyConstrained` exists alongside the sketch-level flag, and gives
+per-entity resolution. Verified:
+
+```
+per-line states (unconstrained rect): [False, False, False, False]
+per-line states (after H/V+origin):   [True, False, False, True]
+LOOSE ENTITIES pinpointed by index: [1, 2]
+```
+
+This matters for the design: a count is not actionable, but naming the specific loose
+entities is. It removes the main reason to mirror the constraint system into an external
+solver purely to obtain diagnostics.
+
+## New finding — sketch-plane axis inversion, measured
+
+Via `sketch.sketchToModelSpace()` on this install:
+
+| sketch plane | sketch +X → world | sketch +Y → world |
+|---|---|---|
+| XY | `(1, 0, 0)` | `(0, 1, 0)` |
+| **XZ** | `(1, 0, 0)` | **`(0, 0, −1)`** |
+| **YZ** | **`(0, 0, −1)`** | `(0, 1, 0)` |
+
+**Rule: on the XZ plane `world_z = −sketch_y`; on YZ `world_z = −sketch_x`.** Geometry drawn
+"upright" on XZ lands inverted in world Z. This is the discrepancy two public Fusion MCP
+repos disagreed about — now measured directly.
+
+`app.preferences.generalPreferences.defaultModelingOrientation` reads **0 (YUp)** on this
+machine, yet the construction planes still measured as tabled above. The preference did not
+remap the API planes in this configuration. ZUp was not tested (it would mean changing a
+user preference). **Generator policy: derive placement from `sketchToModelSpace()` at
+runtime rather than hardcoding this table.**
+
+## New finding — BRep objects die across a rebuild
+
+```
+held BRepFace after rebuild: DEAD -> RuntimeError: 2 : InternalValidationError : asmFace
+token re-resolve after rebuild: found=True
+```
+
+A `BRepFace` held in a Python variable is invalid after a parameter change. (The second run
+saw the same class of error with a slightly different suffix — `pFace` — so the message
+text varies; match on `InternalValidationError`, not the suffix.) Capture `entityToken`
+before the rebuild and re-resolve with `Design.findEntityByToken()` afterwards.
+
+## New finding — the dead-timeline trap, distinct from P5
+
+The second run reproduced a failure P1 and P5 did not cover: a profile drawn with literal
+`Point3D` coordinates where **only the extrude extent** was bound to a parameter. Changing
+the width parameter produced *zero* change — identical volume to four decimal places, all
+12 faces byte-identical.
+
+So there are two separate ways to get a dead model, and they need different rules:
+
+1. **Nothing bound** (P5's BracketA) — geometry drifts out of position on edit.
+2. **Partially bound** — the model looks parametric, some parameters work, and the
+   unbound dimensions silently do nothing.
+
+**Rule: geometry is parameter-driven only where a sketch dimension exists *and* its
+`.parameter.expression` names a parameter.** Literal `Point3D` values are seed positions
+only. Neither eye nor pyright can detect the partial case — only perturbing each parameter
+and re-measuring will.
+
+## New finding — the solver snaps sloppy seeds to exact
+
+A deliberately jittered, non-axis-aligned profile seeded at
+`(0.1,−0.2) → (4.3,0.15) → (4.1,2.4) → (−0.2,2.6)` resolved after constraining to exactly
+`(0,0) → (4,0) → (4,2.5) → (0,2.5)`.
+
+This directly supports the seed-then-constrain architecture: **the generator's coordinates
+only need to be approximately right.** Fusion's solver places the geometry exactly. Small
+arithmetic error in the generated seed is harmless, which removes much of the motivation
+for computing exact coordinates externally.
+
+## New finding — parameter naming traps
+
+`userParameters.add()` throws `RuntimeError: 3 : param name is not valid` for unit symbols
+(`W`, `H`, `R`, `T`, `mm`, `in`, `deg`), function and constant names (`PI`, `abs`, `cos`,
+`min`, `if`), malformed names (`0box`, `box w`, `box-w`) — **and for duplicates, with the
+same misleading message**. Naming is case-sensitive: `W` is rejected while `w` is accepted;
+`PI` rejected, `pi` accepted.
+
+**Generator policy: multi-character `snake_case` names (`outer_w`, `wall_t`), which avoids
+the entire class.** Also avoid accumulating junk parameters — one unreproducible
+`RuntimeError: 3 : invalid expression` occurred in a document polluted with ~21 probe
+parameters and did not recur in a clean document. Cause unidentified.
+
+## Recommended verification block for generated scripts
+
+Every item below is verified working and returns to the agent via `print()`:
+
+1. `sketch.isFullyConstrained` per sketch; on failure iterate `SketchEntity.isFullyConstrained`
+   to name the loose entities
+2. perturb each user parameter and re-measure bbox/volume — **the only thing that catches the
+   partially-bound dead-timeline case**
+3. sweep `timeline.item(i).healthState` and `errorOrWarningMessage`
+4. `analyzeInterference` across body pairs with `areCoincidentFacesIncluded = False`
+5. `measureMinimumDistance` for declared clearances
+
+Plus the offline pyright gate against Autodesk's shipped stubs before the script is ever sent
+to Fusion (7/7 hallucinated-API defects caught, 0 false positives, ~0.3 s).
