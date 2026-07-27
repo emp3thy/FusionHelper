@@ -964,6 +964,15 @@ def _step_to(ctx, des, p, held):
     effect, and the interleaved restore-then-perturb case lands correctly -- the
     restore is exact and the perturbation applies.
 
+    This saves SETTLES, not rebuilds, and the distinction is worth stating because
+    it is easy to get backwards. Measured on a 6-parameter model with fillets: a
+    bare expression write costs ~76 ms with no doEvents() and no read, while a
+    read on a settled model costs ~0.7 ms. The recompute is therefore eager, on
+    the write. Restore-then-perturb is two writes either way, so grouping them
+    under one settle cannot remove a rebuild: isolated 1507 ms vs interleaved
+    1263 ms, a ratio of 1.19. The sweep is 2N rebuilds and N+1 settles, and this
+    restructure buys the ~19% doEvents() overhead -- not half the work.
+
     The ordering is load-bearing and is the whole reason this is safe: the restore
     of the previous parameter is written BEFORE the next one is perturbed, and
     `held` is cleared before it is re-set. At no instant is more than one parameter
