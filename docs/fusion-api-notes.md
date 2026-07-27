@@ -548,7 +548,38 @@ restore w2 AND perturb w3 with no settle between:
 ```
 
 So a parameter sweep that restores parameter *i* and perturbs parameter *i+1* before a single
-settle is safe, making the sweep **N+1 rebuilds rather than 2N**.
+settle is **safe**. It is not, however, *cheaper* in rebuilds — see below.
+
+### The rebuild is eager, on the write itself
+
+An earlier draft of this document concluded that interleaving made the sweep "N+1 rebuilds
+rather than 2N". **That was wrong**, and the error is worth recording because it is an easy one:
+"safe to interleave" was conflated with "cheaper to interleave".
+
+The discriminating measurement, on a 6-parameter model with fillets so a rebuild is not trivially
+cheap:
+
+```
+mean WRITE time (no doEvents, no read):  76.0 ms   per-write: 103, 105, 87, 80, 44, 38
+mean READ time (settled model):           0.7 ms
+
+ISOLATED    (2N writes, 2N settles): 1507 ms
+INTERLEAVED (2N writes, N+1 settles): 1263 ms
+ratio: 1.19
+```
+
+A bare `p.expression = ...` costs ~76 ms with nothing else on the line. That *is* the rebuild —
+it happens on the assignment, not on the settle and not on the next read (which is 0.7 ms). Since
+restore-then-perturb is two writes either way, grouping them under one `doEvents()` cannot remove
+a rebuild.
+
+**The sweep is 2N rebuilds and N+1 settles.** Interleaving saves ~19%, which is the `doEvents()`
+overhead alone. Worth taking, but it is not a halving.
+
+The reason the earlier reading was seductive: OQ1's test read the volume immediately after the
+write with no settle, and saw the new value. A lazy-on-read implementation would produce exactly
+the same observation, so that test could not separate the two hypotheses. Only timing the bare
+write can.
 - **A design must be open** before `fusion_mcp_execute` works.
 - **Large sketches freeze the UI.** Named causes: duplicate entities, stacked patterns/mirrors
   in one sketch. Prefer several small sketches to one huge one.

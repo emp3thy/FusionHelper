@@ -349,8 +349,17 @@ re-assertion reporting any parameter that would not take; and a final re-snapsho
 pre-verification baseline, emitting `model.not_restored` on mismatch. **The verdict always states
 whether the document was left as it was found** — Claude never has to assume.
 
-**Cost: N+1 rebuilds, not 2N** — measured. Consecutive expression writes coalesce, including the
-interleaved restore-then-perturb case the sweep needs. Twenty parameters is 21 rebuilds, not 40.
+**Cost: 2N rebuilds and N+1 settles.** Interleaving restore-then-perturb is *safe* — measured —
+but it is not cheaper in rebuilds. The rebuild is **eager, on the write itself**: a bare
+`p.expression = ...` with no settle and no read costs ~76 ms on a 6-parameter model, while the
+subsequent read costs 0.7 ms. Since restore-then-perturb is two writes either way, grouping them
+under one `doEvents()` cannot remove a rebuild. Measured wall clock: isolated 1507 ms, interleaved
+1263 ms — a ratio of 1.19, which is the `doEvents()` overhead alone.
+
+Take the interleaving for the ~19%, but the sweep does not halve. An earlier draft of this
+document claimed "N+1 rebuilds, not 2N" by conflating *safe to interleave* with *cheaper to
+interleave*; the test that appeared to show coalescing read a value immediately after a write,
+which a lazy-on-read implementation would also produce, so it could not separate the hypotheses.
 
 **The edit canary** (2 rebuilds, default on): perturb every *root* parameter simultaneously, then
 re-run interference. This reproduces P5's flagship failure directly — geometry pinned to literal

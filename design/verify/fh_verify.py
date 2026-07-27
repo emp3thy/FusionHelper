@@ -687,7 +687,7 @@ def check_clearance(ctx):
             continue
         mm, info, err = _measure_pair(ctx, a_role, b_role)
         if err:
-            code = ('R_FACE_UNRESOLVED' if err in ('not_registered', 'token_unresolved')
+            code = ('face.unresolved' if err in ('not_registered', 'token_unresolved')
                     else 'ref.stale_brep' if err == 'stale_brep'
                     else 'clearance.measure_failed')
             ctx.add('clearance', code, 'error', between=[a_role, b_role],
@@ -700,7 +700,7 @@ def check_clearance(ctx):
             lo_mm = _cm_str_to_mm(c.get('min'))
             straddles = (lo_mm is not None and
                          info['spread_mm'][0] < lo_mm <= info['spread_mm'][1])
-            ctx.add('clearance', 'R_FACE_AMBIGUOUS', 'error' if straddles else 'warn',
+            ctx.add('clearance', 'face.ambiguous', 'error' if straddles else 'warn',
                     between=[a_role, b_role], pieces=info['pieces'],
                     spread_mm=info['spread_mm'],
                     note='pieces straddle the threshold' if straddles else None)
@@ -717,20 +717,20 @@ def _judge_clearance(ctx, c, a_role, b_role, mm, info, check='clearance', prefix
         # so a zero is resolved against the interference result and never passes.
         bodies = set(b for b in (info.get('bodies') or []) if b)
         if bodies & ctx.clash_bodies:
-            ctx.add(check, prefix + 'R_CLEARANCE_ZERO', 'error',
+            ctx.add(check, prefix + 'clearance.zero', 'error',
                     between=[a_role, b_role], measured_mm=0, declared_cm=declared,
                     bodies=sorted(bodies),
                     note='interpenetrating: interference reports a clash on these bodies')
         elif not ctx.interference_ran:
-            ctx.add(check, prefix + 'R_CLEARANCE_ZERO', 'error',
+            ctx.add(check, prefix + 'clearance.zero', 'error',
                     between=[a_role, b_role], measured_mm=0, declared_cm=declared,
                     note='interference not analysed; touching and interpenetrating are indistinguishable')
         elif lo is not None and lo > ZERO_MM:
-            ctx.add(check, prefix + 'R_CLEARANCE_VIOLATED', 'error',
+            ctx.add(check, prefix + 'clearance.violated', 'error',
                     between=[a_role, b_role], min_mm=_n(lo), measured_mm=0,
                     short_by_mm=_n(lo), note='contact where a gap was declared')
         else:
-            ctx.add(check, prefix + 'R_CLEARANCE_ZERO', 'warn',
+            ctx.add(check, prefix + 'clearance.zero', 'warn',
                     between=[a_role, b_role], measured_mm=0, declared_cm=declared,
                     note='touching; interference clean, but the distance oracle is blind here')
         return
@@ -738,11 +738,11 @@ def _judge_clearance(ctx, c, a_role, b_role, mm, info, check='clearance', prefix
     if mm is None:
         return
     if lo is not None and mm < lo - 1e-6:
-        ctx.add(check, prefix + 'R_CLEARANCE_VIOLATED', 'error',
+        ctx.add(check, prefix + 'clearance.violated', 'error',
                 between=[a_role, b_role], min_mm=_n(lo), measured_mm=mm,
                 short_by_mm=_n(lo - mm))
     elif hi is not None and mm > hi + 1e-6:
-        ctx.add(check, prefix + 'R_CLEARANCE_VIOLATED', 'error',
+        ctx.add(check, prefix + 'clearance.violated', 'error',
                 between=[a_role, b_role], max_mm=_n(hi), measured_mm=mm,
                 over_by_mm=_n(mm - hi))
 
@@ -758,7 +758,7 @@ def _check_declared_roles(ctx, specs, items):
             pass
     missing = sorted(r for r in needed if r not in ctx.refs)
     if missing:
-        ctx.add('clearance', 'R_FACE_UNRESOLVED', 'error', roles=missing[:6],
+        ctx.add('clearance', 'face.unresolved', 'error', roles=missing[:6],
                 registered=sorted(ctx.refs.keys())[:8],
                 note='declared role never passed to fh_ref during the build')
 
@@ -783,7 +783,7 @@ def _check_datums(ctx):
     for name in sorted(declared):
         pl = planes.get(name)
         if pl is None:
-            ctx.add('clearance', 'R_DATUM_MISSING', 'error', datum=name,
+            ctx.add('clearance', 'datum.missing', 'error', datum=name,
                     built=sorted(planes.keys())[:8])
             continue
         want_mm = _cm_str_to_mm(declared[name])
@@ -794,7 +794,7 @@ def _check_datums(ctx):
         except Exception:
             continue          # not an offset-defined plane; the existence check stands
         if got_mm is not None and abs(got_mm - want_mm) > 1e-4:
-            ctx.add('clearance', 'R_DATUM_MISSING', 'error', datum=name,
+            ctx.add('clearance', 'datum.missing', 'error', datum=name,
                     declared_mm=_n(want_mm), built_mm=got_mm,
                     note='construction plane offset does not match the declaration')
 
@@ -846,16 +846,17 @@ def _perturbed_expr(orig, step_txt, unit):
     return '(%s) + %s%s' % (orig, step_txt, (' ' + unit) if unit else '')
 
 
-_STRICT_RECOMPUTE = False       # see notes: computeAll() is not verified as required
-
-
 def _settle(des):
+    """Measured: assigning `p.expression` recomputes the model before the next
+    statement runs. Reading the volume with no doEvents() already showed the new
+    value, and neither doEvents() nor computeAll() produced any further change.
+
+    doEvents() is kept anyway. It costs nothing, it keeps the UI responsive across
+    a long sweep, and treating synchronous recompute as a guarantee is more than
+    one measurement supports. The computeAll() fallback is gone -- it was dead
+    weight standing in for an uncertainty that has now been resolved.
+    """
     adsk.doEvents()
-    if _STRICT_RECOMPUTE:
-        try:
-            des.computeAll()
-        except Exception:
-            pass
 
 
 def _dependency_map(params):
@@ -917,6 +918,9 @@ def check_liveness(ctx):
     _print(GUARD_PREFIX + json.dumps(
         {'restore': dict((k, _clip(v, 60)) for k, v in saved.items())},
         separators=(',', ':')))
+    # `held` names the one parameter currently perturbed, or None. It is a single
+    # slot by construction, which is what makes the invariant below checkable.
+    held = [None]
     try:
         if ctx.opts.get('canary', True) and len(params) > 1:
             _edit_canary(ctx, des, params, roots, base, detail)
@@ -932,7 +936,9 @@ def check_liveness(ctx):
                     untested = [q.name for q in order[idx:]]
                     break
             t_p = time.time()
-            _test_one(ctx, des, p, base, sick0)
+            state = _step_to(ctx, des, p, held)
+            if state is not None:
+                _judge_one(ctx, des, p, base, sick0, state)
             dt = time.time() - t_p
             per = dt if per is None else max(per, dt)
             tested.append(p.name)
@@ -944,47 +950,83 @@ def check_liveness(ctx):
             ctx.add('liveness', 'liveness.budget_exhausted', 'warn',
                     tested=len(tested), of=len(order), untested=untested[:12])
     finally:
+        _release(des, held)
         _restore_all(ctx, des, params, saved, base)
         _print(GUARD_PREFIX + '{"restore":"released"}')
 
     ctx.opts['_liveness_detail'] = detail
 
 
-def _test_one(ctx, des, p, base, sick0=frozenset()):
+def _step_to(ctx, des, p, held):
+    """Restore whatever is perturbed, perturb p, and settle ONCE for both writes.
+
+    Verified: two consecutive expression writes with a single settle both take
+    effect, and the interleaved restore-then-perturb case lands correctly -- the
+    restore is exact and the perturbation applies.
+
+    The ordering is load-bearing and is the whole reason this is safe: the restore
+    of the previous parameter is written BEFORE the next one is perturbed, and
+    `held` is cleared before it is re-set. At no instant is more than one parameter
+    perturbed, so the guarantee that made the old per-parameter `finally` valuable
+    is preserved exactly rather than traded away for the saved settle.
+
+    Returns the state needed to judge p, or None if p could not be perturbed.
+    """
+    if held[0] is not None:
+        prev, prev_orig = held[0]
+        held[0] = None                      # cleared first: a throw below must not
+        try:                                # leave a stale slot pointing at prev
+            prev.expression = prev_orig
+        except Exception:
+            ctx.add('liveness', 'param.restore_failed', 'error', params=[prev.name])
     orig = p.expression
     v0 = p.value
     step_txt, unit = _step_for(des, p)
     try:
-        try:
-            p.expression = _perturbed_expr(orig, step_txt, unit)
-        except Exception as e:
-            ctx.add('liveness', 'param.perturbation_rejected', 'warn',
-                    param=p.name, expr=_clip(orig, 40), msg=_clip(str(e), 100))
-            return
-        _settle(des)
-        if not _num_differs(p.value, v0):
-            ctx.add('liveness', 'param.perturbation_rejected', 'warn',
-                    param=p.name, expr=_clip(orig, 40), reason='value_unchanged')
-            return
-        after = _snapshot(des)
-        # Only features that became unhealthy *because of this perturbation*.
-        broke = [r for r in _timeline_problems(des, limit=40)
-                 if (r.get('i'), r.get('name')) not in sick0]
-        if broke:
-            # Live, but fragile: a 5% nudge already breaks it. Worth saying.
-            ctx.add('liveness', 'param.fragile', 'warn', param=p.name,
-                    step=(step_txt + ' ' + unit).strip(),
-                    feature=broke[0].get('name'), msg=broke[0].get('msg'))
-            return
-        if not _snapshot_differs(base, after):
-            ctx.add('liveness', 'param.dead', 'error', param=p.name,
-                    step=(step_txt + ' ' + unit).strip(), expr=_clip(orig, 40))
-    finally:
-        try:
-            p.expression = orig
-        except Exception:
-            pass
-        _settle(des)
+        p.expression = _perturbed_expr(orig, step_txt, unit)
+    except Exception as e:
+        ctx.add('liveness', 'param.perturbation_rejected', 'warn', param=p.name,
+                expr=_clip(orig, 40), msg=_clip(str(e), 100) or type(e).__name__)
+        _settle(des)                        # the restore above still needs settling
+        return None
+    held[0] = (p, orig)
+    _settle(des)
+    return (orig, v0, step_txt, unit)
+
+
+def _judge_one(ctx, des, p, base, sick0, state):
+    orig, v0, step_txt, unit = state
+    step = (step_txt + ' ' + unit).strip()
+    if not _num_differs(p.value, v0):
+        ctx.add('liveness', 'param.perturbation_rejected', 'warn',
+                param=p.name, expr=_clip(orig, 40), reason='value_unchanged')
+        return
+    after = _snapshot(des)
+    # Only features that became unhealthy *because of this perturbation*.
+    broke = [r for r in _timeline_problems(des, limit=40)
+             if (r.get('i'), r.get('name')) not in sick0]
+    if broke:
+        # Live, but fragile: a 5% nudge already breaks it. Worth saying.
+        ctx.add('liveness', 'param.fragile', 'warn', param=p.name, step=step,
+                feature=broke[0].get('name'), msg=broke[0].get('msg'))
+        return
+    if not _snapshot_differs(base, after):
+        ctx.add('liveness', 'param.dead', 'error', param=p.name, step=step,
+                expr=_clip(orig, 40))
+
+
+def _release(des, held):
+    """Restore the single held parameter, if any. Runs in the sweep's finally, so
+    an exception mid-measurement cannot leave the document perturbed."""
+    if held[0] is None:
+        return
+    p, orig = held[0]
+    held[0] = None
+    try:
+        p.expression = orig
+    except Exception:
+        pass
+    _settle(des)
 
 
 def _edit_canary(ctx, des, params, roots, base, detail):
@@ -1031,7 +1073,7 @@ def _edit_canary(ctx, des, params, roots, base, detail):
             if err or mm is None:
                 continue          # already reported at nominal; do not double-report
             _judge_clearance(ctx, c, a_role, b_role, mm, info,
-                             check='liveness', prefix='EDIT_')
+                             check='liveness', prefix='edit.')
         for rec in _timeline_problems(des, limit=2):
             if rec['state'] == 'error':
                 ctx.add('liveness', 'edit.breaks_feature', 'warn',
@@ -1091,16 +1133,16 @@ HINTS = {
     'param.dead': 'parameter drives nothing: bind a sketch dimension or a feature extent to it',
     'model.inert': 'no parameter drives any geometry: profile is at literal Point3D coordinates',
     'edit.introduces_clash': 'geometry is placed by coordinates, not datums: re-place against named construction planes',
-    'EDIT_R_CLEARANCE_VIOLATED': 'gap holds at nominal and closes on edit: the gap is not parameterised',
-    'EDIT_R_CLEARANCE_ZERO': 'parts touch only after an edit: re-place against datums',
+    'edit.clearance.violated': 'gap holds at nominal and closes on edit: the gap is not parameterised',
+    'edit.clearance.zero': 'parts touch only after an edit: re-place against datums',
     'model.not_restored': 'call fusion_mcp_update undo until timeline count returns to its pre-run value',
     'param.restore_failed': 'undo, then re-run; do not build on this document state',
     'interference.clash': 'bodies overlap: move or resize against the declared chain, do not nudge coordinates',
-    'R_CLEARANCE_VIOLATED': 'declared clearance not met: change the parameter that sets the gap',
-    'R_CLEARANCE_ZERO': 'distance 0 means touching OR interpenetrating: read the interference finding',
-    'R_FACE_UNRESOLVED': 'register the face at authoring time with fh_ref(role, entity)',
-    'R_FACE_AMBIGUOUS': 'token resolved to several faces: the face was split after registration',
-    'R_DATUM_MISSING': 'declared datum plane not built, or built at a different offset',
+    'clearance.violated': 'declared clearance not met: change the parameter that sets the gap',
+    'clearance.zero': 'distance 0 means touching OR interpenetrating: read the interference finding',
+    'face.unresolved': 'register the face at authoring time with fh_ref(role, entity)',
+    'face.ambiguous': 'token resolved to several faces: the face was split after registration',
+    'datum.missing': 'declared datum plane not built, or built at a different offset',
     'timeline.reference_failure': 'a feature can no longer find its reference: check the profile fits the target body',
     'ref.stale_brep': 'BRep object held across a rebuild: capture entityToken and re-resolve',
 }
