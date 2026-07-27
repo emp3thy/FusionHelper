@@ -6,6 +6,49 @@
 
 ---
 
+## What we are building
+
+**A Claude Code skill and a small Python library. We are not building an MCP server.**
+
+Autodesk already ships one, it is built into Fusion (Preferences > General > API >
+"Fusion MCP Server"), and it already works — every probe in the evidence base was run
+through it. It exposes `fusion_mcp_execute`, which runs arbitrary Python against the live
+Fusion API, so there is no capability gap for us to fill at the transport layer.
+
+What ships:
+
+```
+FusionHelper/
+├── skills/fusion-design/SKILL.md   ← the procedure Claude follows
+└── fusionhelper/
+    ├── preflight.py                ← pyright + lint on the script BEFORE Fusion sees it
+    ├── lint.py                     ← the five rules (no createByReal, no index picks, …)
+    ├── verify.py                   ← generates the assertion block appended to each script
+    └── emit.py                     ← correct-pattern helpers (phase 3)
+```
+
+A markdown file and a small Python package. Nothing else.
+
+**In use:**
+
+1. User describes a part.
+2. Claude loads the `fusion-design` skill — the rules are now resident in context.
+3. Claude writes the declaration block (parameters, datums, clearances) and checks the
+   dimensional chain, before any geometry.
+4. Claude generates Fusion Python.
+5. `python -m fusionhelper.preflight box.py` — **local, no Fusion involved**, ~0.3 s.
+6. Script goes to Fusion through **Autodesk's** MCP.
+7. The appended verification block prints a JSON verdict.
+8. Renders shown to the user.
+
+Steps 2–5 and 7 are what this project builds. Step 6 already exists.
+
+**Why a skill rather than our own MCP server** is argued in *Architecture* below; the short
+version is that the problem is Claude failing to follow a discipline across a long session,
+and a skill body is the only vehicle that stays resident in context for the whole session.
+
+---
+
 ## Problem
 
 Claude Code can generate Fusion 360 Python that executes without error and produces
@@ -67,7 +110,7 @@ with the first.
 
 ## Architecture
 
-Three layers. One already exists and needs no work.
+Three layers, **of which we build two.** The transport is Autodesk's and needs no work.
 
 ```
   ┌─────────────────────────────────────────────────────────┐
