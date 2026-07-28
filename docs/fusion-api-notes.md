@@ -112,6 +112,14 @@ inp = ext.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperatio
 inp.setDistanceExtent(False, adsk.core.ValueInput.createByString('plate_t'))   # <-- the binding
 ```
 
+**`(b)` is runtime-valid and gate-false-positive (measured 2026-07-28 — see §8, "Stub
+gaps").** `ExtrudeFeatureInput.setDistanceExtent` genuinely exists at runtime; it is absent
+from the shipped stub for that class, so the static gate rejects it. Kept here as the
+live-verified mechanism this section's title refers to; `skills/fusion-design/reference/
+api-recipes.md` and the generator's actual recipes use `setOneSideExtent` +
+`DistanceExtentDefinition` instead, which binds the same extent and additionally passes
+the gate.
+
 ### The two dead-timeline traps
 
 **Trap 1 — nothing bound.** Geometry placed at literal coordinates drifts out of position when
@@ -516,6 +524,34 @@ resolves a different project root, reports 1168 errors including `"str" is not d
 
 **Cannot catch:** `createByReal` vs `createByString` (both return `ValueInput`), index picks,
 hardcoded axes, unbound dimensions. Those need the lint rules.
+
+### Stub gaps (measured 2026-07-28)
+
+The "0 false positives" claim above holds for the SEVEN-hallucination probe set it was
+measured against; it is not a blanket guarantee the stub surface is complete. Two live
+`hasattr()` checks against a running Fusion session, made while building Task 15's corpus
+fixtures:
+
+- **`ExtrudeFeatureInput.setDistanceExtent` → `True` at runtime, absent from the stub for
+  that class** (`adsk/fusion.py` declares it only on `HoleFeatureInput`/`HoleFeature`).
+  Genuinely valid code; pyright reports `reportAttributeAccessIssue` on it anyway. **This is
+  the first confirmed gate false positive in this project.**
+- **`Sketch.sketchLines` → `False` at runtime; `SketchCurves.sketchLines` → `True`.** This one
+  was not a stub gap — it was a plain transcription error in `api-recipes.md`, and the stub
+  was right to reject it.
+
+**Stub-absence is not proof of API-absence.** Before trusting a
+`reportAttributeAccessIssue` finding against code that is otherwise documented or was seen
+running live, verify with a live `hasattr()` probe (`fusion_mcp_execute`) rather than
+assuming the gate is correct by construction — it fails closed on real hallucinations but can
+also fail closed on real API surface the stub author didn't transcribe.
+
+**Pyright findings are not waivable through the lint suppression mechanism** (`fusionhelper:
+allow <rule>` only recognises the lint rule IDs, R1–R10 — pyright diagnostics are a separate
+finding class with no waiver path). A confirmed stub gap therefore forces a code-level
+alternative that is both runtime-valid and stub-visible (as `setOneSideExtent` is here), not
+a suppression. Whether the gate itself should ever special-case a specific stub gap is a
+phase-2 question, not resolved by this note.
 
 ---
 
