@@ -35,7 +35,8 @@ def check(tree: ast.AST, source: str) -> list[Finding]:
                                     "world_z = -sketch_y)",
                                     "derive the direction from sketch.sketchToModelSpace() "
                                     "or sketch.xDirection/yDirection at runtime"))
-        elif isinstance(node, ast.Attribute) and node.attr in _INVERTING_PLANES and not calls_sketch_to_model:
+        elif (isinstance(node, ast.Attribute) and node.attr in _INVERTING_PLANES
+              and not calls_sketch_to_model):
             findings.append(Finding(RULE_ID, NUMBER, node.lineno, node.col_offset,
                                     "warn", f"{node.attr} used and sketchToModelSpace() "
                                     "never called — geometry drawn 'upright' on this "

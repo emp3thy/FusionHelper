@@ -27,6 +27,9 @@ def check(tree: ast.AST, source: str) -> list[Finding]:
             continue
         if isinstance(recv, ast.Name) and recv.id == "parameter":
             continue
+        # False positive: plain-local .expression/.value writes (e.g., `param.expression = ...`)
+        # are syntactically caught but semantically invalid (no such Fusion object). Accepted
+        # trade-off: catches the hazardous case (itemByName().expression) and guides correct use.
         findings.append(Finding(RULE_ID, NUMBER, node.lineno, node.col_offset, "warn",
                                 "parameter write — any BRepFace/Edge held in a variable "
                                 "is now dead document-wide (InternalValidationError on "
