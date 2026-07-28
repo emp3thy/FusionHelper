@@ -63,9 +63,10 @@ Every rule traces to a measured probe. The gate cites rules by number.
 8. **Repair loop.** Budgets: preflight fixes 3 (offline, separate); runtime with
    a taxonomy code 3; unclassified runtime 2; verification failures 2; hard cap
    **5 `fusion_mcp_execute` calls per request**. Abort early when: identical failure signature twice;
-   an A→B→A recurrence appears; error count fails to strictly decrease
-   twice. Third attempt is always a from-scratch regeneration, never a patch.
-   `model.not_restored`, `model.inert` or a timeline error state → undo
+   an A→B→A recurrence appears; error count fails to strictly decrease twice;
+   a repair introduces a new error code without clearing the old one (counts as no progress).
+   Third attempt is always a from-scratch regeneration, never a patch.
+   `model.not_restored`, `model.inert`, `edit.introduces_clash`, or a timeline error state → undo
    (`fusion_mcp_update`) and regenerate.
 9. **When giving up:** say what is wrong in plain language, show the attempt
    history, state the document's condition, ask one specific question, and
