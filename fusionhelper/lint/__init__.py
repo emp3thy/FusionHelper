@@ -24,7 +24,12 @@ def run(source: str, path: str = "<script>") -> LintResult:
         result.findings.append(result.parse_error)
         return result
     for rule in ALL_RULES:
-        result.findings.extend(rule.check(tree, source))
+        try:
+            result.findings.extend(rule.check(tree, source))
+        except Exception as exc:
+            module = getattr(rule, "__name__", repr(rule))
+            result.findings.append(Finding("engine", "ENGINE", 1, 0, "error",
+                                           f"rule {module} crashed: {exc}"))
     from fusionhelper.lint import suppress
     result.findings, result.waivers, defects = suppress.apply(source, result.findings)
     result.findings.extend(defects)

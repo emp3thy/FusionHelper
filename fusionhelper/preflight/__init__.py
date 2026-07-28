@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fusionhelper import lint, stubs
 from fusionhelper.lint import render
+from fusionhelper.lint.findings import RULES
 from fusionhelper.lint.rules import r8_stub_intact
 from fusionhelper.preflight import canary, staging
 from fusionhelper.preflight.pyright_gate import (
@@ -49,10 +50,12 @@ def run_preflight(script_path: Path, *, expect_stub: bool = True,
     source = script_path.read_text(encoding="utf-8")
     lint_result = lint.run(source, script_path.name)
     findings = list(lint_result.findings)
+    checked = {n for n, info in RULES.items() if info.checked}
     if expect_stub:
         findings.extend(r8_stub_intact.check_text(source))
-    lock = lock_path if lock_path is not None else \
-        Path(__file__).parents[2] / "tests" / "api_version.lock"
+    else:
+        checked.discard("R8")
+    lock = lock_path if lock_path is not None else stubs.default_lock_path()
     staged = staging.stage(script_path, defs)
     try:
         env = stubs.pyright_pin_env(lock) if lock.exists() else {}
@@ -67,7 +70,8 @@ def run_preflight(script_path: Path, *, expect_stub: bool = True,
             f"PREFLIGHT GATE_BROKEN\n{e}\nExit 3: fix the machine, do NOT edit the script.")
     finally:
         shutil.rmtree(staged, ignore_errors=True)
-    body = render.report(findings, lint_result.waivers, source, script_path.name)
+    body = render.report(findings, lint_result.waivers, source, script_path.name,
+                         checked=checked)
     errors = [f for f in findings if f.severity == "error"]
     verdict = "PASS" if not errors else "FAIL"
     lines = [f"PREFLIGHT {verdict} errors={len(errors)}", body]
@@ -85,7 +89,8 @@ def run_preflight(script_path: Path, *, expect_stub: bool = True,
         except Exception as e:
             lines.append(f"warning: drift check failed: {e}")
     else:
-        lines.append("warning: tests/api_version.lock not found - pyright version "
-                     "unpinned, gate results may drift")
+        lines.append("warning: api_version.lock not found (expected "
+                     "fusionhelper/api_version.lock unless overridden) - pyright "
+                     "version unpinned, gate results may drift")
     report = "\n".join(lines)
     return PreflightResult(Outcome.PASS if not errors else Outcome.FAIL, findings, report)

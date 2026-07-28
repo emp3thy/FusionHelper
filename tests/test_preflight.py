@@ -78,6 +78,19 @@ def test_missing_stub_fails_when_expected(tmp_path):
     assert "R8" in r.report
 
 
+def test_expect_stub_true_default_checks_r8(tmp_path):
+    r = preflight.run_preflight(write(tmp_path, GOOD))
+    assert "checked: R1 R2 R4 R5 R6 R7 R8 ·" in r.report
+    assert "not checked: R3 R9 R10" in r.report
+
+
+def test_expect_stub_false_moves_r8_to_not_checked(tmp_path):
+    r = preflight.run_preflight(write(tmp_path, GOOD, stub=False), expect_stub=False)
+    assert r.outcome is preflight.Outcome.PASS, r.report
+    assert "checked: R1 R2 R4 R5 R6 R7 ·" in r.report
+    assert "not checked: R3 R8 R9 R10" in r.report
+
+
 def test_pyright_version_drift_is_reported_not_absorbed(tmp_path, monkeypatch):
     # Keep the real lock (its pyright_version is the actually-installed, already
     # cached pyright, so PYRIGHT_PYTHON_FORCE_VERSION pinning needs no network
@@ -97,7 +110,7 @@ def test_missing_lock_is_a_visible_warning_not_silent(tmp_path):
     r = preflight.run_preflight(write(tmp_path, GOOD), lock_path=tmp_path / "nowhere.lock")
     assert r.outcome is preflight.Outcome.PASS
     assert r.exit_code == 0
-    assert "warning: tests/api_version.lock not found" in r.report
+    assert "warning: api_version.lock not found" in r.report
 
 
 def test_drift_check_failure_is_a_warning_not_a_crash(tmp_path, monkeypatch):
@@ -140,3 +153,21 @@ def test_cli_usage_exit_2():
     env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN)}
     assert cli(env=env).returncode == 2
     assert cli(str(Path("does_not_exist.py")), env=env).returncode == 2
+
+
+def test_cli_survives_narrow_stdout_encoding(tmp_path):
+    # Rule restatements and the coverage line use em dashes / middle dots that
+    # a legacy console codepage (Windows cp437/cp850) cannot encode. Force a
+    # FAIL report through R1's restatement line under PYTHONIOENCODING=cp437
+    # and confirm the CLI still exits cleanly instead of crashing on print()
+    # with a raw UnicodeEncodeError.
+    bad = GOOD.replace("print(des)", "print(adsk.core.ValueInput.createByReal(1.0))")
+    env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN), "PYTHONIOENCODING": "cp437"}
+    proc = subprocess.run(
+        [sys.executable, "-m", "fusionhelper.preflight", str(write(tmp_path, bad))],
+        capture_output=True, env=env)
+    stdout = proc.stdout.decode("cp437", errors="replace")
+    stderr = proc.stderr.decode("cp437", errors="replace")
+    assert "Traceback" not in stderr, stderr
+    assert stdout.startswith("PREFLIGHT FAIL"), stdout + stderr
+    assert proc.returncode == 1

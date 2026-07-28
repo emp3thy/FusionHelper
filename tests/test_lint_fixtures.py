@@ -23,3 +23,18 @@ def test_syntax_error_becomes_finding():
     assert f.line == 1
     assert f.col == 11
     assert result.parse_error is f
+
+
+def test_rule_crash_becomes_engine_finding_not_a_raw_traceback(monkeypatch):
+    from fusionhelper.lint.rules import r1_create_by_real
+
+    def boom(tree, source):
+        raise ValueError("boom")
+
+    monkeypatch.setattr(r1_create_by_real, "check", boom)
+    result = lint.run("x = 1\n", "box.py")
+    engine = [f for f in result.findings if f.rule_number == "ENGINE"]
+    assert len(engine) == 1
+    assert engine[0].severity == "error"
+    assert "crashed" in engine[0].message
+    assert "boom" in engine[0].message

@@ -37,8 +37,14 @@ def split_diagnostics(payload: dict, script_name: str, canary_name: str):
     a submodule that does not exist (`adsk.geometry`) — and must surface as a finding,
     not be swallowed as GATE_BROKEN. Measured: `import adsk.geometry` (no such stub
     module) previously passed silently through this exact GateBroken path.
+
+    A diagnostic whose file is neither the script nor the canary (an unexpected
+    third file in the staged project) must never silently fall into the canary
+    bucket: that would let noise from some other file count toward "the canary
+    fired" and mask a genuinely dead canary. It is instead surfaced as a visible
+    ENGINE warn finding on the script side.
     """
-    script, canary = [], []
+    script, canary, unknown = [], [], []
     for d in payload.get("generalDiagnostics", []):
         name = Path(d["file"]).name
         if name == canary_name and STUB_SENTINEL_RE.search(d.get("message", "")):
@@ -51,7 +57,18 @@ def split_diagnostics(payload: dict, script_name: str, canary_name: str):
                         d["range"]["start"]["character"],
                         "error" if d["severity"] == "error" else "warn",
                         d["message"].splitlines()[0])
-        (script if name == script_name else canary).append(entry)
+        if name == script_name:
+            script.append(entry)
+        elif name == canary_name:
+            canary.append(entry)
+        else:
+            unknown.append(name)
+    if unknown:
+        names = ", ".join(sorted(set(unknown)))
+        script.append(Finding("engine", "ENGINE", 1, 0, "warn",
+                              f"pyright reported {len(unknown)} diagnostic(s) from "
+                              f"unexpected file(s) not part of the staged script or "
+                              f"canary: {names}"))
     return script, canary
 
 

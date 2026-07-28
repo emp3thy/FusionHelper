@@ -18,6 +18,12 @@ def discover_defs() -> Path | None:
     return cand if (cand / "adsk").is_dir() else None
 
 
+def default_lock_path() -> Path:
+    """The lock ships inside the installed package, not the source checkout's
+    tests/ directory — it must be resolvable from a `pip install`."""
+    return Path(__file__).parent / "api_version.lock"
+
+
 def api_version(defs: Path) -> str | None:
     vt = defs.parent.parent / "version.txt"   # .../API/version.txt
     try:
@@ -52,7 +58,13 @@ def drift_report(lock: dict, *, defs: Path | None, pyright_version: str) -> list
     if pyright_version != lock["pyright_version"]:
         drift.append(f"pyright drifted: lock {lock['pyright_version']}, "
                      f"installed {pyright_version}")
-    if defs is not None and fingerprint(defs) != lock["stub_sha256"]:
+    # FUSIONHELPER_DEFS overrides discover_defs() with synthetic/test stubs (CI,
+    # unit tests) that were never blessed into the lock and never will be —
+    # comparing their fingerprint against the real Fusion install's stub_sha256
+    # would be a permanent, meaningless false positive. The pyright-version
+    # comparison above stays active regardless: that drift is real either way.
+    if defs is not None and not os.environ.get("FUSIONHELPER_DEFS") and \
+            fingerprint(defs) != lock["stub_sha256"]:
         drift.append("stub fingerprint drifted: Fusion update changed the API defs; "
                      "re-run gate fidelity tests and re-bless the lock")
     return drift

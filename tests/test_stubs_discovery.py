@@ -32,6 +32,35 @@ def test_lock_roundtrip_and_drift(tmp_path):
     assert not any("stub" in d for d in drift)
 
 
+def test_stub_drift_reported_when_no_env_override(tmp_path, monkeypatch):
+    monkeypatch.delenv("FUSIONHELPER_DEFS", raising=False)
+    lock = tmp_path / "api_version.lock"
+    # deliberately wrong fingerprint so a real mismatch is reported
+    stubs.write_lock(lock, api_version="x", pyright_version="1.1.408", stub_sha256="0" * 64)
+    data = stubs.read_lock(lock)
+    drift = stubs.drift_report(data, defs=SYN, pyright_version="1.1.408")
+    assert any("stub" in d for d in drift)
+
+
+def test_stub_drift_skipped_when_fusionhelper_defs_overrides(tmp_path, monkeypatch):
+    # FUSIONHELPER_DEFS points at synthetic/test stubs that were never blessed
+    # into the lock and never will be -- comparing their fingerprint against a
+    # real Fusion install's stub_sha256 would be a permanent false positive.
+    lock = tmp_path / "api_version.lock"
+    stubs.write_lock(lock, api_version="x", pyright_version="1.1.408", stub_sha256="0" * 64)
+    data = stubs.read_lock(lock)
+    monkeypatch.setenv("FUSIONHELPER_DEFS", str(SYN))
+    drift = stubs.drift_report(data, defs=SYN, pyright_version="1.1.408")
+    assert not any("stub" in d for d in drift)
+
+
+def test_default_lock_path_is_inside_the_package(tmp_path):
+    path = stubs.default_lock_path()
+    assert path.name == "api_version.lock"
+    assert path.parent == Path(stubs.__file__).parent
+    assert path.is_file()
+
+
 def test_pyright_pin_env(tmp_path):
     lock = tmp_path / "api_version.lock"
     stubs.write_lock(lock, api_version="x", pyright_version="1.1.408", stub_sha256="0" * 64)

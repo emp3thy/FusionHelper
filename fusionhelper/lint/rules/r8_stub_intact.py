@@ -34,6 +34,7 @@ def check_text(source: str) -> list[Finding]:
                    "wrapper: the script builds geometry and prints nothing (the silent case)")
         else:
             msg = "verification stub present but modified — exact stub text required"
+    msg += " (R8 is not waivable — regenerate the tail)"
     return [Finding(RULE_ID, NUMBER, last_line, 0, "error", msg, _FIX)]
 
 

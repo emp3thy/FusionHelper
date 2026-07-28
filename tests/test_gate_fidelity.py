@@ -39,7 +39,8 @@ def test_hallucination_caught(tmp_path, bad, monkeypatch):
 
 
 def test_stub_tail_passes_real_preflight(tmp_path):
-    good = Path("tests/fixtures/lint/good/corpus_verify_tail.py").read_text(encoding="utf-8")
+    good = (Path(__file__).parent / "fixtures" / "lint" / "good" /
+           "corpus_verify_tail.py").read_text(encoding="utf-8")
     p = tmp_path / "script.py"
     p.write_text(good, encoding="utf-8")
     r = preflight.run_preflight(p)
