@@ -5,6 +5,7 @@ from fusionhelper.lint.rules import (
                                       r5_stale_brep,
                                       r6_hardcoded_axis,
                                       r7_param_names,
+                                      r8_stub_intact,
 )
 
 ALL_RULES = [
@@ -14,4 +15,5 @@ ALL_RULES = [
     r5_stale_brep,
     r6_hardcoded_axis,
     r7_param_names,
-]  # grows: r8
+    r8_stub_intact,
+]
