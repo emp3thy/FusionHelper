@@ -1416,11 +1416,15 @@ def check_text(source: str) -> list[Finding]:
     last_line = source.count("\n") + 1
     if verify.STUB_SENTINEL not in source:
         msg = "verification stub missing — the script will build and never verify"
-    elif source.rfind(verify.STUB_SENTINEL) < len(source.rstrip()) - len(verify.STUB_TEXT):
-        msg = ("code appears after the stub — a later `def run` would discard the "
-               "wrapper: the script builds geometry and prints nothing (the silent case)")
     else:
-        msg = "verification stub present but modified — exact stub text required"
+        # Diagnose from the LAST sentinel onward: intact stub text followed by
+        # more content = appended code; anything else = modified stub.
+        tail = _norm(source[source.rfind(verify.STUB_SENTINEL):])
+        if tail.startswith(_norm(verify.STUB_TEXT)):
+            msg = ("code appears after the stub — a later `def run` would discard the "
+                   "wrapper: the script builds geometry and prints nothing (the silent case)")
+        else:
+            msg = "verification stub present but modified — exact stub text required"
     return [Finding(RULE_ID, NUMBER, last_line, 0, "error", msg, _FIX)]
 
 
