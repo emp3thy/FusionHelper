@@ -28,6 +28,9 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 "fusionhelper/verify/fh_verify.py" = ["UP", "SIM", "E501", "B"]
 "fusionhelper/verify/stub_text.py" = ["E501"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.pyright]
 include = ["fusionhelper", "tests"]
 exclude = ["tests/fixtures", "tests/synthetic_stubs", "fusionhelper/verify/fh_verify.py"]
