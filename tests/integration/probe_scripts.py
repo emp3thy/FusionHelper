@@ -9,11 +9,14 @@ stub-gapped `setDistanceExtent` -- see `docs/fusion-api-notes.md` section 8).
 `probe-results.md` records measured *output*, not the exact script bodies for
 every probe (P4, P5, P7, P8 in particular): those scripts are reconstructed
 from the recipe docs and the shipped Autodesk stubs, then verified live
-against this project's own Fusion install before being committed here (see
-task-17-report.md "Development verification"). Where the reconstruction is a
-plausible-but-not-guaranteed match for the original probe's exact geometry
-(P8's hole layout), the test asserts the qualitative finding the doc records,
-not a byte-for-byte transcription of its error text.
+against this project's own Fusion install before being committed here. Where
+the reconstruction is a plausible-but-not-guaranteed match for the original
+probe's exact geometry (P8's hole layout), the test asserts the qualitative
+finding the doc records, not a byte-for-byte transcription of its error text
+-- see `docs/probe-results.md`'s "New finding -- a cut with zero body overlap
+fails silently, not with P8's documented error" addendum for the one case
+where the reconstruction surfaced a genuine doc-vs-live deviation, not just a
+different geometry.
 
 Every script prints exactly one `FH_RESULT {json}` line as its last output.
 No script here catches exceptions except P3, whose entire point is
@@ -693,6 +696,13 @@ top = top_face(plate_body)
 # top face (a raw construction plane produced "InternalValidationError:
 # logicalSelection" from HoleFeatures.add -- the hole tool needs an actual
 # target-body face, not just a coincident plane).
+#
+# Deliberately holeFeatures, not a sketch-circle + CutFeatureOperation
+# extrude: the latter silently no-ops (no exception, no reference failure)
+# when its profile has zero overlap with the target body, instead of
+# raising the reference failure this probe documents. See
+# docs/probe-results.md's "New finding -- a cut with zero body overlap
+# fails silently, not with P8's documented error" (measured 2026-07-28).
 hole_sk = root.sketches.add(top)
 centers = [(2, 1.5), (2, 3.5), (6, 1.5), (6, 3.5)]
 pts = adsk.core.ObjectCollection.create()

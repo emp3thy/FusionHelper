@@ -430,6 +430,37 @@ the entire class.** Also avoid accumulating junk parameters — one unreproducib
 `RuntimeError: 3 : invalid expression` occurred in a document polluted with ~21 probe
 parameters and did not recur in a clean document. Cause unidentified.
 
+## New finding — a cut with zero body overlap fails silently, not with P8's documented error
+
+Measured 2026-07-28, while building Task 17's regression test for P8: a sketch-circle profile
+cut with `ExtrudeFeatures.createInput(..., CutFeatureOperation)` and a fixed
+`DistanceExtentDefinition` does **not** reproduce P8's documented `"extrusion profile falls
+outside the boundary of the selected body… N Reference Failures"` error when the profile has
+zero overlap with the target body. It silently no-ops instead — boolean subtraction of nothing
+from a body — leaving the timeline healthy and the plate unmodified. No exception, no
+`healthState` change, no message.
+
+To reproduce a genuine reference failure when a hole's position leaves the target body, the
+regression test uses Fusion's dedicated Hole feature instead (`root.features.holeFeatures`,
+`createSimpleInput` + `setPositionBySketchPoints` + `setAllExtent`), which explicitly validates
+hole placement against the target body at build time and does raise a reference failure
+(`healthState=1`, message containing `"Reference Failures"`) when a hole falls off the edge.
+See `tests/integration/probe_scripts.py`'s `P8_PARAMETER_SWEEP` for the working recipe.
+
+**This is not a transcription error being corrected — it is new evidence for the document's own
+thesis.** P5 and P8's original findings are both about Fusion's health reporting being an
+incomplete oracle; this adds a second, sharper instance: not just "some invalid geometry passes
+silently" but "the *same conceptual operation* (a cut) can either raise a reference failure or
+silently no-op depending on which of two APIs constructs it," with no message distinguishing the
+two outcomes from the caller's side. `detailed-design.md`'s open question 5 — *"`boolean.no_op`
+has no message and must be detected by post-condition (pre/post volume), which requires an
+`emit` assertion"* — predicted exactly this failure mode before it was measured.
+
+**Generator implication:** a boolean/cut operation's success cannot be inferred from the absence
+of a timeline error. Where a cut's completeness matters (e.g. "this hole must actually remove
+material"), assert a post-condition — pre/post volume or face-count change — not just
+`healthState`.
+
 ## Recommended verification block for generated scripts
 
 Every item below is verified working and returns to the agent via `print()`:
