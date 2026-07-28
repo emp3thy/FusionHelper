@@ -20,6 +20,7 @@ explicitly marked otherwise. Documentation claims that were not verified are lab
 | Endpoint | `http://127.0.0.1:27182/mcp` |
 | Transport | streamable-HTTP JSON-RPC. Plain `GET` returns 404 — `POST` an `initialize` call |
 | Identifies as | `MCP Server Adapter v1.0.0`, protocol `2025-06-18` |
+| Session | `initialize` response carries an **`MCP-Session-Id` header** (measured 2026-07-28); capture it and send it on every subsequent request |
 | Capabilities | `tools`, `resources`. **No `prompts`** (`prompts/list` → `-32601 Method not found`) |
 | Lifetime | Only alive while Fusion is running |
 | Licence | **Paid subscription required.** Third-party AI integration is blocked on Personal use |

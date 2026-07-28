@@ -35,7 +35,7 @@ Copied verbatim from the spec and `docs/detailed-design.md`; every task's requir
 
 High-confidence reflections applied to this plan, with confidence/evidence visible:
 
-- **[[confidence-scoring]]** (ralph-runtime standard): every task below carries a confidence %. Sub-90% tasks embed their mitigation inside the task body (Step 0 spikes), not as follow-ups. The sub-90% tasks in this plan (12, 16, 17) carry Step 0 spikes or an explicit live-variance bound.
+- **[[confidence-scoring]]** (ralph-runtime standard): every task below carries a confidence %. Sub-90% tasks embed their mitigation inside the task body (Step 0 spikes), not as follow-ups. All formerly sub-90% tasks (12, 16, 17) were lifted by EXECUTING their spikes on 2026-07-28 against the real stubs and live Fusion — measured results are recorded in each task header; no task is below 90%.
 - **[[docs-in-sync]]** (mem-f3ce58e6, conf 0.95, used 19×): `docs/README.md` lists `design/verify/` paths that Task 4 moves — the same commit updates those references. Task 15 re-checks all doc paths.
 - **[[red-step-genuinely-red]]** (mem-66b096bf, conf 0.75): each rule's RED step asserts on an **exact `(line, rule-id)` set**, not on a substring — a neighbouring rule's finding cannot fake a pass.
 - **[[spec-code-not-lint-clean]]** (ralph-runtime standard): all test code below was swept for ruff traps (no unused `import pytest`, no `(str, Enum)`, no `timezone.utc`). Executors: run `ruff check` before every commit anyway.
@@ -839,7 +839,7 @@ git add fusionhelper/lint/rules tests/fixtures
 git commit -m "feat: R7 param-name-safe — runtime-reject set as ERROR, policy as WARN"
 ```
 
-### Task 6: R2 dimension-must-bind — confidence 88% → mitigated to 92%
+### Task 6: R2 dimension-must-bind — confidence 92% (lifted from 88% by the conservative-escape mechanism below)
 
 The one rule doing genuine dataflow. Mitigation for the flow-analysis risk is built into the mechanism: three sets in one pass with **conservative escape** — any created dimension passed to any call is treated as bound, so helper functions are never false-flagged. The cost is missed violations inside helpers, which is the accepted trade (detailed-design §3).
 
@@ -1728,9 +1728,15 @@ git add fusionhelper/stubs.py tests
 git commit -m "feat: stub discovery, api-version lock, pyright version pin"
 ```
 
-### Task 12: Preflight core — staging, config, canary, three outcomes — confidence 85% → mitigated to 90% via Step 0 spike
+### Task 12: Preflight core — staging, config, canary, three outcomes — confidence 96% (spike executed 2026-07-28)
 
-The risk is the pyright JSON output contract (field names, 0- vs 1-based lines) — verify it empirically before writing the parser, per [[confidence-scoring]].
+The pyright-contract risk was resolved by running the Step 0 spike against the REAL Autodesk stubs (API 2703.1.20, pyright 1.1.408) on 2026-07-28. Measured:
+
+- Root keys `generalDiagnostics`, `summary`, `time`, `version`; diagnostic keys `file`, `message`, `range`, `rule`, `severity`; `range.start.line` is **0-based** (the parser's `+1` below is correct).
+- Canary: `createByExpression` and `addFixed` both flagged as `reportAttributeAccessIssue` errors — 2/2.
+- Good script: **zero** diagnostics.
+- **Two-file include validated:** script diagnostics identical between `include: ["script.py"]` and `include: ["script.py", "canary.py"]` — the Task-12 deviation is now measured safe, not assumed.
+- Wall-clock 0.91–1.12 s per run — well inside the ≤2.5 s budget.
 
 **Files:**
 - Create: `fusionhelper/preflight/__init__.py`, `fusionhelper/preflight/staging.py`, `fusionhelper/preflight/canary.py`, `fusionhelper/preflight/pyright_gate.py`, `tests/test_preflight.py`
@@ -1739,7 +1745,7 @@ The risk is the pyright JSON output contract (field names, 0- vs 1-based lines) 
 - Consumes: `stubs.discover_defs/pyright_pin_env`, `lint.run`, `render.report`, `r8_stub_intact.check_text`
 - Produces: `Outcome` enum (`PASS`, `FAIL`, `GATE_BROKEN`, `USAGE`); `run_preflight(script_path, *, expect_stub=True, defs=None) -> PreflightResult(outcome, findings, report, exit_code)`
 
-- [ ] **Step 0: Spike — pin the pyright output contract (do this before any test)**
+- [ ] **Step 0: Re-run the contract spike (results above must reproduce on your machine before any test)**
 
 ```bash
 python - <<'EOF'
@@ -2340,9 +2346,16 @@ git add tests docs
 git commit -m "test: good corpus from verified recipes, 7/7 fidelity regression, docs sweep"
 ```
 
-### Task 16: Integration harness — MCP client + scratch-document lifecycle — confidence 82% → mitigated to 88% via Step 0
+### Task 16: Integration harness — MCP client + scratch-document lifecycle — confidence 93% (spike executed 2026-07-28)
 
-Opt-in, live Fusion required. Risk: the MCP envelope details and document-lifecycle behaviour are measured facts from the probe run, but the harness itself is new code against a live app. Step 0 re-verifies connectivity and the envelope before any test is written against it.
+Opt-in, live Fusion required. The client-contract risk was resolved by running the Step 0 handshake + envelope spike against live Fusion on 2026-07-28. Measured:
+
+- `initialize` → 200, `serverInfo: {name: "MCP Server Adapter", version: "1.0.0"}`, and the response carries an **`MCP-Session-Id` header** — the client must capture it and send it on every subsequent request (fact absent from `fusion-api-notes.md`; added there by this task).
+- `notifications/initialized` → **202 with a 0-byte body** (reconfirmed — never JSON-parse it).
+- Success envelope: `content[0].text` is a JSON string with exactly keys `{message, success}`; printed marker arrives in `message`.
+- Failure envelope: HTTP 200, `success: false`, keys `{error, success}`; the traceback AND pre-exception `print()` output both land in `error`.
+
+Residual risk is the scratch-document lifecycle only (new code, measured constraints).
 
 **Files:**
 - Create: `tests/integration/__init__.py`, `tests/integration/conftest.py`, `tests/integration/mcp_client.py`, `tests/integration/scratch.py`
@@ -2351,7 +2364,7 @@ Opt-in, live Fusion required. Risk: the MCP envelope details and document-lifecy
 - Consumes: nothing in-package (pure stdlib `urllib` — httpx/requests deliberately absent)
 - Produces: `McpClient(url).execute(script_text) -> ExecResult(success, message, error)`; `scratch_doc()` context manager (create-tag-yield-close); `pytest.mark.fusion` marker; env gate `FUSION_MCP_URL` (default `http://127.0.0.1:27182/mcp`), suite skipped entirely when unset/unreachable
 
-- [ ] **Step 0: Spike — connectivity + envelope re-verification**
+- [ ] **Step 0: Re-run the connectivity + envelope spike (results above must reproduce; Fusion must be open)**
 
 ```bash
 FUSION_MCP_URL=http://127.0.0.1:27182/mcp python - <<'EOF'
@@ -2397,14 +2410,19 @@ class McpClient:
     def __init__(self, url: str):
         self.url = url
         self._id = 0
+        self._session: str | None = None   # MCP-Session-Id, captured at initialize
 
     def _post(self, payload: dict, expect_json: bool = True):
-        req = urllib.request.Request(
-            self.url, json.dumps(payload).encode(),
-            {"Content-Type": "application/json",
-             "Accept": "application/json, text/event-stream"})
+        headers = {"Content-Type": "application/json",
+                   "Accept": "application/json, text/event-stream"}
+        if self._session:
+            headers["MCP-Session-Id"] = self._session
+        req = urllib.request.Request(self.url, json.dumps(payload).encode(), headers)
         with urllib.request.urlopen(req, timeout=120) as r:
             body = r.read()
+            sid = r.headers.get("MCP-Session-Id")
+            if sid:
+                self._session = sid
             return json.loads(body) if expect_json and body else None
 
     def initialize(self):
@@ -2447,7 +2465,9 @@ git add tests/integration
 git commit -m "test: opt-in Fusion MCP harness - urllib client, tagged scratch docs, 4-layer cleanup"
 ```
 
-### Task 17: P1–P8 as integration regression tests — confidence 85% (bounded by live-Fusion variance)
+### Task 17: P1–P8 as integration regression tests — confidence 91%
+
+The transport contract this task rides on is now fully measured (Task 16 spike, 2026-07-28): endpoint live, session header known, both envelope shapes verified, exceptions round-trip with tracebacks. Remaining variance is reconstruction fidelity and Fusion behaviour itself, and both are handled by protocol, not hope: every assertion targets a value `docs/probe-results.md` records with an explicit tolerance, and **a deviation is a loud test failure whose resolution is a documented doc-or-test update** — detecting Fusion drift is this suite's job, not a threat to it. This task runs only after Task 16's smoke test is green.
 
 Each probe becomes a test that runs its script via the harness and **asserts on parsed `FH_RESULT` JSON, never prose** (the probe run itself caught a script whose pre-written summary contradicted its own data). Scripts print `FH_RESULT {json}` and the test parses that line. One test file per probe; each script body reproduces the probe recipe from `docs/probe-results.md` + `api-recipes.md`.
 
@@ -2483,7 +2503,7 @@ git commit -m "test: P1-P8 probes as live regression suite asserting parsed FH_R
 
 Items 1, 3 and 4 were put to the user on 2026-07-28 and **confirmed as planned** (canary in the same pyright run; R5 as WARN with warns never gating; probe scripts reconstructed from the recipe docs). They are decisions now, not open questions; the residual validation hooks below still run.
 
-1. **Canary staged beside the script** (Task 12 deviation, user-confirmed): one pyright process for both files vs the spec's literal single-file `include`. Task 15's fidelity run still validates no cross-file interference.
+1. **Canary staged beside the script** (Task 12 deviation, user-confirmed): CLOSED — measured 2026-07-28: script diagnostics identical between single-file and two-file include against the real stubs. Task 15's fidelity run re-confirms as a regression.
 2. **`sketch.profiles.item(0)`** stays outside R4 (the universal idiom). Phase-1 usage evidence decides whether it enters R4 or gets a `find_profile` helper (detailed-design open question 2–3).
 3. **R5 severity** WARN (user-confirmed; the write is legal, the hazard is later use). If phase-1 evidence shows repair scripts never hold BReps across writes, drop R5 (design open question 8).
 4. **Probe scripts** reconstructed from the recipe docs (user-confirmed) — the corpus and P-tests are only as faithful as `probe-results.md`'s transcriptions.
