@@ -2481,10 +2481,12 @@ git commit -m "test: P1-P8 probes as live regression suite asserting parsed FH_R
 
 ## Open questions carried into execution
 
-1. **Canary staged beside the script** (Task 12 deviation): one pyright process for both files vs the spec's literal single-file `include`. Validated or reversed by Task 15's fidelity run.
+Items 1, 3 and 4 were put to the user on 2026-07-28 and **confirmed as planned** (canary in the same pyright run; R5 as WARN with warns never gating; probe scripts reconstructed from the recipe docs). They are decisions now, not open questions; the residual validation hooks below still run.
+
+1. **Canary staged beside the script** (Task 12 deviation, user-confirmed): one pyright process for both files vs the spec's literal single-file `include`. Task 15's fidelity run still validates no cross-file interference.
 2. **`sketch.profiles.item(0)`** stays outside R4 (the universal idiom). Phase-1 usage evidence decides whether it enters R4 or gets a `find_profile` helper (detailed-design open question 2–3).
-3. **R5 severity** set to WARN here (the write is legal; the hazard is later use). If phase-1 evidence shows repair scripts never hold BReps across writes, drop R5 (design open question 8).
-4. **Probe scripts** are reconstructed from the recipe docs, not recovered originals — the corpus and P-tests are only as faithful as `probe-results.md`'s transcriptions.
+3. **R5 severity** WARN (user-confirmed; the write is legal, the hazard is later use). If phase-1 evidence shows repair scripts never hold BReps across writes, drop R5 (design open question 8).
+4. **Probe scripts** reconstructed from the recipe docs (user-confirmed) — the corpus and P-tests are only as faithful as `probe-results.md`'s transcriptions.
 5. **Repair-loop bound** (spec open question 1) is answered in SKILL.md as budgets + early-abort rules from detailed-design §4; it is prose discipline in phase 1, enforced by nothing — the v2 wrapper decision waits for evidence.
 
 ## Self-review record
