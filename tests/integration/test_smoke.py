@@ -7,7 +7,7 @@ lifecycle's per-test `finally` layer leaves no tagged document behind.
 import pytest
 
 from tests.integration.mcp_client import McpClient
-from tests.integration.scratch import sweep_scratch_docs
+from tests.integration.scratch import read_scratch_tags, sweep_scratch_docs
 
 pytestmark = pytest.mark.fusion
 
@@ -28,6 +28,11 @@ def test_scratch_lifecycle_creates_and_tags(client: McpClient, scratch: str):
     res = client.execute("print('fh-scratch-alive')")
     assert res.success
     assert "fh-scratch-alive" in res.message
+
+    # Independent read-back: confirms the tag was actually written, not just
+    # that the leak check later finds nothing to sweep (which a silently
+    # failed tag write would also produce).
+    assert read_scratch_tags(client) == [scratch]
 
 
 def test_no_leaked_scratch_documents(client: McpClient):

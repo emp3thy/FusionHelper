@@ -16,6 +16,14 @@ lifecycle"). Four layers, in the order they run:
   3. session-end sweep -- this session's tag, belt-and-braces alongside
      every test's own per-test `finally`
   4. atexit -- if pytest itself is interrupted before session teardown runs
+
+CONCURRENT PYTEST SESSIONS AGAINST THE SAME FUSION INSTANCE ARE UNSUPPORTED.
+Layer 1's pre-session sweep matches ANY fusionhelper/scratch tag, not just
+this session's own -- by design, so a Ctrl-C'd prior run's leaks get cleaned
+up automatically -- but that means it will also close another *live*
+session's scratch documents if two `pytest tests/integration` runs are ever
+started against the same Fusion process at the same time. Run this suite
+one session at a time per Fusion instance.
 """
 import atexit
 import contextlib

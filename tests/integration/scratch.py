@@ -37,6 +37,7 @@ SESSION_TAG_PREFIX = "fh-test-"
 
 _CREATED_PREFIX = "fh-scratch-created "
 _SWEEP_RESULT_PREFIX = "fh-sweep-result "
+_READBACK_PREFIX = "fh-scratch-tags "
 
 # Plain (non-f-string) templates: the emitted script builds a JSON dict
 # literal itself, and an f-string would need every one of those braces
@@ -99,6 +100,29 @@ for doc, name, doctag in eligible:
 print('__SWEEP_PREFIX__' + json.dumps({'closed': closed, 'skipped': skipped, 'errors': errors}))
 """
 
+_READBACK_SCRIPT_TEMPLATE = """
+import json
+import adsk.core, adsk.fusion
+app = adsk.core.Application.get()
+found = []
+docs = app.documents
+for i in range(docs.count):
+    doc = docs.item(i)
+    if doc.isSaved:
+        continue
+    try:
+        prod = doc.products.itemByProductType('DesignProductType')
+    except Exception:
+        prod = None
+    if prod is None:
+        continue
+    des = adsk.fusion.Design.cast(prod)
+    attr = des.attributes.itemByName('__ATTR_GROUP__', '__ATTR_NAME__')
+    if attr is not None:
+        found.append(str(attr.value))
+print('__READBACK_PREFIX__' + json.dumps(found))
+"""
+
 
 def new_session_tag() -> str:
     return SESSION_TAG_PREFIX + uuid.uuid4().hex
@@ -119,6 +143,33 @@ def _sweep_script(tag: str | None) -> str:
             .replace("__ATTR_NAME__", ATTR_NAME)
             .replace("__SWEEP_PREFIX__", _SWEEP_RESULT_PREFIX)
             .replace("__TARGET_TAG__", target_expr))
+
+
+def _readback_script() -> str:
+    return (_READBACK_SCRIPT_TEMPLATE
+            .replace("__ATTR_GROUP__", ATTR_GROUP)
+            .replace("__ATTR_NAME__", ATTR_NAME)
+            .replace("__READBACK_PREFIX__", _READBACK_PREFIX))
+
+
+def read_scratch_tags(client: McpClient) -> list[str]:
+    """Read the fusionhelper/scratch attribute value off every unsaved
+    document currently open, independent of any particular session's tag.
+
+    Exists because the sweep-based leak check alone cannot catch a silent
+    tagging failure: if `create_scratch_doc` created a document but the
+    `attributes.add` call silently didn't stick, a tag-scoped sweep would
+    never find that document either, so "nothing left to sweep" would look
+    identical to "the tag was never written". This reads the attribute back
+    directly and lets the caller assert its value, not just its absence.
+    """
+    res = client.execute(_readback_script())
+    if not res.success:
+        raise RuntimeError(f"scratch tag read-back failed: {res.error}")
+    for line in reversed(res.message.splitlines()):
+        if line.startswith(_READBACK_PREFIX):
+            return json.loads(line[len(_READBACK_PREFIX):])
+    raise RuntimeError(f"no {_READBACK_PREFIX!r} line found in: {res.message!r}")
 
 
 def create_scratch_doc(client: McpClient, tag: str) -> None:
@@ -144,6 +195,12 @@ def sweep_scratch_docs(client: McpClient, tag: str | None) -> SweepResult:
     tag=None sweeps ANY fusionhelper/scratch-tagged document regardless of
     which session created it -- used only for the pre-session sweep of a
     prior run's leaks. All other layers pass the current session's tag.
+
+    tag=None is therefore unsafe to call while another pytest session is
+    concurrently running this suite against the same Fusion instance: it
+    cannot distinguish "a prior session's leak" from "another session's
+    document in active use" and will close both. Concurrent sessions against
+    one Fusion process are unsupported; see conftest.py's module docstring.
     """
     res = client.execute(_sweep_script(tag))
     if not res.success:
