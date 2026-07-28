@@ -72,3 +72,25 @@ def test_missing_stub_fails_when_expected(tmp_path):
     r = preflight.run_preflight(write(tmp_path, GOOD, stub=False))
     assert r.outcome is preflight.Outcome.FAIL
     assert "R8" in r.report
+
+
+def test_pyright_version_drift_is_reported_not_absorbed(tmp_path, monkeypatch):
+    # Keep the real lock (its pyright_version is the actually-installed, already
+    # cached pyright, so PYRIGHT_PYTHON_FORCE_VERSION pinning needs no network
+    # fetch) and fake only what "installed" reports, so drift is detected
+    # without perturbing the real pyright subprocess invocation. Pointing the
+    # lock itself at a nonexistent pyright_version (e.g. "9.9.9") instead would
+    # make pyright_pin_env force that version and crash the subprocess — this
+    # was verified against a real run before choosing the monkeypatch approach.
+    monkeypatch.setattr(preflight.importlib.metadata, "version", lambda _name: "9.9.9")
+    r = preflight.run_preflight(write(tmp_path, GOOD))
+    assert r.outcome is preflight.Outcome.PASS
+    assert r.exit_code == 0
+    assert "drift: pyright drifted" in r.report
+
+
+def test_missing_lock_is_a_visible_warning_not_silent(tmp_path):
+    r = preflight.run_preflight(write(tmp_path, GOOD), lock_path=tmp_path / "nowhere.lock")
+    assert r.outcome is preflight.Outcome.PASS
+    assert r.exit_code == 0
+    assert "warning: tests/api_version.lock not found" in r.report

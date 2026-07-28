@@ -1,4 +1,5 @@
 import enum
+import importlib.metadata
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,7 +35,7 @@ class PreflightResult:
 
 
 def run_preflight(script_path: Path, *, expect_stub: bool = True,
-                  defs: Path | None = None) -> PreflightResult:
+                  defs: Path | None = None, lock_path: Path | None = None) -> PreflightResult:
     script_path = Path(script_path)
     if not script_path.is_file():
         return PreflightResult(Outcome.USAGE, [], f"no such script: {script_path}")
@@ -50,9 +51,10 @@ def run_preflight(script_path: Path, *, expect_stub: bool = True,
     findings = list(lint_result.findings)
     if expect_stub:
         findings.extend(r8_stub_intact.check_text(source))
+    lock = lock_path if lock_path is not None else \
+        Path(__file__).parents[2] / "tests" / "api_version.lock"
     staged = staging.stage(script_path, defs)
     try:
-        lock = Path(__file__).parents[2] / "tests" / "api_version.lock"
         env = stubs.pyright_pin_env(lock) if lock.exists() else {}
         payload = run_pyright(staged, env)
         script_diags, canary_diags = split_diagnostics(
@@ -68,5 +70,16 @@ def run_preflight(script_path: Path, *, expect_stub: bool = True,
     body = render.report(findings, lint_result.waivers, source, script_path.name)
     errors = [f for f in findings if f.severity == "error"]
     verdict = "PASS" if not errors else "FAIL"
-    report = f"PREFLIGHT {verdict} errors={len(errors)}\n{body}"
+    lines = [f"PREFLIGHT {verdict} errors={len(errors)}", body]
+    # Drift is REPORTED, never silently absorbed — but it never changes the
+    # outcome: the canary above already proves the gate functions correctly.
+    if lock.exists():
+        installed_pyright = importlib.metadata.version("pyright")
+        drift = stubs.drift_report(stubs.read_lock(lock), defs=defs,
+                                   pyright_version=installed_pyright)
+        lines.extend(f"drift: {d}" for d in drift)
+    else:
+        lines.append("warning: tests/api_version.lock not found - pyright version "
+                     "unpinned, gate results may drift")
+    report = "\n".join(lines)
     return PreflightResult(Outcome.PASS if not errors else Outcome.FAIL, findings, report)
