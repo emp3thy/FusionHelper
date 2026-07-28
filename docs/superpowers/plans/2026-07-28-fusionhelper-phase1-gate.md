@@ -416,7 +416,9 @@ def run(source: str, path: str = "<script>") -> LintResult:
     try:
         tree = ast.parse(source, filename=path)
     except SyntaxError as e:
-        result.parse_error = Finding("syntax", "SYNTAX", e.lineno or 1, e.offset or 0,
+        # SyntaxError.offset is 1-based; Finding.col is uniformly 0-based
+        result.parse_error = Finding("syntax", "SYNTAX", e.lineno or 1,
+                                     max(0, (e.offset or 1) - 1),
                                      "error", f"script does not parse: {e.msg}")
         result.findings.append(result.parse_error)
         return result
