@@ -1,4 +1,7 @@
 import importlib.metadata
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -108,3 +111,32 @@ def test_drift_check_failure_is_a_warning_not_a_crash(tmp_path, monkeypatch):
     assert r.outcome is preflight.Outcome.PASS
     assert r.exit_code == 0
     assert "drift check failed" in r.report
+
+
+# CLI tests
+
+
+def cli(*args, env=None):
+    if env is None:
+        env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN)}
+    return subprocess.run([sys.executable, "-m", "fusionhelper.preflight", *args],
+                          capture_output=True, text=True, env=env)
+
+
+def test_cli_pass_exit_0(tmp_path):
+    env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN)}
+    p = cli(str(write(tmp_path, GOOD)), env=env)
+    assert p.returncode == 0, p.stdout + p.stderr
+    assert p.stdout.startswith("PREFLIGHT PASS")
+
+
+def test_cli_fail_exit_1(tmp_path):
+    env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN)}
+    result = cli(str(write(tmp_path, HALLUCINATED)), env=env)
+    assert result.returncode == 1
+
+
+def test_cli_usage_exit_2():
+    env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN)}
+    assert cli(env=env).returncode == 2
+    assert cli(str(Path("does_not_exist.py")), env=env).returncode == 2
