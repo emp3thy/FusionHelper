@@ -763,3 +763,12 @@ a saved document is never even inspected for a tag, let alone closed.
   solver relocates geometry to satisfy dims on the wrong axes.
 - `fh_verify`'s edit canary now honours `interference_allowed` (declared-intent
   overlaps no longer inflate the before/after clash counts).
+- **Circular-patterning a CUT feature around a curved body fails** with
+  `NO_TARGET_BODY / PATTERN_FEATURES_NO_PASTE_INT_EDGES` — under both the
+  default and `AdjustPatternCompute` options (measured). Workaround: extrude the
+  cutter as a NEW-BODY tool, pattern the BODY, then one `combineFeatures` cut of
+  all tool bodies (`isKeepToolBodies = False`).
+- **`param.dead` can mean a silently MISSING FEATURE**: a mis-bound tool sketch
+  (hardcoded diameter expression in a reused helper) built a bite that never
+  touched the target — constraints/timeline/interference all passed while the
+  intended feature was absent; only liveness flagged the two dead parameters.
