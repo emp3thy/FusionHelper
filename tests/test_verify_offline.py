@@ -410,8 +410,12 @@ ok(px.expression == '10 mm' and held3[0] is None,
 
 # ----------------------------------------------------------------- the stub contract
 import ast
-sys.path.insert(0, str(_VERIFY_DIR))
-from stub_text import STUB_TEXT, STUB_SENTINEL, append_to
+_stub_text_path = _VERIFY_DIR / "stub_text.py"
+_stub_text_spec = importlib.util.spec_from_file_location("stub_text", _stub_text_path)
+_stub_text = importlib.util.module_from_spec(_stub_text_spec)
+_stub_text_spec.loader.exec_module(_stub_text)
+STUB_TEXT, STUB_SENTINEL, append_to = (
+    _stub_text.STUB_TEXT, _stub_text.STUB_SENTINEL, _stub_text.append_to)
 
 ok(STUB_TEXT.splitlines()[0] == STUB_SENTINEL,
    "sentinel comment is the stub's first line (Agent B detects on this)")
