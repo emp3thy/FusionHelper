@@ -21,7 +21,7 @@ def discover_defs() -> Path | None:
 def api_version(defs: Path) -> str | None:
     vt = defs.parent.parent / "version.txt"   # .../API/version.txt
     try:
-        return vt.read_text(encoding="utf-8").strip()
+        return vt.read_text(encoding="utf-8-sig").strip()
     except OSError:
         return None
 

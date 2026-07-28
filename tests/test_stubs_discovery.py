@@ -37,3 +37,13 @@ def test_pyright_pin_env(tmp_path):
     stubs.write_lock(lock, api_version="x", pyright_version="1.1.408", stub_sha256="0" * 64)
     env = stubs.pyright_pin_env(lock)
     assert env["PYRIGHT_PYTHON_FORCE_VERSION"] == "1.1.408"
+
+
+def test_api_version_strips_utf8_bom(tmp_path):
+    """BOM in version.txt should be stripped to return clean version string."""
+    defs = tmp_path / "API" / "Python" / "defs"
+    defs.mkdir(parents=True)
+    version_file = tmp_path / "API" / "version.txt"
+    # Write version.txt with UTF-8 BOM prefix
+    version_file.write_bytes(b"\xef\xbb\xbf2703.1.20\r\n")
+    assert stubs.api_version(defs) == "2703.1.20"
