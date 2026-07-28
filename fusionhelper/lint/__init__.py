@@ -25,5 +25,8 @@ def run(source: str, path: str = "<script>") -> LintResult:
         return result
     for rule in ALL_RULES:
         result.findings.extend(rule.check(tree, source))
+    from fusionhelper.lint import suppress
+    result.findings, result.waivers, defects = suppress.apply(source, result.findings)
+    result.findings.extend(defects)
     result.findings.sort(key=lambda f: (f.line, f.col, f.rule_number))
     return result
