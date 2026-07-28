@@ -10,13 +10,16 @@ Read in this order.
 | [`fusion-api-notes.md`](fusion-api-notes.md) | **The working reference.** Verified Fusion API behaviour, traps, and recipes. Keep this open while implementing. |
 | [`research-findings.md`](research-findings.md) | **The literature.** LLM spatial-reasoning and CAD-generation research, prior art, and the reasoning behind the architecture. |
 
-Written artefacts, not yet wired together:
+Wired together (skill → gate → verification):
 
 | Path | What |
 |---|---|
-| `skills/fusion-design/reference/` | The skill's reference bundle — 740 lines |
-| `fusionhelper/verify/fh_verify.py` | The verification block — 995 lines |
-| `tests/test_verify_offline.py` | 43 offline assertions, passing without Fusion |
+| `skills/fusion-design/SKILL.md` | The skill. Cites the reference bundle and the CLI by name — this is what Claude Code reads. |
+| `skills/fusion-design/reference/` | The skill's reference bundle: recipes, axis mapping, limits — read the section you need. |
+| `fusionhelper/preflight/` | The offline gate: lint (R1/R2/R4-R8) + pyright against Autodesk's shipped stubs. `python -m fusionhelper.preflight <script>`. |
+| `fusionhelper/verify/fh_verify.py` | The verification block, appended to every generated script by `verify.append_to()` and checked intact by R8. |
+| `tests/test_verify_offline.py` | 43 offline assertions against `fh_verify.py`, passing without Fusion. |
+| `tests/test_gate_fidelity.py` | Regression: 7 real hallucinations FAIL preflight, a verified-recipe corpus PASSes it — against Autodesk's real stubs, local-only. |
 
 ## In one paragraph
 

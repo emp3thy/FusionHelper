@@ -28,6 +28,11 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 "fusionhelper/verify/stub_text.py" = ["E501"]
 "tests/test_verify_offline.py" = ["E401", "E402", "E501", "E731", "I001", "UP031"]
 "tests/fixtures/verify/stub_example.py" = ["E401", "I001"]
+# corpus fixtures: pasted verbatim from skills/fusion-design/reference/api-recipes.md
+# (same code, same provenance) plus, for the verify-tail fixture, the byte-exact
+# appended stub — neither is rewritten to satisfy style rules.
+"tests/fixtures/lint/good/corpus_predicate_pick.py" = ["SIM102"]
+"tests/fixtures/lint/good/corpus_verify_tail.py" = ["E401", "I001"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

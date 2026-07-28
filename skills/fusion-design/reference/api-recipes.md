@@ -108,10 +108,20 @@ expression and stayed live across an edit.
 ```python
 ext = root.features.extrudeFeatures
 inp = ext.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
-inp.setDistanceExtent(False, adsk.core.ValueInput.createByString('plate_t'))
+extent = adsk.fusion.DistanceExtentDefinition.create(
+    adsk.core.ValueInput.createByString('plate_t'))
+inp.setOneSideExtent(extent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
 f = ext.add(inp)
 f.name = 'plate_body'
 ```
+
+`ExtrudeFeatureInput` has no `setDistanceExtent` method — that name does not appear in
+Autodesk's shipped stubs (checked directly against `adsk/fusion.py`, API 2703.1.20).
+`setOneSideExtent` plus a `DistanceExtentDefinition` is the real signature. The earlier
+form in this doc ran live in Fusion without error but failed pyright outright — caught
+only when this recipe was pasted into a corpus fixture and pushed through the real
+pre-flight gate. "Ran once in Fusion" and "passes the static gate" are not the same
+claim; this recipe is now checked against both.
 
 Binding the extent is necessary and **not sufficient** (**R2**). A profile drawn at literal
 `Point3D` coordinates with only the extent bound produced *byte-identical* geometry when
@@ -124,9 +134,14 @@ Extrude direction is clean: a positive distance always follows the plane normal.
 
 The verified sequence. `isFullyConstrained` flips `False` → `True` on the last dimension.
 
+`Sketch` has no `sketchLines` property — the shipped stubs only expose `sketchCurves`,
+which is where `sketchLines` actually lives (`sk.sketchCurves.sketchLines`). The
+one-line-shorter form below ran live in Fusion but fails pyright the same way
+`setDistanceExtent` does, above; corrected here for the same reason.
+
 ```python
 sk = root.sketches.add(root.xYConstructionPlane)
-lines = sk.sketchLines
+lines = sk.sketchCurves.sketchLines
 rect = lines.addTwoPointRectangle(
     adsk.core.Point3D.create(0, 0, 0),
     adsk.core.Point3D.create(6, 4, 0))          # seed only; approximately right is enough

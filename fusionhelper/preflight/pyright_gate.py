@@ -27,18 +27,30 @@ def run_pyright(staged_dir: Path, env_extra: dict[str, str]) -> dict:
 
 
 def split_diagnostics(payload: dict, script_name: str, canary_name: str):
+    """Split pyright diagnostics between the script under test and the canary probe.
+
+    An unresolved "adsk.*" import is only proof of environment breakage (extraPaths
+    not wired, stubs missing) when it appears against the CANARY file: the canary's
+    two imports (`adsk.core`, `adsk.fusion`) are fixed, known-good text, so if pyright
+    cannot resolve them the stub path itself failed. The same message against the
+    SCRIPT file can equally be a genuine hallucination — a generated script importing
+    a submodule that does not exist (`adsk.geometry`) — and must surface as a finding,
+    not be swallowed as GATE_BROKEN. Measured: `import adsk.geometry` (no such stub
+    module) previously passed silently through this exact GateBroken path.
+    """
     script, canary = [], []
     for d in payload.get("generalDiagnostics", []):
-        if STUB_SENTINEL_RE.search(d.get("message", "")):
-            raise GateBroken("stub path did not take effect: adsk import unresolved. "
-                             "Environment error — fix the machine, do NOT edit the "
-                             "script; other diagnostics suppressed as noise.")
+        name = Path(d["file"]).name
+        if name == canary_name and STUB_SENTINEL_RE.search(d.get("message", "")):
+            raise GateBroken("stub path did not take effect: adsk import unresolved "
+                             "in the canary probe, whose imports are fixed known-good "
+                             "text. Environment error — fix the machine, do NOT edit "
+                             "the script; other diagnostics suppressed as noise.")
         entry = Finding("pyright", d.get("rule") or "PYRIGHT",
                         d["range"]["start"]["line"] + 1,        # 0-based -> 1-based
                         d["range"]["start"]["character"],
                         "error" if d["severity"] == "error" else "warn",
                         d["message"].splitlines()[0])
-        name = Path(d["file"]).name
         (script if name == script_name else canary).append(entry)
     return script, canary
 
