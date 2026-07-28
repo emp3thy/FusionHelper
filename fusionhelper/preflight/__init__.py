@@ -73,11 +73,17 @@ def run_preflight(script_path: Path, *, expect_stub: bool = True,
     lines = [f"PREFLIGHT {verdict} errors={len(errors)}", body]
     # Drift is REPORTED, never silently absorbed — but it never changes the
     # outcome: the canary above already proves the gate functions correctly.
+    # A failure *computing* drift (bad install, unreadable lock, filesystem
+    # error) must not crash the whole preflight run with a raw traceback —
+    # that would be worse than the silent absorption this block exists to fix.
     if lock.exists():
-        installed_pyright = importlib.metadata.version("pyright")
-        drift = stubs.drift_report(stubs.read_lock(lock), defs=defs,
-                                   pyright_version=installed_pyright)
-        lines.extend(f"drift: {d}" for d in drift)
+        try:
+            installed_pyright = importlib.metadata.version("pyright")
+            drift = stubs.drift_report(stubs.read_lock(lock), defs=defs,
+                                       pyright_version=installed_pyright)
+            lines.extend(f"drift: {d}" for d in drift)
+        except Exception as e:
+            lines.append(f"warning: drift check failed: {e}")
     else:
         lines.append("warning: tests/api_version.lock not found - pyright version "
                      "unpinned, gate results may drift")

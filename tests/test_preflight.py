@@ -1,3 +1,4 @@
+import importlib.metadata
 from pathlib import Path
 
 import pytest
@@ -94,3 +95,16 @@ def test_missing_lock_is_a_visible_warning_not_silent(tmp_path):
     assert r.outcome is preflight.Outcome.PASS
     assert r.exit_code == 0
     assert "warning: tests/api_version.lock not found" in r.report
+
+
+def test_drift_check_failure_is_a_warning_not_a_crash(tmp_path, monkeypatch):
+    # A broken drift *computation* (bad install, unreadable metadata, ...) must
+    # not crash the whole run with a raw traceback — that would be worse than
+    # the silent absorption the drift block exists to fix.
+    def _raise(_name):
+        raise importlib.metadata.PackageNotFoundError("pyright")
+    monkeypatch.setattr(preflight.importlib.metadata, "version", _raise)
+    r = preflight.run_preflight(write(tmp_path, GOOD))
+    assert r.outcome is preflight.Outcome.PASS
+    assert r.exit_code == 0
+    assert "drift check failed" in r.report
