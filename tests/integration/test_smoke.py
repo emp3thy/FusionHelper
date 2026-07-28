@@ -7,7 +7,12 @@ lifecycle's per-test `finally` layer leaves no tagged document behind.
 import pytest
 
 from tests.integration.mcp_client import McpClient
-from tests.integration.scratch import read_scratch_tags, sweep_scratch_docs
+from tests.integration.scratch import (
+    create_scratch_doc,
+    new_session_tag,
+    read_scratch_tags,
+    sweep_scratch_docs,
+)
 
 pytestmark = pytest.mark.fusion
 
@@ -43,3 +48,18 @@ def test_no_leaked_scratch_documents(client: McpClient):
     leaked by this session."""
     result = sweep_scratch_docs(client, None)
     assert result.closed == []
+
+
+def test_pre_session_sweep_closes_prior_leak(client: McpClient):
+    """Regression for conftest.py's layer 1 (pre-session sweep): create a
+    scratch document directly, bypassing the `scratch` fixture's own
+    `finally` cleanup, to simulate a prior session's Ctrl-C leak. Then run
+    the same sweep_scratch_docs(client, None) call the pre-session fixture
+    uses and confirm it actually closes the leaked document, verified by an
+    independent tag read-back rather than trusting the sweep's own report.
+    """
+    tag = new_session_tag()
+    create_scratch_doc(client, tag)
+    result = sweep_scratch_docs(client, None)
+    assert any(entry.endswith(f":{tag}") for entry in result.closed), result.closed
+    assert read_scratch_tags(client) == []
