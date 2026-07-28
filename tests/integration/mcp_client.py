@@ -68,10 +68,13 @@ class McpClient:
                           inner.get("message", ""), inner.get("error", ""))
 
     def undo(self) -> Any:
+        # Measured 2026-07-28: fusion_mcp_update's schema is
+        # {"featureType": "undo"|"redo"} (required enum) — NOT "operation";
+        # the wrong shape is rejected with "Missing required property".
         self._id += 1
         return self._post({"jsonrpc": "2.0", "id": self._id, "method": "tools/call",
                            "params": {"name": "fusion_mcp_update",
-                                      "arguments": {"operation": "undo"}}})
+                                      "arguments": {"featureType": "undo"}}})
 
 
 def parse_fh_result(text: str) -> dict[str, Any]:

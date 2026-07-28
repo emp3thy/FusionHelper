@@ -714,3 +714,29 @@ only the scratch one, and calling `close(False)` on it left the saved document c
 untouched (still open, still `isSaved == True`, no tag) and removed the scratch document from
 `app.documents`. `doc.isSaved` is checked before any attribute access in the cleanup sweep, so
 a saved document is never even inspected for a tag, let alone closed.
+
+## 11. Live-calibration findings (measured 2026-07-28, trophy-duplicate exercise)
+
+- **Failed `fusion_mcp_execute` calls roll back atomically.** A script exception
+  reverts everything the script did — `userParameters.add`, `deleteMe`, feature
+  adds. One transaction per call, aborted on error. A crashed attempt therefore
+  leaves the document unchanged (timeline marker position excepted).
+- **`fusion_mcp_update` takes `{"featureType": "undo"|"redo"}`** — required enum;
+  an `operation` key is rejected with "Missing required property 'featureType'".
+- **`healthState` 4 = rolled back** (feature beyond the timeline marker). Absent
+  from the documented 0–3 range; a document can ship with a deliberately
+  rolled-back tail.
+- **`timeline.moveToEnd()` activates a rolled-back tail** — it changes the user's
+  model state silently. Record and restore `timeline.markerPosition` around any
+  history edit. New features insert AT the marker, which is also how a feature
+  is replaced in place: `feature.timelineObject.rollTo(True)`, delete, re-add.
+- **`addTwoDistancesChamferEdgeSet(edges, d1, d2, isFlipped, isTangentChain)`** —
+  five arguments; with both flags False, `d1` is the vertical (face-one) distance
+  and `d2` the horizontal. Chamfering a top rim whose horizontal cut would
+  intersect a body joined ON that face fails with
+  `ASM_BL_UNFIN_SHEET — could not be created at the requested size`; chamfer the
+  bare box BEFORE the join (roll the marker back), as the union then covers the
+  overlap region.
+- **Verify liveness budget**: `fh_verify` samples parameters when the 20 s default
+  `liveness_budget_s` runs out (`mode: "sampled"`, `untested` listed). Raise it
+  via `FH_OPTS` to cover a large table; 22 params completed in ~4 s once warm.

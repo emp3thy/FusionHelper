@@ -426,7 +426,9 @@ def _check_dimension_bindings(ctx, sk, name, param_names):
 
 # ---------------------------------------------------------------------- check: timeline
 
-_HEALTH = {0: 'healthy', 1: 'warning', 2: 'error', 3: 'suppressed'}
+# 4 measured live 2026-07-28: features beyond the timeline marker (rolled back)
+# report healthState 4 -- deliberate user state, not a build failure
+_HEALTH = {0: 'healthy', 1: 'warning', 2: 'error', 3: 'suppressed', 4: 'rolled_back'}
 
 
 def _timeline_problems(des, limit=8):

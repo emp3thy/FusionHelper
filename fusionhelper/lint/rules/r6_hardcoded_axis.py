@@ -22,10 +22,16 @@ def _is_all_literal_vector(node: ast.expr) -> bool:
                for a in node.args)
 
 
+# Either direction of the mapping proves runtime derivation: sketchToModelSpace
+# (sketch->world) or modelToSketchSpace (world->sketch). Requiring only the
+# former false-positived on a live build that seeded via modelToSketchSpace.
+_MAPPING_CALLS = {"sketchToModelSpace", "modelToSketchSpace"}
+
+
 def check(tree: ast.AST, source: str) -> list[Finding]:
     findings = []
-    calls_sketch_to_model = any(
-        isinstance(n, ast.Attribute) and n.attr == "sketchToModelSpace"
+    derives_mapping = any(
+        isinstance(n, ast.Attribute) and n.attr in _MAPPING_CALLS
         for n in ast.walk(tree))
     for node in ast.walk(tree):
         if isinstance(node, ast.expr) and _is_all_literal_vector(node):
@@ -36,10 +42,12 @@ def check(tree: ast.AST, source: str) -> list[Finding]:
                                     "derive the direction from sketch.sketchToModelSpace() "
                                     "or sketch.xDirection/yDirection at runtime"))
         elif (isinstance(node, ast.Attribute) and node.attr in _INVERTING_PLANES
-              and not calls_sketch_to_model):
+              and not derives_mapping):
             findings.append(Finding(RULE_ID, NUMBER, node.lineno, node.col_offset,
-                                    "warn", f"{node.attr} used and sketchToModelSpace() "
-                                    "never called — geometry drawn 'upright' on this "
+                                    "warn", f"{node.attr} used and neither "
+                                    "sketchToModelSpace() nor modelToSketchSpace() is "
+                                    "called — geometry drawn 'upright' on this "
                                     "plane lands inverted in world Z",
-                                    "map sketch coords through sketch.sketchToModelSpace()"))
+                                    "map coords through sketch.sketchToModelSpace() or "
+                                    "sketch.modelToSketchSpace()"))
     return findings

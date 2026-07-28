@@ -10,3 +10,4 @@ build/
 
 # FusionHelper working directory: generated declarations, scripts and verdicts
 .fusionhelper/
+.superpowers/

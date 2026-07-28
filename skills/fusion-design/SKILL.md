@@ -62,9 +62,16 @@ Every rule traces to a measured probe. The gate cites rules by number.
    - exit 3 GATE_BROKEN / environment → fix the machine. **Do not edit the script.**
 6. **Execute** via the official Fusion MCP (`fusion_mcp_execute`,
    `featureType: "script"`). The stub prints one `FH_VERDICT1 {...}` JSON line.
-7. **Verify:** parse the verdict. `pass` → render screenshots *for the user*
-   (renders are for the human — numeric read-back is the oracle, not your eyes).
-   Anything else → repair loop.
+7. **Verify:** parse the verdict — AND the `FH_CHECK1 {...}` lines above it: the
+   verdict carries only check statuses and hint codes; the per-finding detail
+   (which sketch, which entities, which parameter) is in the `FH_CHECK1` lines.
+   `pass` → render screenshots *for the user* (renders are for the human —
+   numeric read-back is the oracle, not your eyes). Anything else → repair loop.
+   Verify options go in module globals: `FH_OPTS = {...}` before `run`, keys:
+   `force_liveness` (run liveness even after a cheap-check failure — essential in
+   a pre-existing document, see below), `only_params` (scope liveness to YOUR
+   parameters), `liveness_budget_s` (default 20 s samples large tables — raise it
+   to cover every parameter), `liveness: False`, `canary`, `max_bodies`.
 8. **Repair loop.** Budgets: preflight fixes 3 (offline, separate); runtime with
    a taxonomy code 3; unclassified runtime 2; verification failures 2; hard cap
    **5 `fusion_mcp_execute` calls per request**. Abort early when: identical failure signature twice;
@@ -76,6 +83,35 @@ Every rule traces to a measured probe. The gate cites rules by number.
 9. **When giving up:** say what is wrong in plain language, show the attempt
    history, state the document's condition, ask one specific question, and
    attach a render.
+
+## Working in an existing document (calibrated live, 2026-07-28)
+
+The five checks sweep the WHOLE document, so a user's pre-existing unconstrained
+sketches fail your build's verdict and skip liveness with `prior_failure`. In an
+existing document: expect `constraints: fail` from entities you did not create,
+read the `FH_CHECK1` sketch names to separate yours from theirs, and re-verify
+with `FH_OPTS = {"force_liveness": True, "only_params": [<your params>]}`.
+
+Timeline hazards in someone else's document:
+- `healthState 4` = a feature the USER rolled back (deliberate state, not damage).
+- **Never call `timeline.moveToEnd()` blindly** — it rolls past and ACTIVATES the
+  user's rolled-back tail, changing their model. Record `timeline.markerPosition`
+  before any history edit and restore it (marker position is NOT part of the
+  script transaction, and verify does not yet detect a moved marker).
+- New features insert AT the marker, and `feature.timelineObject.rollTo(True)`
+  plus delete/re-add replaces a feature in place — the right way to fix a
+  committed-but-wrong feature without rebuilding.
+
+Recovery semantics (measured): a FAILED `fusion_mcp_execute` rolls back
+atomically — its parameter adds, deletes, and features all revert, so a crashed
+attempt leaves the document as it was. Undo of COMMITTED calls goes through
+`fusion_mcp_update` with `{"featureType": "undo"}`. Read-only survey/probe
+scripts (gate them with `--no-stub`) do not count against the 5-execute repair
+cap — the cap governs build/repair attempts.
+
+Waivers (`# fusionhelper: allow ...`) apply only to the checked lint rules
+(R1 R2 R4 R5 R6 R7); waiving R3/R9/R10 always reports "unused suppression"
+because nothing fires for them — they are runtime/convention rules.
 
 ## Honest limits
 
