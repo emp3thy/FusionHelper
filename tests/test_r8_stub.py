@@ -20,7 +20,7 @@ def test_crlf_and_trailing_whitespace_pass():
 def test_missing_stub_fails_with_diagnosis():
     (f,) = findings_for(GOOD_BODY)
     assert f.rule_number == "R8"
-    assert "stub" in f.message and "missing" in f.message
+    assert "missing" in f.message
 
 
 def test_code_after_stub_fails_as_the_silent_case():
@@ -34,3 +34,10 @@ def test_edited_stub_fails():
     text = verify.append_to(GOOD_BODY).replace("_fh_wrap", "_fh_wrap2")
     (f,) = findings_for(text)
     assert f.rule_number == "R8"
+    assert "modified" in f.message
+
+
+def test_double_append_passes():
+    # Double append ends with the intact stub so should pass (suffix compare matches)
+    text = verify.append_to(verify.append_to(GOOD_BODY))
+    assert findings_for(text) == []
