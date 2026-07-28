@@ -740,3 +740,26 @@ a saved document is never even inspected for a tag, let alone closed.
 - **Verify liveness budget**: `fh_verify` samples parameters when the 20 s default
   `liveness_budget_s` runs out (`mode: "sampled"`, `untested` listed). Raise it
   via `FH_OPTS` to cover a large table; 22 params completed in ~4 s once warm.
+
+## 12. Donut-exercise findings (measured 2026-07-28)
+
+- **Enum-typed property SETTERS false-positive in the gate** (second stub-gap
+  class): e.g. `CombineFeatureInput.operation` is annotated
+  `value: FeatureOperations` while members are ints, and
+  `reportArgumentType: "none"` covers call arguments only — assignment surfaces
+  as `reportAttributeAccessIssue`. Sanctioned escape: a scoped
+  `# pyright: ignore[reportAttributeAccessIssue]` on that line with a reason.
+- **`fusion_mcp_execute` REUSES the module namespace across calls** — stale
+  globals from earlier scripts leak (`FH_ATTEMPT` from a previous script
+  appeared in a later verdict). Always define `FH_ATTEMPT`/`FH_OPTS`/
+  `INTERFERENCE_ALLOWED` explicitly in every stub-carrying script.
+- **Combine-JOIN of disjoint bodies silently no-ops** — live confirmation of
+  detailed-design open question 5 (`boolean.no_op` has no message). A single
+  multi-lump body cannot be produced that way.
+- **`setByAngle` construction planes have plane-local sketch axes**: seeds via
+  `modelToSketchSpace` are not enough — Horizontal/Vertical DIMENSION
+  orientations must also be assigned by probing which sketch axis a world
+  direction maps to (map a second probe point and compare deltas), else the
+  solver relocates geometry to satisfy dims on the wrong axes.
+- `fh_verify`'s edit canary now honours `interference_allowed` (declared-intent
+  overlaps no longer inflate the before/after clash counts).

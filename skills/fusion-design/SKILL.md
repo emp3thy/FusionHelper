@@ -58,7 +58,9 @@ Every rule traces to a measured probe. The gate cites rules by number.
    - exit 1 FAIL → fix the script (findings cite rule numbers). A pyright attribute error on a
      call you have verified live may be a **STUB GAP**, not a hallucination — check
      `reference/api-recipes.md` (the `setDistanceExtent` precedent) before editing; lint
-     suppressions do not apply to pyright findings.
+     suppressions do not apply to pyright findings — the sanctioned per-line escape for a
+     verified stub gap is `# pyright: ignore[<rule>]` with a reason comment. Enum-typed
+     property SETTERS (e.g. `CombineFeatureInput.operation`) are a known stub-gap class.
    - exit 3 GATE_BROKEN / environment → fix the machine. **Do not edit the script.**
 6. **Execute** via the official Fusion MCP (`fusion_mcp_execute`,
    `featureType: "script"`). The stub prints one `FH_VERDICT1 {...}` JSON line.
@@ -83,6 +85,15 @@ Every rule traces to a measured probe. The gate cites rules by number.
 9. **When giving up:** say what is wrong in plain language, show the attempt
    history, state the document's condition, ask one specific question, and
    attach a render.
+
+## Script hygiene (measured)
+
+`fusion_mcp_execute` REUSES the Python namespace across calls: stale globals
+from earlier scripts leak into later ones. Define `FH_ATTEMPT`, `FH_OPTS`,
+and `INTERFERENCE_ALLOWED` explicitly in every stub-carrying script. On
+`setByAngle` datum planes, derive DIMENSION orientations the same way as
+seeds: probe a second mapped point to learn which sketch axis is which —
+H/V dims assigned to the wrong plane-local axes relocate geometry silently.
 
 ## Working in an existing document (calibrated live, 2026-07-28)
 

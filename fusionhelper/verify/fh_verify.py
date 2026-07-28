@@ -570,14 +570,40 @@ def _analyze(des, bodies):
     return des.analyzeInterference(ii)
 
 
-def _clash_count(des):
-    """Cheap yes/no used by the edit canary. Returns -1 when not analysable."""
+def _allowed_pairs(decl):
+    allowed = set()
+    for pair in (decl.get('interference_allowed') or []):
+        try:
+            allowed.add(_pair_key(pair[0], pair[1]))
+        except Exception:
+            pass
+    return allowed
+
+
+def _clash_count(des, allowed=None):
+    """Cheap yes/no used by the edit canary. Returns -1 when not analysable.
+
+    Skips declared-intent pairs (interference_allowed) -- measured 2026-07-28:
+    without the filter, 27 intended icing overlaps inflated the before/after
+    counts and an allowed-pair contact appearing under perturbation read as a
+    regression.
+    """
     bodies = [b for _, b in _all_bodies(des) if _is_solid(b)]
     if len(bodies) < 2:
         return -1
     try:
         res = _analyze(des, bodies)
-        return res.count if res else 0
+        if not res:
+            return 0
+        if not allowed:
+            return res.count
+        n = 0
+        for i in range(res.count):
+            r = res.item(i)
+            if _pair_key(_name_of(r.entityOne), _name_of(r.entityTwo)) in allowed:
+                continue
+            n += 1
+        return n
     except Exception:
         return -1
 
@@ -1055,7 +1081,7 @@ def _edit_canary(ctx, des, params, roots, base, detail):
     if not targets:
         return
     saved = dict((p.name, p.expression) for p in targets)
-    clash_before = _clash_count(des)
+    clash_before = _clash_count(des, _allowed_pairs(ctx.decl))
     try:
         for p in targets:
             step_txt, unit = _step_for(des, p)
@@ -1070,7 +1096,7 @@ def _edit_canary(ctx, des, params, roots, base, detail):
             ctx.add('liveness', 'model.inert', 'error', params=len(targets),
                     note='no root parameter changed any geometry')
             return
-        clash_after = _clash_count(des)
+        clash_after = _clash_count(des, _allowed_pairs(ctx.decl))
         if clash_after > max(clash_before, 0):
             ctx.add('liveness', 'edit.introduces_clash', 'error',
                     clashes_before=max(clash_before, 0), clashes_after=clash_after,
