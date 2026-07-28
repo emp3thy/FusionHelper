@@ -27,3 +27,10 @@ def test_skill_cites_the_real_cli_and_reference_files():
 def test_repair_budgets_match_design():
     text = SKILL.read_text(encoding="utf-8")
     assert "5" in text and "identical failure signature twice" in text
+
+
+def test_stub_gap_escape_route_documented():
+    text = SKILL.read_text(encoding="utf-8")
+    assert "stub gap" in text.lower()
+    assert "setDistanceExtent" in text
+    assert re.search(r"lint\s+suppressions do not apply to pyright findings", text)

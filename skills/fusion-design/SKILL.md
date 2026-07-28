@@ -34,7 +34,9 @@ Every rule traces to a measured probe. The gate cites rules by number.
   Fusion rejects unit symbols, function names AND duplicates with the same
   misleading message.
 - **R8** Every generated script ends with the verification stub, appended by
-  `fusionhelper.verify.append_to()`, unmodified, last in the file.
+  `fusionhelper.verify.append_to()`, unmodified, last in the file. Not waivable —
+  the finding sits past the last line, so there is no line to attach a suppression
+  to; regenerate the tail instead.
 - **R9** Never catch exceptions in generated scripts. The traceback is the
   diagnostic (Autodesk's own guidance).
 - **R10** Never save the document. Ever. Only the user saves.
@@ -53,7 +55,10 @@ Every rule traces to a measured probe. The gate cites rules by number.
    `python -c "from fusionhelper import verify; print(verify.install_block())"`.
 5. **Gate:** `python -m fusionhelper.preflight box.py`
    - exit 0 PASS → send to Fusion
-   - exit 1 FAIL → fix the script (findings cite rule numbers)
+   - exit 1 FAIL → fix the script (findings cite rule numbers). A pyright attribute error on a
+     call you have verified live may be a **STUB GAP**, not a hallucination — check
+     `reference/api-recipes.md` (the `setDistanceExtent` precedent) before editing; lint
+     suppressions do not apply to pyright findings.
    - exit 3 GATE_BROKEN / environment → fix the machine. **Do not edit the script.**
 6. **Execute** via the official Fusion MCP (`fusion_mcp_execute`,
    `featureType: "script"`). The stub prints one `FH_VERDICT1 {...}` JSON line.
