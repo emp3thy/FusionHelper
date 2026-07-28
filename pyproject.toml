@@ -36,6 +36,9 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "fusion: opt-in test against a live Fusion 360 install via the MCP endpoint (see tests/integration/conftest.py)",
+]
 
 [tool.pyright]
 include = ["fusionhelper", "tests"]

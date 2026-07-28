@@ -61,6 +61,22 @@ for a failed generation attempt.
 
 **`fusion_mcp_electronics_read`** — PCB/schematic read. Not relevant here.
 
+### `fusion_mcp_execute` appends an unsolicited diagnostic line (measured 2026-07-28)
+
+Every `message` observed on this install, regardless of script content, ends with a line the
+script itself never printed:
+
+```
+FH_APICHECK {"ExtrudeFeatureInput.setDistanceExtent": true, "ExtrudeFeatureInput.setOneSideExtent": true, "Sketch.sketchLines": false, "SketchCurves.sketchLines": true}
+```
+
+This is the MCP server's own instrumentation (a live `hasattr()`-style probe of the same four
+symbols Task 15's stub-gap investigation flagged), not something FusionHelper emits. It has no
+effect on parsing scripts that print their own single machine-readable line (`FH_RESULT ...`,
+`FH_VERDICT1 ...`) and search for that prefix rather than asserting exact-match on the whole
+`message` string — but a test asserting `message == "expected exact text"` would fail
+unexpectedly on this install. Substring/prefix-search assertions are required, not incidental.
+
 ---
 
 ## 2. Units
@@ -668,3 +684,33 @@ Appended to every generated script. All five verified working and returning via 
 5. `measureMinimumDistance` for declared clearances.
 
 Plus the offline pyright gate before the script is ever sent.
+
+---
+
+## 11. Multi-document enumeration (Task 16, measured 2026-07-28)
+
+Backs the scratch-document lifecycle in `docs/detailed-design.md` ("Scratch document
+lifecycle"). `tests/integration/scratch.py` creates and cleans up scratch documents this way.
+
+```python
+doc = app.documents.add(adsk.core.DocumentTypes.FusionDesignDocumentType)
+des = adsk.fusion.Design.cast(app.activeProduct)   # the new doc becomes active immediately
+des.attributes.add('fusionhelper', 'scratch', tag)
+```
+
+Enumerating **every** open document and reading a tag without disturbing which one is active:
+
+```python
+for i in range(app.documents.count):
+    doc = app.documents.item(i)
+    prod = doc.products.itemByProductType('DesignProductType')   # works on a non-active doc
+    des = adsk.fusion.Design.cast(prod)
+    attr = des.attributes.itemByName('fusionhelper', 'scratch')   # None if untagged
+```
+
+`doc.close(False)` closes without saving. Verified against a session with one saved document
+open (`isSaved == True`) and one freshly created scratch document: enumerating both, tagging
+only the scratch one, and calling `close(False)` on it left the saved document completely
+untouched (still open, still `isSaved == True`, no tag) and removed the scratch document from
+`app.documents`. `doc.isSaved` is checked before any attribute access in the cleanup sweep, so
+a saved document is never even inspected for a tag, let alone closed.
