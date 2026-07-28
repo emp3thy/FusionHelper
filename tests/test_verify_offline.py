@@ -5,7 +5,8 @@ pure logic: unit conversion, change detection, message classification, dependenc
 analysis, perturbation sizing, reference multiplicity, the clearance/interference
 coupling, and the output protocol.
 """
-import sys, os, types, json, io, contextlib
+import sys, os, types, json, io, contextlib, importlib.util
+from pathlib import Path
 
 adsk = types.ModuleType('adsk')
 core = types.ModuleType('adsk.core')
@@ -16,7 +17,11 @@ sys.modules['adsk'] = adsk
 sys.modules['adsk.core'] = core
 sys.modules['adsk.fusion'] = fusion
 
-import fh_verify as V
+_VERIFY_DIR = Path(__file__).parents[1] / "fusionhelper" / "verify"
+_fh_verify_path = _VERIFY_DIR / "fh_verify.py"
+_spec = importlib.util.spec_from_file_location("fh_verify", _fh_verify_path)
+V = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(V)
 
 RESULTS = []
 
@@ -405,7 +410,7 @@ ok(px.expression == '10 mm' and held3[0] is None,
 
 # ----------------------------------------------------------------- the stub contract
 import ast
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, str(_VERIFY_DIR))
 from stub_text import STUB_TEXT, STUB_SENTINEL, append_to
 
 ok(STUB_TEXT.splitlines()[0] == STUB_SENTINEL,
@@ -430,7 +435,7 @@ ok('attempt=1' not in STUB_TEXT and "g.get('FH_ATTEMPT', 1)" in STUB_TEXT,
    "the attempt number is read from globals, so the stub stays byte-constant")
 
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                       'stub_example.py'), encoding='utf-8') as f:
+                       'fixtures', 'verify', 'stub_example.py'), encoding='utf-8') as f:
     ok(f.read().endswith(STUB_TEXT),
        "the committed stub_example.py has not drifted from STUB_TEXT")
 
@@ -459,4 +464,18 @@ for x in passing_lines:
     print("  " + x)
 
 print("\n%d assertions, %d failures" % (len(RESULTS), RESULTS.count(False)))
-sys.exit(1 if RESULTS.count(False) else 0)
+
+if __name__ == "__main__":
+    sys.exit(1 if RESULTS.count(False) else 0)
+
+
+def test_all_offline_assertions_passed():
+    """The ok() calls above already ran as a side effect of importing this
+    module and populated RESULTS; pytest needs one real assertion to turn
+    that outcome into a pass/fail. Failing ok() lines print to stdout, which
+    pytest captures and shows on failure.
+    """
+    assert RESULTS.count(False) == 0, (
+        "%d of %d offline fh_verify checks failed (see captured stdout for "
+        "the FAIL lines)" % (RESULTS.count(False), len(RESULTS))
+    )

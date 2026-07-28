@@ -15,8 +15,8 @@ Written artefacts, not yet wired together:
 | Path | What |
 |---|---|
 | `skills/fusion-design/reference/` | The skill's reference bundle — 740 lines |
-| `design/verify/fh_verify.py` | The verification block — 995 lines |
-| `design/verify/test_fh_verify_offline.py` | 43 offline assertions, passing without Fusion |
+| `fusionhelper/verify/fh_verify.py` | The verification block — 995 lines |
+| `tests/test_verify_offline.py` | 43 offline assertions, passing without Fusion |
 
 ## In one paragraph
 

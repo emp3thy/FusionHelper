@@ -17,7 +17,6 @@ packages = ["fusionhelper"]
 
 [tool.ruff]
 line-length = 100
-exclude = ["design"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
@@ -25,8 +24,10 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 # verify-block code runs inside Fusion's interpreter and predates the package;
 # it keeps its own conservative style
 [tool.ruff.lint.per-file-ignores]
-"fusionhelper/verify/fh_verify.py" = ["UP", "SIM", "E501", "B"]
+"fusionhelper/verify/fh_verify.py" = ["UP", "SIM", "E501", "B", "I001"]
 "fusionhelper/verify/stub_text.py" = ["E501"]
+"tests/test_verify_offline.py" = ["E401", "E402", "E501", "E731", "I001", "UP031"]
+"tests/fixtures/verify/stub_example.py" = ["E401", "I001"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
