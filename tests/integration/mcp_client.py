@@ -40,7 +40,7 @@ class McpClient:
         if self._session:
             headers["MCP-Session-Id"] = self._session
         req = urllib.request.Request(self.url, json.dumps(payload).encode(), headers)
-        with urllib.request.urlopen(req, timeout=120) as r:
+        with urllib.request.urlopen(req, timeout=600) as r:
             body = r.read()
             sid = r.headers.get("MCP-Session-Id")
             if sid:

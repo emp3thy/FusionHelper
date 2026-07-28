@@ -772,3 +772,16 @@ a saved document is never even inspected for a tag, let alone closed.
   (hardcoded diameter expression in a reused helper) built a bite that never
   touched the target — constraints/timeline/interference all passed while the
   intended feature was absent; only liveness flagged the two dead parameters.
+- **`MoveFeatures` has no classic `createInput(entities, matrix)`** — use
+  `createInput2(entities)` + `defineAsFreeMove(Matrix3D)`. A baked free-move
+  (e.g. random yaw about a local normal) survives the edit canary but its
+  rotation origin goes ~1 mm stale under a resize — acceptable for aesthetic
+  scatter, never for load-bearing placement.
+- **Client timeouts vs long builds**: a 260-feature build + verify exceeded the
+  harness's old 120 s HTTP timeout while Fusion COMPLETED the script — after a
+  client-side timeout, probe document state before re-running (double-build
+  hazard). Timeout now 600 s.
+- **`FH_OPTS max_bodies`** (default 60) silently skips interference on
+  sprinkle-count models — raise it explicitly; and declare body-pair contact
+  that is design INTENT (`INTERFERENCE_ALLOWED`, e.g. sprinkle-on-sprinkle
+  stacking) rather than easing placement to dodge the check.
