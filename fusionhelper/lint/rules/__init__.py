@@ -1,3 +1,3 @@
-from fusionhelper.lint.rules import r1_create_by_real
+from fusionhelper.lint.rules import r1_create_by_real, r7_param_names
 
-ALL_RULES = [r1_create_by_real]  # grows: r7 (Task 5), r2 (6), r4 (7), r5+r6 (8), r8 (9)
+ALL_RULES = [r1_create_by_real, r7_param_names]  # grows: r2,r4,r5+r6,r8
