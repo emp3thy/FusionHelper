@@ -57,7 +57,7 @@ class McpClient:
         # 200 + JSON-RPC error -32001 ("User is not logged in"); later calls
         # then 400. Fail here with the real cause instead.
         if isinstance(out, dict) and "error" in out:
-            raise RuntimeError("Fusion MCP initialize failed: %s" % out["error"])
+            raise RuntimeError(f"Fusion MCP initialize failed: {out['error']}")
         self._post({"jsonrpc": "2.0", "method": "notifications/initialized"},
                    expect_json=False)   # 202, EMPTY body -- do not parse
         return out
