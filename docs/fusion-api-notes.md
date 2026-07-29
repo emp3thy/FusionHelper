@@ -785,3 +785,8 @@ a saved document is never even inspected for a tag, let alone closed.
   sprinkle-count models — raise it explicitly; and declare body-pair contact
   that is design INTENT (`INTERFERENCE_ALLOWED`, e.g. sprinkle-on-sprinkle
   stacking) rather than easing placement to dodge the check.
+- **Expired Autodesk login** (measured 2026-07-29): `initialize` returns 200
+  with JSON-RPC error `-32001 "Authentication required: User is not logged
+  in"`, and subsequent `tools/call` requests fail as bare HTTP 400. Diagnose
+  with a bare initialize; remedy is signing back into Fusion. The harness now
+  raises the real cause at initialize.
