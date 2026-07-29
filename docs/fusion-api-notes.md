@@ -790,3 +790,11 @@ a saved document is never even inspected for a tag, let alone closed.
   in"`, and subsequent `tools/call` requests fail as bare HTTP 400. Diagnose
   with a bare initialize; remedy is signing back into Fusion. The harness now
   raises the real cause at initialize.
+- **`filletFeatures.add()` can succeed while the feature lands in ERROR
+  healthState** (measured 2026-07-28) — no exception; only a timeline health
+  sweep catches it. Constant-radius fillets are bounded by the shortest edge in
+  the chain: a scalloped drape rim capped out at ~0.8 mm (1.0/1.18/1.43 mm and
+  a compounding second pass all failed).
+- **Embed depths derive from the thinnest penetrated layer**: seating a rod
+  d/4 into a 1 mm shell put its underside 0.65 mm into the body beneath
+  (interference caught it). Thickness-proof seat: centre = base + t/2 + d/2.

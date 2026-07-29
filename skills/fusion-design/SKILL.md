@@ -62,6 +62,9 @@ Every rule traces to a measured probe. The gate cites rules by number.
      verified stub gap is `# pyright: ignore[<rule>]` with a reason comment. Enum-typed
      property SETTERS (e.g. `CombineFeatureInput.operation`) are a known stub-gap class.
    - exit 3 GATE_BROKEN / environment → fix the machine. **Do not edit the script.**
+     Same class at execute time: an expired Autodesk login answers `initialize` with
+     JSON-RPC `-32001` and later calls fail as bare HTTP 400 — sign back into Fusion;
+     never edit the script for an environment failure.
 6. **Execute** via the official Fusion MCP (`fusion_mcp_execute`,
    `featureType: "script"`). The stub prints one `FH_VERDICT1 {...}` JSON line.
 7. **Verify:** parse the verdict — AND the `FH_CHECK1 {...}` lines above it: the
@@ -94,6 +97,21 @@ and `INTERFERENCE_ALLOWED` explicitly in every stub-carrying script. On
 `setByAngle` datum planes, derive DIMENSION orientations the same way as
 seeds: probe a second mapped point to learn which sketch axis is which —
 H/V dims assigned to the wrong plane-local axes relocate geometry silently.
+
+More measured rules:
+- **A feature add can succeed while the feature lands in error state** —
+  `filletFeatures.add()` returned normally with the fillet erroring in the
+  timeline. Never trust add() success alone; the timeline health check is
+  what catches it. Fillet radii are bounded by the SHORTEST edge in the
+  chain (scalloped rims bound at ~0.8 mm by lens-emergence slivers;
+  measured fails at 1.0/1.18/1.43 mm and as a compounding second pass).
+- **Delete parameters together with their features** — an orphaned
+  parameter (feature removed, param left in the table) is correctly
+  flagged by liveness as `param.dead`.
+- **Derive embed depths from the THINNEST layer penetrated, not from the
+  embedded object's size**: a d/4 rod embed cannot fit a shell thinner
+  than ~3d/4. The thickness-proof seat is centre = layer_base + t/2 + d/2
+  (dips t/2 into the layer, stays t/2 clear of what's beneath, any t).
 
 ## Working in an existing document (calibrated live, 2026-07-28)
 
