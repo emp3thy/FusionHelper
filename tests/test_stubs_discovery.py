@@ -1,0 +1,78 @@
+from pathlib import Path
+
+from fusionhelper import stubs
+
+SYN = Path(__file__).parent / "synthetic_stubs"
+
+
+def test_env_override_wins(monkeypatch):
+    monkeypatch.setenv("FUSIONHELPER_DEFS", str(SYN))
+    assert stubs.discover_defs() == SYN
+
+
+def test_missing_defs_returns_none(monkeypatch):
+    monkeypatch.setenv("FUSIONHELPER_DEFS", str(SYN / "nope"))
+    assert stubs.discover_defs() is None
+
+
+def test_fingerprint_is_stable_and_content_sensitive(tmp_path):
+    fp1 = stubs.fingerprint(SYN)
+    assert fp1 == stubs.fingerprint(SYN)
+    assert len(fp1) == 64
+
+
+def test_lock_roundtrip_and_drift(tmp_path):
+    lock = tmp_path / "api_version.lock"
+    stubs.write_lock(lock, api_version="2703.1.20", pyright_version="1.1.408",
+                     stub_sha256=stubs.fingerprint(SYN))
+    data = stubs.read_lock(lock)
+    assert data["pyright_version"] == "1.1.408"
+    drift = stubs.drift_report(data, defs=SYN, pyright_version="1.1.999")
+    assert any("pyright" in d for d in drift)          # reported, never absorbed
+    assert not any("stub" in d for d in drift)
+
+
+def test_stub_drift_reported_when_no_env_override(tmp_path, monkeypatch):
+    monkeypatch.delenv("FUSIONHELPER_DEFS", raising=False)
+    lock = tmp_path / "api_version.lock"
+    # deliberately wrong fingerprint so a real mismatch is reported
+    stubs.write_lock(lock, api_version="x", pyright_version="1.1.408", stub_sha256="0" * 64)
+    data = stubs.read_lock(lock)
+    drift = stubs.drift_report(data, defs=SYN, pyright_version="1.1.408")
+    assert any("stub" in d for d in drift)
+
+
+def test_stub_drift_skipped_when_fusionhelper_defs_overrides(tmp_path, monkeypatch):
+    # FUSIONHELPER_DEFS points at synthetic/test stubs that were never blessed
+    # into the lock and never will be -- comparing their fingerprint against a
+    # real Fusion install's stub_sha256 would be a permanent false positive.
+    lock = tmp_path / "api_version.lock"
+    stubs.write_lock(lock, api_version="x", pyright_version="1.1.408", stub_sha256="0" * 64)
+    data = stubs.read_lock(lock)
+    monkeypatch.setenv("FUSIONHELPER_DEFS", str(SYN))
+    drift = stubs.drift_report(data, defs=SYN, pyright_version="1.1.408")
+    assert not any("stub" in d for d in drift)
+
+
+def test_default_lock_path_is_inside_the_package(tmp_path):
+    path = stubs.default_lock_path()
+    assert path.name == "api_version.lock"
+    assert path.parent == Path(stubs.__file__).parent
+    assert path.is_file()
+
+
+def test_pyright_pin_env(tmp_path):
+    lock = tmp_path / "api_version.lock"
+    stubs.write_lock(lock, api_version="x", pyright_version="1.1.408", stub_sha256="0" * 64)
+    env = stubs.pyright_pin_env(lock)
+    assert env["PYRIGHT_PYTHON_FORCE_VERSION"] == "1.1.408"
+
+
+def test_api_version_strips_utf8_bom(tmp_path):
+    """BOM in version.txt should be stripped to return clean version string."""
+    defs = tmp_path / "API" / "Python" / "defs"
+    defs.mkdir(parents=True)
+    version_file = tmp_path / "API" / "version.txt"
+    # Write version.txt with UTF-8 BOM prefix
+    version_file.write_bytes(b"\xef\xbb\xbf2703.1.20\r\n")
+    assert stubs.api_version(defs) == "2703.1.20"

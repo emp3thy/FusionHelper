@@ -20,6 +20,7 @@ explicitly marked otherwise. Documentation claims that were not verified are lab
 | Endpoint | `http://127.0.0.1:27182/mcp` |
 | Transport | streamable-HTTP JSON-RPC. Plain `GET` returns 404 — `POST` an `initialize` call |
 | Identifies as | `MCP Server Adapter v1.0.0`, protocol `2025-06-18` |
+| Session | `initialize` response carries an **`MCP-Session-Id` header** (measured 2026-07-28); capture it and send it on every subsequent request |
 | Capabilities | `tools`, `resources`. **No `prompts`** (`prompts/list` → `-32601 Method not found`) |
 | Lifetime | Only alive while Fusion is running |
 | Licence | **Paid subscription required.** Third-party AI integration is blocked on Personal use |
@@ -59,6 +60,22 @@ API in the live active document**. There is no reduced verb set to design around
 for a failed generation attempt.
 
 **`fusion_mcp_electronics_read`** — PCB/schematic read. Not relevant here.
+
+### `fusion_mcp_execute` appends an unsolicited diagnostic line (measured 2026-07-28)
+
+Every `message` observed on this install, regardless of script content, ends with a line the
+script itself never printed:
+
+```
+FH_APICHECK {"ExtrudeFeatureInput.setDistanceExtent": true, "ExtrudeFeatureInput.setOneSideExtent": true, "Sketch.sketchLines": false, "SketchCurves.sketchLines": true}
+```
+
+This is the MCP server's own instrumentation (a live `hasattr()`-style probe of the same four
+symbols Task 15's stub-gap investigation flagged), not something FusionHelper emits. It has no
+effect on parsing scripts that print their own single machine-readable line (`FH_RESULT ...`,
+`FH_VERDICT1 ...`) and search for that prefix rather than asserting exact-match on the whole
+`message` string — but a test asserting `message == "expected exact text"` would fail
+unexpectedly on this install. Substring/prefix-search assertions are required, not incidental.
 
 ---
 
@@ -110,6 +127,14 @@ dim.parameter.expression = 'outer_w'          # <-- the binding
 inp = ext.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
 inp.setDistanceExtent(False, adsk.core.ValueInput.createByString('plate_t'))   # <-- the binding
 ```
+
+**`(b)` is runtime-valid and gate-false-positive (measured 2026-07-28 — see §8, "Stub
+gaps").** `ExtrudeFeatureInput.setDistanceExtent` genuinely exists at runtime; it is absent
+from the shipped stub for that class, so the static gate rejects it. Kept here as the
+live-verified mechanism this section's title refers to; `skills/fusion-design/reference/
+api-recipes.md` and the generator's actual recipes use `setOneSideExtent` +
+`DistanceExtentDefinition` instead, which binds the same extent and additionally passes
+the gate.
 
 ### The two dead-timeline traps
 
@@ -516,6 +541,34 @@ resolves a different project root, reports 1168 errors including `"str" is not d
 **Cannot catch:** `createByReal` vs `createByString` (both return `ValueInput`), index picks,
 hardcoded axes, unbound dimensions. Those need the lint rules.
 
+### Stub gaps (measured 2026-07-28)
+
+The "0 false positives" claim above holds for the SEVEN-hallucination probe set it was
+measured against; it is not a blanket guarantee the stub surface is complete. Two live
+`hasattr()` checks against a running Fusion session, made while building Task 15's corpus
+fixtures:
+
+- **`ExtrudeFeatureInput.setDistanceExtent` → `True` at runtime, absent from the stub for
+  that class** (`adsk/fusion.py` declares it only on `HoleFeatureInput`/`HoleFeature`).
+  Genuinely valid code; pyright reports `reportAttributeAccessIssue` on it anyway. **This is
+  the first confirmed gate false positive in this project.**
+- **`Sketch.sketchLines` → `False` at runtime; `SketchCurves.sketchLines` → `True`.** This one
+  was not a stub gap — it was a plain transcription error in `api-recipes.md`, and the stub
+  was right to reject it.
+
+**Stub-absence is not proof of API-absence.** Before trusting a
+`reportAttributeAccessIssue` finding against code that is otherwise documented or was seen
+running live, verify with a live `hasattr()` probe (`fusion_mcp_execute`) rather than
+assuming the gate is correct by construction — it fails closed on real hallucinations but can
+also fail closed on real API surface the stub author didn't transcribe.
+
+**Pyright findings are not waivable through the lint suppression mechanism** (`fusionhelper:
+allow <rule>` only recognises the lint rule IDs, R1–R10 — pyright diagnostics are a separate
+finding class with no waiver path). A confirmed stub gap therefore forces a code-level
+alternative that is both runtime-valid and stub-visible (as `setOneSideExtent` is here), not
+a suppression. Whether the gate itself should ever special-case a specific stub gap is a
+phase-2 question, not resolved by this note.
+
 ---
 
 ## 9. Other constraints and gotchas
@@ -631,3 +684,117 @@ Appended to every generated script. All five verified working and returning via 
 5. `measureMinimumDistance` for declared clearances.
 
 Plus the offline pyright gate before the script is ever sent.
+
+---
+
+## 11. Multi-document enumeration (Task 16, measured 2026-07-28)
+
+Backs the scratch-document lifecycle in `docs/detailed-design.md` ("Scratch document
+lifecycle"). `tests/integration/scratch.py` creates and cleans up scratch documents this way.
+
+```python
+doc = app.documents.add(adsk.core.DocumentTypes.FusionDesignDocumentType)
+des = adsk.fusion.Design.cast(app.activeProduct)   # the new doc becomes active immediately
+des.attributes.add('fusionhelper', 'scratch', tag)
+```
+
+Enumerating **every** open document and reading a tag without disturbing which one is active:
+
+```python
+for i in range(app.documents.count):
+    doc = app.documents.item(i)
+    prod = doc.products.itemByProductType('DesignProductType')   # works on a non-active doc
+    des = adsk.fusion.Design.cast(prod)
+    attr = des.attributes.itemByName('fusionhelper', 'scratch')   # None if untagged
+```
+
+`doc.close(False)` closes without saving. Verified against a session with one saved document
+open (`isSaved == True`) and one freshly created scratch document: enumerating both, tagging
+only the scratch one, and calling `close(False)` on it left the saved document completely
+untouched (still open, still `isSaved == True`, no tag) and removed the scratch document from
+`app.documents`. `doc.isSaved` is checked before any attribute access in the cleanup sweep, so
+a saved document is never even inspected for a tag, let alone closed.
+
+## 11. Live-calibration findings (measured 2026-07-28, trophy-duplicate exercise)
+
+- **Failed `fusion_mcp_execute` calls roll back atomically.** A script exception
+  reverts everything the script did — `userParameters.add`, `deleteMe`, feature
+  adds. One transaction per call, aborted on error. A crashed attempt therefore
+  leaves the document unchanged (timeline marker position excepted).
+- **`fusion_mcp_update` takes `{"featureType": "undo"|"redo"}`** — required enum;
+  an `operation` key is rejected with "Missing required property 'featureType'".
+- **`healthState` 4 = rolled back** (feature beyond the timeline marker). Absent
+  from the documented 0–3 range; a document can ship with a deliberately
+  rolled-back tail.
+- **`timeline.moveToEnd()` activates a rolled-back tail** — it changes the user's
+  model state silently. Record and restore `timeline.markerPosition` around any
+  history edit. New features insert AT the marker, which is also how a feature
+  is replaced in place: `feature.timelineObject.rollTo(True)`, delete, re-add.
+- **`addTwoDistancesChamferEdgeSet(edges, d1, d2, isFlipped, isTangentChain)`** —
+  five arguments; with both flags False, `d1` is the vertical (face-one) distance
+  and `d2` the horizontal. Chamfering a top rim whose horizontal cut would
+  intersect a body joined ON that face fails with
+  `ASM_BL_UNFIN_SHEET — could not be created at the requested size`; chamfer the
+  bare box BEFORE the join (roll the marker back), as the union then covers the
+  overlap region.
+- **Verify liveness budget**: `fh_verify` samples parameters when the 20 s default
+  `liveness_budget_s` runs out (`mode: "sampled"`, `untested` listed). Raise it
+  via `FH_OPTS` to cover a large table; 22 params completed in ~4 s once warm.
+
+## 12. Donut-exercise findings (measured 2026-07-28)
+
+- **Enum-typed property SETTERS false-positive in the gate** (second stub-gap
+  class): e.g. `CombineFeatureInput.operation` is annotated
+  `value: FeatureOperations` while members are ints, and
+  `reportArgumentType: "none"` covers call arguments only — assignment surfaces
+  as `reportAttributeAccessIssue`. Sanctioned escape: a scoped
+  `# pyright: ignore[reportAttributeAccessIssue]` on that line with a reason.
+- **`fusion_mcp_execute` REUSES the module namespace across calls** — stale
+  globals from earlier scripts leak (`FH_ATTEMPT` from a previous script
+  appeared in a later verdict). Always define `FH_ATTEMPT`/`FH_OPTS`/
+  `INTERFERENCE_ALLOWED` explicitly in every stub-carrying script.
+- **Combine-JOIN of disjoint bodies silently no-ops** — live confirmation of
+  detailed-design open question 5 (`boolean.no_op` has no message). A single
+  multi-lump body cannot be produced that way.
+- **`setByAngle` construction planes have plane-local sketch axes**: seeds via
+  `modelToSketchSpace` are not enough — Horizontal/Vertical DIMENSION
+  orientations must also be assigned by probing which sketch axis a world
+  direction maps to (map a second probe point and compare deltas), else the
+  solver relocates geometry to satisfy dims on the wrong axes.
+- `fh_verify`'s edit canary now honours `interference_allowed` (declared-intent
+  overlaps no longer inflate the before/after clash counts).
+- **Circular-patterning a CUT feature around a curved body fails** with
+  `NO_TARGET_BODY / PATTERN_FEATURES_NO_PASTE_INT_EDGES` — under both the
+  default and `AdjustPatternCompute` options (measured). Workaround: extrude the
+  cutter as a NEW-BODY tool, pattern the BODY, then one `combineFeatures` cut of
+  all tool bodies (`isKeepToolBodies = False`).
+- **`param.dead` can mean a silently MISSING FEATURE**: a mis-bound tool sketch
+  (hardcoded diameter expression in a reused helper) built a bite that never
+  touched the target — constraints/timeline/interference all passed while the
+  intended feature was absent; only liveness flagged the two dead parameters.
+- **`MoveFeatures` has no classic `createInput(entities, matrix)`** — use
+  `createInput2(entities)` + `defineAsFreeMove(Matrix3D)`. A baked free-move
+  (e.g. random yaw about a local normal) survives the edit canary but its
+  rotation origin goes ~1 mm stale under a resize — acceptable for aesthetic
+  scatter, never for load-bearing placement.
+- **Client timeouts vs long builds**: a 260-feature build + verify exceeded the
+  harness's old 120 s HTTP timeout while Fusion COMPLETED the script — after a
+  client-side timeout, probe document state before re-running (double-build
+  hazard). Timeout now 600 s.
+- **`FH_OPTS max_bodies`** (default 60) silently skips interference on
+  sprinkle-count models — raise it explicitly; and declare body-pair contact
+  that is design INTENT (`INTERFERENCE_ALLOWED`, e.g. sprinkle-on-sprinkle
+  stacking) rather than easing placement to dodge the check.
+- **Expired Autodesk login** (measured 2026-07-29): `initialize` returns 200
+  with JSON-RPC error `-32001 "Authentication required: User is not logged
+  in"`, and subsequent `tools/call` requests fail as bare HTTP 400. Diagnose
+  with a bare initialize; remedy is signing back into Fusion. The harness now
+  raises the real cause at initialize.
+- **`filletFeatures.add()` can succeed while the feature lands in ERROR
+  healthState** (measured 2026-07-28) — no exception; only a timeline health
+  sweep catches it. Constant-radius fillets are bounded by the shortest edge in
+  the chain: a scalloped drape rim capped out at ~0.8 mm (1.0/1.18/1.43 mm and
+  a compounding second pass all failed).
+- **Embed depths derive from the thinnest penetrated layer**: seating a rod
+  d/4 into a 1 mm shell put its underside 0.65 mm into the body beneath
+  (interference caught it). Thickness-proof seat: centre = base + t/2 + d/2.

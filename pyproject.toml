@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fusionhelper"
+version = "0.1.0"
+description = "Offline gate + verification block for Claude-generated Fusion 360 scripts"
+requires-python = ">=3.12"
+dependencies = ["pyright==1.1.408"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["fusionhelper"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+# verify-block code runs inside Fusion's interpreter and predates the package;
+# it keeps its own conservative style
+[tool.ruff.lint.per-file-ignores]
+"fusionhelper/verify/fh_verify.py" = ["UP", "SIM", "E501", "B", "I001"]
+"fusionhelper/verify/stub_text.py" = ["E501"]
+"tests/test_verify_offline.py" = ["E401", "E402", "E501", "E731", "I001", "UP031"]
+"tests/fixtures/verify/stub_example.py" = ["E401", "I001"]
+# corpus fixtures: pasted verbatim from skills/fusion-design/reference/api-recipes.md
+# (same code, same provenance) plus, for the verify-tail fixture, the byte-exact
+# appended stub — neither is rewritten to satisfy style rules.
+"tests/fixtures/lint/good/corpus_predicate_pick.py" = ["SIM102"]
+"tests/fixtures/lint/good/corpus_verify_tail.py" = ["E401", "I001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "fusion: opt-in test against a live Fusion 360 install via the MCP endpoint (see tests/integration/conftest.py)",
+]
+
+[tool.pyright]
+include = ["fusionhelper", "tests"]
+exclude = ["tests/fixtures", "tests/synthetic_stubs", "fusionhelper/verify/fh_verify.py"]
+typeCheckingMode = "basic"

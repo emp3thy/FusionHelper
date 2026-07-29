@@ -13,8 +13,8 @@ for the design rationale. This document is the implementation-level detail.
 | Path | What |
 |---|---|
 | `skills/fusion-design/reference/` | The skill's reference bundle — 740 lines, written |
-| `design/verify/fh_verify.py` | The verification block — 995 lines, written |
-| `design/verify/test_fh_verify_offline.py` | 43 offline assertions, passing without Fusion |
+| `fusionhelper/verify/fh_verify.py` | The verification block — 995 lines, written |
+| `tests/test_verify_offline.py` | 43 offline assertions, passing without Fusion |
 
 ---
 
@@ -259,10 +259,12 @@ Verdict on line 1 in a fixed grammar. Every finding carries `path:line:col`, a s
 a caret, and a `fix:` containing **code, not advice**. Grouped by rule with the restatement first
 and the remediation stated once. Deterministic ordering so two runs are diffable.
 
-Every run, including green ones, ends with the coverage line:
+Every run, including green ones, ends with the coverage line, derived from the rule set and the
+rules actually exercised this run — never hardcoded, so it cannot claim R8 was checked on a run
+that skipped it (`--no-stub` / `expect_stub=False`):
 
 ```
-checked: R1 R2 R4 R5 R6 R7 R8 · not checked: R3 · R5 covers parameter-change only
+checked: R1 R2 R4 R5 R6 R7 R8 · not checked: R3 R9 R10 · R5 covers parameter-change only
 ```
 
 This closes a hole that follows from the anti-drift design itself: if rules re-enter context by
@@ -639,9 +641,13 @@ syrupy (~30 lines of snapshot helper).
 
 ### API-version drift
 
-`tests/api_version.lock` records API version, pyright version and stub sha256. Drift is
-**reported, never silently absorbed**. Pyright drifts by itself — the PyPI wrapper auto-upgrades
-unless pinned — so `PYRIGHT_PYTHON_FORCE_VERSION` is set from the lock file inside preflight.
+`fusionhelper/api_version.lock` records API version, pyright version and stub sha256. It ships
+inside the installed package (not `tests/`) so a `pip install` carries it. Drift is **reported,
+never silently absorbed**. Pyright drifts by itself — the PyPI wrapper auto-upgrades unless
+pinned — so `PYRIGHT_PYTHON_FORCE_VERSION` is set from the lock file inside preflight. The stub
+fingerprint half of the comparison is skipped when `FUSIONHELPER_DEFS` overrides the discovered
+stubs (synthetic/test stubs were never blessed into the lock and would drift forever); the
+pyright-version comparison stays active regardless.
 
 ---
 

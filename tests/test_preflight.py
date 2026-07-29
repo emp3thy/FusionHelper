@@ -1,0 +1,181 @@
+import importlib.metadata
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+from fusionhelper import preflight, verify
+
+SYN = Path(__file__).parent / "synthetic_stubs"
+
+GOOD = """import adsk.core
+import adsk.fusion
+
+
+def run(_context: str):
+    app = adsk.core.Application.get()
+    des = adsk.fusion.Design.cast(app.activeProduct)
+    print(des)
+"""
+
+HALLUCINATED = GOOD.replace("Application.get()", "Application.getInstance()")
+
+
+def write(tmp_path, body, stub=True):
+    p = tmp_path / "script.py"
+    p.write_text(verify.append_to(body) if stub else body, encoding="utf-8")
+    return p
+
+
+@pytest.fixture(autouse=True)
+def _defs(monkeypatch):
+    monkeypatch.setenv("FUSIONHELPER_DEFS", str(SYN))
+
+
+def test_good_script_passes(tmp_path):
+    r = preflight.run_preflight(write(tmp_path, GOOD))
+    assert r.outcome is preflight.Outcome.PASS
+    assert r.exit_code == 0
+    assert r.report.splitlines()[0].startswith("PREFLIGHT PASS")
+
+
+def test_hallucinated_api_fails(tmp_path):
+    r = preflight.run_preflight(write(tmp_path, HALLUCINATED))
+    assert r.outcome is preflight.Outcome.FAIL
+    assert r.exit_code == 1
+    assert "getInstance" in r.report
+
+
+def test_missing_defs_is_gate_broken(tmp_path, monkeypatch):
+    monkeypatch.setenv("FUSIONHELPER_DEFS", str(tmp_path / "nowhere"))
+    r = preflight.run_preflight(write(tmp_path, GOOD))
+    assert r.outcome is preflight.Outcome.GATE_BROKEN
+    assert r.exit_code == 3
+    assert "do not edit the script" in r.report.lower()
+
+
+def test_dead_canary_is_gate_broken(tmp_path, monkeypatch):
+    # neuter the canary: if pyright stops flagging the known-bad probe,
+    # a clean run must NOT be reported as PASS
+    monkeypatch.setattr(preflight.canary, "CANARY_TEXT", "x = 1\n")
+    r = preflight.run_preflight(write(tmp_path, GOOD))
+    assert r.outcome is preflight.Outcome.GATE_BROKEN
+    assert r.exit_code == 3
+
+
+def test_lint_findings_fail_before_pyright_matters(tmp_path):
+    r = preflight.run_preflight(write(tmp_path, GOOD.replace(
+        "print(des)", "print(adsk.core.ValueInput.createByReal(1.0))")))
+    assert r.outcome is preflight.Outcome.FAIL
+    assert "R1" in r.report
+
+
+def test_missing_stub_fails_when_expected(tmp_path):
+    r = preflight.run_preflight(write(tmp_path, GOOD, stub=False))
+    assert r.outcome is preflight.Outcome.FAIL
+    assert "R8" in r.report
+
+
+def test_expect_stub_true_default_checks_r8(tmp_path):
+    r = preflight.run_preflight(write(tmp_path, GOOD))
+    assert "checked: R1 R2 R4 R5 R6 R7 R8 ·" in r.report
+    assert "not checked: R3 R9 R10" in r.report
+
+
+def test_expect_stub_false_moves_r8_to_not_checked(tmp_path):
+    r = preflight.run_preflight(write(tmp_path, GOOD, stub=False), expect_stub=False)
+    assert r.outcome is preflight.Outcome.PASS, r.report
+    assert "checked: R1 R2 R4 R5 R6 R7 ·" in r.report
+    assert "not checked: R3 R8 R9 R10" in r.report
+
+
+def test_pyright_version_drift_is_reported_not_absorbed(tmp_path, monkeypatch):
+    # Keep the real lock (its pyright_version is the actually-installed, already
+    # cached pyright, so PYRIGHT_PYTHON_FORCE_VERSION pinning needs no network
+    # fetch) and fake only what "installed" reports, so drift is detected
+    # without perturbing the real pyright subprocess invocation. Pointing the
+    # lock itself at a nonexistent pyright_version (e.g. "9.9.9") instead would
+    # make pyright_pin_env force that version and crash the subprocess — this
+    # was verified against a real run before choosing the monkeypatch approach.
+    monkeypatch.setattr(preflight.importlib.metadata, "version", lambda _name: "9.9.9")
+    r = preflight.run_preflight(write(tmp_path, GOOD))
+    assert r.outcome is preflight.Outcome.PASS
+    assert r.exit_code == 0
+    assert "drift: pyright drifted" in r.report
+
+
+def test_missing_lock_is_a_visible_warning_not_silent(tmp_path):
+    r = preflight.run_preflight(write(tmp_path, GOOD), lock_path=tmp_path / "nowhere.lock")
+    assert r.outcome is preflight.Outcome.PASS
+    assert r.exit_code == 0
+    assert "warning: api_version.lock not found" in r.report
+
+
+def test_drift_check_failure_is_a_warning_not_a_crash(tmp_path, monkeypatch):
+    # A broken drift *computation* (bad install, unreadable metadata, ...) must
+    # not crash the whole run with a raw traceback — that would be worse than
+    # the silent absorption the drift block exists to fix.
+    def _raise(_name):
+        raise importlib.metadata.PackageNotFoundError("pyright")
+    monkeypatch.setattr(preflight.importlib.metadata, "version", _raise)
+    r = preflight.run_preflight(write(tmp_path, GOOD))
+    assert r.outcome is preflight.Outcome.PASS
+    assert r.exit_code == 0
+    assert "drift check failed" in r.report
+
+
+# CLI tests
+
+
+def cli(*args, env=None):
+    if env is None:
+        env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN)}
+    return subprocess.run([sys.executable, "-m", "fusionhelper.preflight", *args],
+                          capture_output=True, text=True, env=env)
+
+
+def test_cli_pass_exit_0(tmp_path):
+    env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN)}
+    p = cli(str(write(tmp_path, GOOD)), env=env)
+    assert p.returncode == 0, p.stdout + p.stderr
+    assert p.stdout.startswith("PREFLIGHT PASS")
+
+
+def test_cli_fail_exit_1(tmp_path):
+    env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN)}
+    result = cli(str(write(tmp_path, HALLUCINATED)), env=env)
+    assert result.returncode == 1
+
+
+def test_cli_usage_exit_2():
+    env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN)}
+    assert cli(env=env).returncode == 2
+    assert cli(str(Path("does_not_exist.py")), env=env).returncode == 2
+
+
+def test_cli_survives_narrow_stdout_encoding(tmp_path):
+    # Rule restatements and the coverage line use em dashes / middle dots that
+    # a legacy console codepage (Windows cp437/cp850) cannot encode. Force a
+    # FAIL report through R1's restatement line under PYTHONIOENCODING=cp437
+    # and confirm the CLI still exits cleanly instead of crashing on print()
+    # with a raw UnicodeEncodeError.
+    bad = GOOD.replace("print(des)", "print(adsk.core.ValueInput.createByReal(1.0))")
+    env = {**os.environ, "FUSIONHELPER_DEFS": str(SYN), "PYTHONIOENCODING": "cp437"}
+    proc = subprocess.run(
+        [sys.executable, "-m", "fusionhelper.preflight", str(write(tmp_path, bad))],
+        capture_output=True, env=env)
+    stdout = proc.stdout.decode("cp437", errors="replace")
+    stderr = proc.stderr.decode("cp437", errors="replace")
+    assert "Traceback" not in stderr, stderr
+    assert stdout.startswith("PREFLIGHT FAIL"), stdout + stderr
+    assert proc.returncode == 1
+
+
+def test_corrupt_lock_is_a_warning_not_a_crash(tmp_path):
+    bad_lock = tmp_path / "api_version.lock"
+    bad_lock.write_text("{ not json", encoding="utf-8")
+    r = preflight.run_preflight(write(tmp_path, GOOD), lock_path=bad_lock)
+    assert r.outcome is preflight.Outcome.PASS
+    assert "unreadable" in r.report and "unpinned" in r.report

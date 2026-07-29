@@ -108,10 +108,29 @@ expression and stayed live across an edit.
 ```python
 ext = root.features.extrudeFeatures
 inp = ext.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
-inp.setDistanceExtent(False, adsk.core.ValueInput.createByString('plate_t'))
+extent = adsk.fusion.DistanceExtentDefinition.create(
+    adsk.core.ValueInput.createByString('plate_t'))
+inp.setOneSideExtent(extent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
 f = ext.add(inp)
 f.name = 'plate_body'
 ```
+
+**`ExtrudeFeatureInput.setDistanceExtent` is a stub gap, not a hallucination.** The earlier
+form of this recipe (`inp.setDistanceExtent(False, ValueInput...)`) ran live in Fusion
+without error, and a live `hasattr()` probe against a real `ExtrudeFeatureInput` confirmed
+the method genuinely exists at runtime (measured 2026-07-28). It is simply absent from the
+shipped `.pyi` stub for that class — `adsk/fusion.py` (API 2703.1.20) declares
+`setDistanceExtent` only on `HoleFeatureInput`/`HoleFeature`, not on `ExtrudeFeatureInput` —
+so pyright's static gate false-positives on otherwise-correct code. This is the first
+confirmed gate false positive found in this project; do not "fix" a `setDistanceExtent`
+finding by assuming the call is wrong.
+
+The recipe below uses `setOneSideExtent` plus a `DistanceExtentDefinition` instead — not
+because `setDistanceExtent` is invalid, but because `setOneSideExtent` is **both**
+runtime-valid **and** stub-visible, so it is gate-clean. Until the stub gap is closed
+(or the gate is taught to tolerate it — a phase-2 question, since pyright findings are not
+waivable through the lint suppression mechanism), prefer the form that satisfies both the
+runtime and the gate over the one that only satisfies the runtime.
 
 Binding the extent is necessary and **not sufficient** (**R2**). A profile drawn at literal
 `Point3D` coordinates with only the extent bound produced *byte-identical* geometry when
@@ -124,9 +143,16 @@ Extrude direction is clean: a positive distance always follows the plane normal.
 
 The verified sequence. `isFullyConstrained` flips `False` → `True` on the last dimension.
 
+`Sketch` has no `sketchLines` property, at runtime or in the stub — a live `hasattr()`
+probe against a real `Sketch` returned `False` (measured 2026-07-28), and
+`SketchCurves.sketchLines` returned `True`. Unlike the `setDistanceExtent` case above,
+this is not a stub gap: the one-line-shorter form (`sk.sketchLines`) was a plain
+transcription error in this doc, corrected below to the property that actually exists
+(`sk.sketchCurves.sketchLines`).
+
 ```python
 sk = root.sketches.add(root.xYConstructionPlane)
-lines = sk.sketchLines
+lines = sk.sketchCurves.sketchLines
 rect = lines.addTwoPointRectangle(
     adsk.core.Point3D.create(0, 0, 0),
     adsk.core.Point3D.create(6, 4, 0))          # seed only; approximately right is enough
