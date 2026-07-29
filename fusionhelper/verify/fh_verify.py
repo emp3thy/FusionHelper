@@ -173,7 +173,7 @@ def _all_bodies(des):
 
 
 def _body_metrics(b):
-    m = {'f': None, 'v': None, 'a': None, 'bb': None}
+    m = {'f': None, 'v': None, 'a': None, 'bb': None, 'c': None}
     try:
         m['f'] = b.faces.count
     except Exception:
@@ -186,6 +186,15 @@ def _body_metrics(b):
                 m[key] = getattr(b.physicalProperties, attr)
             except Exception:
                 pass
+    try:
+        # centre of mass makes the signature translation-sensitive: a groove
+        # field moved by a position parameter keeps volume/area/bbox/face
+        # count byte-identical (measured: nook_course_y0 false-negatived as
+        # param.dead) but shifts the centroid.
+        com = b.physicalProperties.centerOfMass
+        m['c'] = (com.x, com.y, com.z)
+    except Exception:
+        pass
     try:
         bb = b.boundingBox
         m['bb'] = (bb.minPoint.x, bb.minPoint.y, bb.minPoint.z,
@@ -217,6 +226,13 @@ def _snapshot_differs(a, b):
         if ma['bb'] is not None:
             for i in range(6):
                 if _num_differs(ma['bb'][i], mb['bb'][i]):
+                    return True
+        ca, cb = ma.get('c'), mb.get('c')
+        if (ca is None) != (cb is None):
+            return True
+        if ca is not None:
+            for i in range(3):
+                if _num_differs(ca[i], cb[i]):
                     return True
     return False
 

@@ -798,3 +798,49 @@ a saved document is never even inspected for a tag, let alone closed.
 - **Embed depths derive from the thinnest penetrated layer**: seating a rod
   d/4 into a 1 mm shell put its underside 0.65 mm into the body beneath
   (interference caught it). Thickness-proof seat: centre = base + t/2 + d/2.
+
+## 13. Book-nook exercise findings (measured 2026-07-29, Temple of Dendur)
+
+- **Concentric circles merge their centre sketch points**: two
+  `addByCenterRadius` circles at the same centre share ONE sketch point, so
+  position-dimensioning both centres to the origin raises
+  `VCS_SKETCH_OVER_CONSTRAINTS` at execute. Dimension only the first
+  circle's centre; the second gets `geometricConstraints.addConcentric` plus
+  a diameter dimension, nothing more.
+- **`addTwoPointRectangle` applies NO constraints** (the verify block
+  reported the raw sketch as `sketch.unconstrained`): fully constrain with
+  2 horizontal + 2 vertical geometric constraints and four bound dims —
+  width, height, and origin-to-corner H/V — deriving axis roles and signs
+  from `modelToSketchSpace` probe points, never assuming them (R6).
+- **Never sketch on `BRepFace` for repeated engraving passes**: a full-length
+  groove cut SPLITS the host face, which both invalidates held face
+  references (`InternalValidationError: face` on the next `sketches.add`)
+  and breaks area-threshold face finders. Sketch on named construction
+  planes at the measured face coordinate instead; plane references stay
+  valid across cuts.
+- **bbox guards cannot see wrong-direction extrudes through thin sheets**: a
+  rib extruded the wrong way through a 0.5 mm panel into the solid behind it
+  never moved the panel's bounding box. Direction-guard with
+  `BRepBody.pointContainment()` on a probe point placed just off the target
+  side, and verify the pick with the interference check.
+- **Pattern spacing parameters need edge headroom**: the liveness pass steps
+  each parameter ~5%; if that pushes the last `RectangularPattern` instance
+  off its host face, the patterned JoinFeature fails and the edit is flagged
+  `edit.introduces_clash`. Size count/base so nominal x 1.05 stays on-face.
+- **Liveness signature now includes centre of mass**: volume/area/bbox/face
+  count are all blind to pure translation — a groove field moved by its
+  position parameter false-negatived as `param.dead`. `fh_verify` snapshots
+  `physicalProperties.centerOfMass` per body since 2026-07-29.
+- **`MeshBody.isVisible` has no setter through the MCP proxy**
+  (`AttributeError: property '_get_isVisible' ... has no setter`);
+  `BRepBody.isVisible` sets fine. Plan screenshot cameras around meshes.
+- **Mesh plane cuts ARE scriptable**: `features.meshPlaneCutFeatures`
+  `.createInput(meshBody, plane)` with `meshPlaneCutType`/
+  `meshPlaneCutFillType`/`isFlip` properties (enums via runtime `dir()`able
+  lookup; absent from the offline stubs). Trim + uniform fill keeps the mesh
+  watertight; assert the kept side via the post-cut bounding box and re-add
+  flipped if wrong.
+- **A failed execute is a free sandbox**: transactions roll back atomically
+  on any uncaught exception, so a probe script that ends in a deliberate
+  `raise` can test feature creation (planes, sketches, mesh inputs) against
+  the live document without leaving anything behind.
