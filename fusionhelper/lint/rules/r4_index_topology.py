@@ -34,10 +34,16 @@ def _collection_receiver(node: ast.expr) -> str | None:
 
 
 class _RangeIterationTracker(ast.NodeVisitor):
-    """Collects receiver chains exempted by `for i in range(<recv>.count)`."""
+    """Collects the nodes exempted by `for i in range(<recv>.count)` loops.
+
+    The exemption is scoped to the matched loop's OWN subtree, keyed by node
+    identity — never by receiver-chain text globally. (BugBot on PR #1 proved
+    the text-global version silently exempted a literal `body.faces[4]`
+    elsewhere in the file once any range-count loop over that chain existed.)
+    """
 
     def __init__(self):
-        self.exempt: set[str] = set()
+        self.exempt_nodes: set[int] = set()
 
     def visit_For(self, node: ast.For):
         it = node.iter
@@ -47,7 +53,15 @@ class _RangeIterationTracker(ast.NodeVisitor):
                 and it.args[0].attr == "count"):
             recv = _collection_receiver(it.args[0].value)
             if recv:
-                self.exempt.add(recv)
+                for sub in ast.walk(node):
+                    if isinstance(sub, ast.Subscript):
+                        if _collection_receiver(sub.value) == recv:
+                            self.exempt_nodes.add(id(sub))
+                    elif (isinstance(sub, ast.Call)
+                          and isinstance(sub.func, ast.Attribute)
+                          and sub.func.attr == "item"
+                          and _collection_receiver(sub.func.value) == recv):
+                        self.exempt_nodes.add(id(sub))
         self.generic_visit(node)
 
 
@@ -58,7 +72,7 @@ def check(tree: ast.AST, source: str) -> list[Finding]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Subscript):
             recv = _collection_receiver(node.value)
-            if recv is not None and recv not in tracker.exempt:
+            if recv is not None and id(node) not in tracker.exempt_nodes:
                 # profiles.item(0) exclusion is structural: "profiles" is not in _COLLECTIONS
                 findings.append(Finding(RULE_ID, NUMBER, node.lineno, node.col_offset, "error",
                                         f"index pick on {recv} — breaks when face/edge count "
@@ -67,7 +81,7 @@ def check(tree: ast.AST, source: str) -> list[Finding]:
         elif (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
               and node.func.attr == "item"):
             recv = _collection_receiver(node.func.value)
-            if recv is not None and recv not in tracker.exempt:
+            if recv is not None and id(node) not in tracker.exempt_nodes:
                 # profiles.item(0) exclusion is structural: "profiles" is not in _COLLECTIONS
                 findings.append(Finding(RULE_ID, NUMBER, node.lineno, node.col_offset, "error",
                                         f"index pick on {recv} — breaks when face/edge count "
