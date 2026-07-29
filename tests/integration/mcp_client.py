@@ -14,6 +14,7 @@ re-verified at the start of this task):
   HTTP 200 + success:false, never a JSON-RPC error.
 """
 import json
+import os
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
@@ -40,7 +41,11 @@ class McpClient:
         if self._session:
             headers["MCP-Session-Id"] = self._session
         req = urllib.request.Request(self.url, json.dumps(payload).encode(), headers)
-        with urllib.request.urlopen(req, timeout=600) as r:
+        # 600 s starved out a 200-body build + full liveness pass (Fusion
+        # finished; the verdict died with the socket). Overridable for
+        # heavyweight documents.
+        timeout = int(os.environ.get("FH_MCP_TIMEOUT_S", "600"))
+        with urllib.request.urlopen(req, timeout=timeout) as r:
             body = r.read()
             sid = r.headers.get("MCP-Session-Id")
             if sid:
