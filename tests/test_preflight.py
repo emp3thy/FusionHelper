@@ -171,3 +171,11 @@ def test_cli_survives_narrow_stdout_encoding(tmp_path):
     assert "Traceback" not in stderr, stderr
     assert stdout.startswith("PREFLIGHT FAIL"), stdout + stderr
     assert proc.returncode == 1
+
+
+def test_corrupt_lock_is_a_warning_not_a_crash(tmp_path):
+    bad_lock = tmp_path / "api_version.lock"
+    bad_lock.write_text("{ not json", encoding="utf-8")
+    r = preflight.run_preflight(write(tmp_path, GOOD), lock_path=bad_lock)
+    assert r.outcome is preflight.Outcome.PASS
+    assert "unreadable" in r.report and "unpinned" in r.report

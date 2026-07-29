@@ -50,17 +50,29 @@ class _RangeIterationTracker(ast.NodeVisitor):
         if (isinstance(it, ast.Call) and isinstance(it.func, ast.Name)
                 and it.func.id == "range" and len(it.args) == 1
                 and isinstance(it.args[0], ast.Attribute)
-                and it.args[0].attr == "count"):
+                and it.args[0].attr == "count"
+                and isinstance(node.target, ast.Name)):
             recv = _collection_receiver(it.args[0].value)
+            loop_var = node.target.id
+
+            def _is_loop_var(expr):
+                return isinstance(expr, ast.Name) and expr.id == loop_var
+
             if recv:
+                # exempt only <recv>[<loop var>] / <recv>.item(<loop var>)
+                # inside THIS loop -- a literal index in the loop body is
+                # still the P4 hazard (BugBot, PR #1, second pass)
                 for sub in ast.walk(node):
                     if isinstance(sub, ast.Subscript):
-                        if _collection_receiver(sub.value) == recv:
+                        if (_collection_receiver(sub.value) == recv
+                                and _is_loop_var(sub.slice)):
                             self.exempt_nodes.add(id(sub))
                     elif (isinstance(sub, ast.Call)
                           and isinstance(sub.func, ast.Attribute)
                           and sub.func.attr == "item"
-                          and _collection_receiver(sub.func.value) == recv):
+                          and _collection_receiver(sub.func.value) == recv
+                          and len(sub.args) == 1
+                          and _is_loop_var(sub.args[0])):
                         self.exempt_nodes.add(id(sub))
         self.generic_visit(node)
 

@@ -57,8 +57,13 @@ def run_preflight(script_path: Path, *, expect_stub: bool = True,
         checked.discard("R8")
     lock = lock_path if lock_path is not None else stubs.default_lock_path()
     staged = staging.stage(script_path, defs)
+    lock_warning = None
     try:
-        env = stubs.pyright_pin_env(lock) if lock.exists() else {}
+        try:
+            env = stubs.pyright_pin_env(lock) if lock.exists() else {}
+        except Exception as e:  # corrupt/foreign lock: unpinned, never a crash
+            env = {}
+            lock_warning = f"warning: {lock} unreadable ({e}) - pyright version unpinned"
         payload = run_pyright(staged, env)
         script_diags, canary_diags = split_diagnostics(
             payload, staging.SCRIPT_NAME, canary.CANARY_NAME)
@@ -75,6 +80,8 @@ def run_preflight(script_path: Path, *, expect_stub: bool = True,
     errors = [f for f in findings if f.severity == "error"]
     verdict = "PASS" if not errors else "FAIL"
     lines = [f"PREFLIGHT {verdict} errors={len(errors)}", body]
+    if lock_warning:
+        lines.append(lock_warning)
     # Drift is REPORTED, never silently absorbed — but it never changes the
     # outcome: the canary above already proves the gate functions correctly.
     # A failure *computing* drift (bad install, unreadable lock, filesystem
