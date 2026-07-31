@@ -1235,7 +1235,12 @@ def fh_verify(clearances=None, face_specs=None, datum_heights_cm=None, digest=No
               interference_allowed=None, expect_dead=None, refs=None, attempt=1, **opts):
     t0 = time.time()
     global _SNAPSHOT_EXCLUDE
-    _SNAPSHOT_EXCLUDE = tuple(opts.get('snapshot_exclude') or ())
+    _excl = opts.get('snapshot_exclude') or ()
+    if isinstance(_excl, str):
+        # a bare string would tuple() into per-character prefixes and
+        # silently exclude nearly everything (BugBot, PR #4)
+        _excl = (_excl,)
+    _SNAPSHOT_EXCLUDE = tuple(_excl)
     try:
         decl = {'clearances': clearances, 'face_specs': face_specs,
                 'datum_heights_cm': datum_heights_cm,
