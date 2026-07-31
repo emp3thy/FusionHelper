@@ -39,7 +39,14 @@ Every rule traces to a measured probe. The gate cites rules by number.
   to; regenerate the tail instead.
 - **R9** Never catch exceptions in generated scripts. The traceback is the
   diagnostic (Autodesk's own guidance).
-- **R10** Never save the document. Ever. Only the user saves.
+- **R10** Never save the document on your own judgement. Two sanctioned
+  exceptions, both user-driven: (a) at session start, if the active document
+  is UNSAVED and carries user-authored geometry, refuse to execute anything
+  until the user has saved once — an unsaved kit is one crash from gone;
+  (b) with the user's standing consent for the document, checkpoint-save
+  (`document.save("checkpoint: <milestone>")`) ONLY after a green verdict.
+  Fusion cloud docs are fully versioned — every save is a new version and
+  old versions restore from the Data Panel, which is what makes (b) safe.
 
 ## Workflow (phase 1)
 
@@ -141,6 +148,69 @@ cap — the cap governs build/repair attempts.
 Waivers (`# fusionhelper: allow ...`) apply only to the checked lint rules
 (R1 R2 R4 R5 R6 R7); waiving R3/R9/R10 always reports "unused suppression"
 because nothing fires for them — they are runtime/convention rules.
+
+## Checkpoint versioning (the reset story)
+
+Scripts build from a BASELINE, not from an empty file: v1 = the user's
+hand-made parts and nothing else; later checkpoints layer verified script
+output on top (v2 = v1 + sub-assembly, v3 = v2 + main build, each saved
+only on a green verdict, with consent — see R10). This changes what
+"regenerate from zero" costs:
+
+- Architecture change / teardown: NEVER surgically delete generated bodies
+  in a live heavy document (measured: ~20-30 s per `deleteMe` in a
+  361-feature / 11k-occurrence doc — a wall teardown cost ~40 min).
+  Restore the baseline version from the Data Panel and re-run the scripts.
+- Never re-run a build script on a document that already contains its
+  output — name collisions produce silently coincident " (N)"-suffixed
+  duplicate bodies that renders and the current attempt's interference
+  check cannot see. Version-restore makes this scenario impossible.
+- Parameter-level changes never need a rebuild at all: edit the parameter.
+
+## Heavy documents and transport discipline (measured 2026-07-31)
+
+- **A dead client is NOT a rolled-back script.** A client that times out or
+  is killed mid-`fusion_mcp_execute` may leave Fusion to finish and COMMIT
+  the script — or abort partway with no rollback. Measured leaks: stepped
+  parameters left as `( 5 mm ) + 0.25 mm`, duplicate body sets, and
+  half-applied reorganizations. After ANY client timeout: probe before
+  re-running (double-build hazard), audit parameter expressions for step
+  wrappers, and audit body counts for " (N)" suffixes and unexpected root
+  bodies.
+- **Orphaned requests still run.** Requests queued by killed clients
+  execute in order when Fusion frees up. Never stack retries while Fusion
+  is busy; poll with a single patient probe. Distinguish busy from frozen
+  from outside: process CPU + `Responding` (a script on the UI thread
+  shows a white window while working).
+- **Chunk structural operations.** Scripts run on Fusion's UI thread. One
+  mega-execute (~250 component ops) froze the UI for an hour; the same
+  work as ~20-op executes with `adsk.doEvents()` between batches ran
+  invisibly. Chunking also restores atomic-rollback granularity and makes
+  client timeouts irrelevant.
+- **Instanced-component count dominates every cost.** 60 instances of a
+  180-part component (≈11k leaf occurrences) took each verify liveness
+  step to ~6 min (snapshot mass-properties) and each body delete to ~30 s.
+  Exclude visual-only instanced components from verification with
+  `FH_OPTS = {"snapshot_exclude": ["<component name prefix>", ...]}`, and
+  scope `only_params` to what the step can actually exercise.
+- **Never gate through a pipe.** `preflight | head` masks the gate's exit
+  code (pipeline exit = last command) — a FAILED gate let an ungated
+  script execute. Check the gate's exit code explicitly, then run.
+- **Sketch circles: create jittered.** Circles created at coincident
+  coordinates trigger silent alignment inference; the later origin dim
+  then over-constrains (`VCS_SKETCH_OVER_CONSTRAINTS`). Create each circle
+  at a small unique offset (+0.1-0.3 mm, incremented per circle) and let
+  the driving dims snap it home. Rectangles are immune.
+- **Patterns: trust nothing, validate topology.** Cut/feature patterns
+  need `AdjustPatternCompute` (default dies with
+  `PATTERN_FEATURES_NO_PASTE_INT_EDGES`); body patterns reject it.
+  Direction sign is unreliable — try flipped distances until validated.
+  Validate cut patterns by FACE-COUNT delta on the participants, never by
+  `body.volume` (a low-accuracy estimate, measured 24% off on small
+  holes); floor at ~4 faces per expected instance, not the seed's count.
+- **After body moves/deletes, check the light bulbs.** Fusion spontaneously
+  switches off component/occurrence `isLightBulbOn` after heavy
+  reorganizations — geometry looks deleted but is only dark.
 
 ## Honest limits
 

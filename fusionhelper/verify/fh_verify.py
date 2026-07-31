@@ -25,6 +25,7 @@ import adsk.core
 import adsk.fusion
 import json
 import math
+import os
 import re
 import time
 import traceback
@@ -155,8 +156,14 @@ def _print(line):
 
 # --------------------------------------------------------------------- model snapshot
 
+_SNAPSHOT_EXCLUDE = ()
+
+
 def _all_bodies(des):
-    """(key, body) for every BRepBody in the design, occurrence proxies included."""
+    """(key, body) for every BRepBody in the design, occurrence proxies
+    included. Components matching a snapshot_exclude prefix are skipped
+    wholesale: an 11k-instance component made every liveness step walk
+    ~11,000 mass-property calls (~6 min/step, measured)."""
     out = []
     root = des.rootComponent
     for b in root.bRepBodies:
@@ -165,6 +172,14 @@ def _all_bodies(des):
         occs = root.allOccurrences
         for i in range(occs.count):
             occ = occs.item(i)
+            skip = False
+            for pref in _SNAPSHOT_EXCLUDE:
+                if (occ.component.name.startswith(pref)
+                        or occ.fullPathName.startswith(pref)):
+                    skip = True
+                    break
+            if skip:
+                continue
             for b in occ.bRepBodies:
                 out.append((occ.fullPathName + '/' + b.name, b))
     except Exception:
@@ -1201,9 +1216,31 @@ HINTS = {
 }
 
 
+def _mirror_verdict(line):
+    """Write the verdict beside the installed block. Socket-death insurance:
+    a client timeout mid-execute loses the printed verdict (measured twice on
+    a 258-body document); the file survives regardless of transport."""
+    try:
+        home = os.environ.get('FUSIONHELPER_HOME') or os.path.join(
+            os.environ.get('LOCALAPPDATA', ''), 'FusionHelper')
+        with open(os.path.join(home, 'last_verdict.txt'), 'w',
+                  encoding='utf-8') as fh:
+            fh.write(line)
+    except Exception:
+        pass
+    return line
+
+
 def fh_verify(clearances=None, face_specs=None, datum_heights_cm=None, digest=None,
               interference_allowed=None, expect_dead=None, refs=None, attempt=1, **opts):
     t0 = time.time()
+    global _SNAPSHOT_EXCLUDE
+    _excl = opts.get('snapshot_exclude') or ()
+    if isinstance(_excl, str):
+        # a bare string would tuple() into per-character prefixes and
+        # silently exclude nearly everything (BugBot, PR #4)
+        _excl = (_excl,)
+    _SNAPSHOT_EXCLUDE = tuple(_excl)
     try:
         decl = {'clearances': clearances, 'face_specs': face_specs,
                 'datum_heights_cm': datum_heights_cm,
@@ -1250,14 +1287,15 @@ def fh_verify(clearances=None, face_specs=None, datum_heights_cm=None, digest=No
                 codes.append(f['code'])
         if codes:
             verdict['hints'] = dict((c, HINTS[c]) for c in codes[:4])
-        return VERDICT_PREFIX + json.dumps(verdict, separators=(',', ':'))
+        return _mirror_verdict(
+            VERDICT_PREFIX + json.dumps(verdict, separators=(',', ':')))
     except Exception:
         # Deliberate deviation from "do not catch exceptions": by the time this runs
         # the model is already built, and an uncaught throw here would discard every
         # check that already passed. The build itself is never wrapped.
-        return VERDICT_PREFIX + json.dumps(
+        return _mirror_verdict(VERDICT_PREFIX + json.dumps(
             {'v': FH_CONTRACT, 'status': 'error', 'code': 'verify.internal',
-             'msg': _clip(traceback.format_exc(), 500)}, separators=(',', ':'))
+             'msg': _clip(traceback.format_exc(), 500)}, separators=(',', ':')))
 
 
 def _timeline_count(des):
