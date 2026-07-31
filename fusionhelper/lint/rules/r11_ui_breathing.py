@@ -35,11 +35,12 @@ def check(tree: ast.AST, source: str) -> list[Finding]:
         hits = [a for a in attrs if a in _MUTATING]
         if len(hits) == 0:
             continue
+        what = ", ".join(sorted(set(hits))[:3])
         findings.append(Finding(
             RULE_ID, NUMBER, node.lineno, node.col_offset, "warn",
-            "loop mutates the document (%s) without adsk.doEvents() — "
+            f"loop mutates the document ({what}) without adsk.doEvents() — "
             "scripts run on the UI thread and an unbroken loop freezes "
-            "the window for its whole duration" % ", ".join(sorted(set(hits))[:3]),
+            "the window for its whole duration",
             "call adsk.doEvents() once per iteration (or per small batch) "
             "inside the loop body"))
     return findings
