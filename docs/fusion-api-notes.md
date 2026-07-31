@@ -844,3 +844,45 @@ a saved document is never even inspected for a tag, let alone closed.
   on any uncaught exception, so a probe script that ends in a deliberate
   `raise` can test feature creation (planes, sketches, mesh inputs) against
   the live document without leaving anything behind.
+
+## 14. Heavy-document findings (measured 2026-07-31, LED wall)
+
+- **Client death does not roll back**: a timed-out/killed MCP client can
+  leave Fusion completing (and committing) the script, or aborting midway
+  with stepped parameters un-restored. Audit after every client timeout:
+  `( X ) + step`-wrapped expressions, " (N)"-suffixed duplicate bodies,
+  unexpected root bodies. Orphaned requests from dead clients still
+  execute later, in queue order.
+- **UI-thread scripts**: one mega-execute (~250 component ops) froze the
+  UI for an hour (user-confirmed; process alive, `Responding=True` once
+  `doEvents` batches were adopted). Chunk structural work to ~20 ops per
+  execute with `adsk.doEvents()` between batches.
+- **Instanced-component scaling**: ~11k leaf occurrences made verify
+  liveness ~6 min/step and `body.deleteMe()` ~30 s each (full recompute
+  per op). `snapshot_exclude` (fh_verify option, 2026-07-31) skips named
+  components from the model snapshot; teardown by version-restore beats
+  deletion surgery.
+- **Sketch circle alignment inference**: circles CREATED at coincident
+  coordinates get silent alignment constraints; the later origin dim
+  over-constrains. Jitter creation coordinates (+0.1-0.3 mm, unique per
+  circle) and let driving dims snap them home. `addTwoPointRectangle`
+  corners are immune. (Supersedes the twin-alignment workaround, which
+  fails on offset planes with different axis mapping.)
+- **Rectangular patterns**: cut/feature patterns require
+  `patternComputeOption = AdjustPatternCompute` (absent from the offline
+  stubs); body patterns reject it. A 1D input needs an explicit degenerate
+  `setDirectionTwo(perp, 1, 0 mm)` or `add()` raises NO_TARGET_BODY.
+  Direction sign is not trustworthy — retry flipped and validate.
+  Validate cut patterns by participant FACE-COUNT deltas: `body.volume`
+  without accuracy control is an estimate (measured 24% low on a field of
+  3 mm holes) and `PhysicalProperties.accuracy` has no setter through the
+  MCP proxy.
+- **`Matrix3D.setWithCoordinateSystem` occurrence placement**: legitimate
+  world-space literal vectors — waive R6 line-by-line with
+  `# fh: transform-space`.
+- **Component light bulbs**: `isLightBulbOn` spontaneously flips off on
+  occurrences after `moveToComponent` batches and aborted executes; check
+  and re-light before concluding geometry is missing.
+- **Shell-out hygiene**: gating through a pipe (`preflight | head`)
+  swallows the exit code; an ungated script reached Fusion. Gate with an
+  explicit exit-code check.

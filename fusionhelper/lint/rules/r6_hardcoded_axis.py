@@ -28,13 +28,24 @@ def _is_all_literal_vector(node: ast.expr) -> bool:
 _MAPPING_CALLS = {"sketchToModelSpace", "modelToSketchSpace"}
 
 
+_TRANSFORM_MARKER = "fh: transform-space"
+
+
 def check(tree: ast.AST, source: str) -> list[Finding]:
     findings = []
+    lines = source.splitlines()
     derives_mapping = any(
         isinstance(n, ast.Attribute) and n.attr in _MAPPING_CALLS
         for n in ast.walk(tree))
     for node in ast.walk(tree):
         if isinstance(node, ast.expr) and _is_all_literal_vector(node):
+            # Occurrence/matrix transforms are WORLD-space by definition -
+            # the sketch-axis trap this rule exists for cannot apply. A
+            # measured false positive (LED-wall occurrence placement) is
+            # waived line-by-line with an explicit marker, never wholesale.
+            line = lines[node.lineno - 1] if node.lineno <= len(lines) else ""
+            if _TRANSFORM_MARKER in line:
+                continue
             findings.append(Finding(RULE_ID, NUMBER, node.lineno, node.col_offset,
                                     "error", "all-literal Vector3D.create — hardcoded "
                                     "axis assumption (the XZ inversion trap: on XZ, "
