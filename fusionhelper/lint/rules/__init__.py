@@ -6,6 +6,7 @@ from fusionhelper.lint.rules import (
                                       r6_hardcoded_axis,
                                       r7_param_names,
                                       r8_stub_intact,
+                                      r11_ui_breathing,
 )
 
 ALL_RULES = [
@@ -16,4 +17,5 @@ ALL_RULES = [
     r6_hardcoded_axis,
     r7_param_names,
     r8_stub_intact,
+    r11_ui_breathing,
 ]

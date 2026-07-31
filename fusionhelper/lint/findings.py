@@ -41,5 +41,8 @@ RULES: dict[str, RuleInfo] = {
                    "Never catch exceptions in generated scripts (convention)", False),
     "R10": RuleInfo("no-save", "R10",
                     "Never save the document (convention)", False),
+    "R11": RuleInfo("loops-must-breathe", "R11",
+                    "Loops that mutate the document call adsk.doEvents() "
+                    "per iteration", True),
 }
 BY_ID = {info.rule_id: info for info in RULES.values()}
