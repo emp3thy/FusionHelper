@@ -43,8 +43,9 @@ def check(tree: ast.AST, source: str) -> list[Finding]:
             # the sketch-axis trap this rule exists for cannot apply. A
             # measured false positive (LED-wall occurrence placement) is
             # waived line-by-line with an explicit marker, never wholesale.
-            line = lines[node.lineno - 1] if node.lineno <= len(lines) else ""
-            if _TRANSFORM_MARKER in line:
+            end = getattr(node, "end_lineno", None) or node.lineno
+            span = lines[node.lineno - 1:min(end, len(lines))]
+            if any(_TRANSFORM_MARKER in ln for ln in span):
                 continue
             findings.append(Finding(RULE_ID, NUMBER, node.lineno, node.col_offset,
                                     "error", "all-literal Vector3D.create — hardcoded "
