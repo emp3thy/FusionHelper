@@ -223,6 +223,14 @@ def _snapshot(des):
     snap = {}
     for i, (key, b) in enumerate(_all_bodies(des)):
         snap['%d|%s' % (i, key)] = _body_metrics(b)
+        if i % 25 == 24:
+            # keep the UI thread breathing: a snapshot over hundreds of
+            # bodies otherwise freezes the window for its whole duration
+            # (user-visible as "Fusion is dead"; measured 2026-07-31)
+            try:
+                adsk.doEvents()
+            except Exception:
+                pass
     return snap
 
 
@@ -1001,6 +1009,10 @@ def check_liveness(ctx):
             dt = time.time() - t_p
             per = dt if per is None else max(per, dt)
             tested.append(p.name)
+            try:
+                adsk.doEvents()
+            except Exception:
+                pass
         detail['tested'] = len(tested)
         detail['of'] = len(order)
         if untested:
@@ -1260,6 +1272,10 @@ def fh_verify(clearances=None, face_specs=None, datum_heights_cm=None, digest=No
             except Exception as e:
                 ctx.add(name, 'check.crashed', 'warn', msg=_clip(str(e), 140))
             ctx.emit_check(name)
+            try:
+                adsk.doEvents()
+            except Exception:
+                pass
 
         verdict = {
             'v': FH_CONTRACT,

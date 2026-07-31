@@ -208,6 +208,15 @@ only on a green verdict, with consent — see R10). This changes what
   Validate cut patterns by FACE-COUNT delta on the participants, never by
   `body.volume` (a low-accuracy estimate, measured 24% off on small
   holes); floor at ~4 faces per expected instance, not the seed's count.
+- **Loops must breathe (R11, warn).** Any loop that mutates the document
+  (add / deleteMe / moveToComponent / addExistingComponent / ...) calls
+  `adsk.doEvents()` per iteration — scripts run on the UI thread and an
+  unbroken loop freezes the window for its whole duration. The verify
+  block breathes on its own (between checks, per liveness step, every 25
+  snapshot bodies). Liveness on instanced-heavy documents remains
+  budget-limited regardless: each parameter step forces a full document
+  recompute that `snapshot_exclude` cannot avoid — expect `sampled` mode
+  and say so in the report.
 - **After body moves/deletes, check the light bulbs.** Fusion spontaneously
   switches off component/occurrence `isLightBulbOn` after heavy
   reorganizations — geometry looks deleted but is only dark.
