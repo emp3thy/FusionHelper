@@ -163,6 +163,8 @@ class BRepBody:
     def faces(self) -> "FaceList": ...
     @property
     def edges(self) -> "EdgeList": ...
+    @property
+    def volume(self) -> float: ...
 
 
 class FaceList:
@@ -216,7 +218,8 @@ class Features:
 
 
 class ExtrudeFeatureList:
-    def add(self, profile: object, distance: object) -> "ExtrudeFeature": ...
+    def createInput(self, profiles: object, operation: int) -> "ExtrudeFeatureInput": ...
+    def add(self, input_obj: "ExtrudeFeatureInput") -> "ExtrudeFeature": ...
     def item(self, index: int) -> "ExtrudeFeature": ...
     @property
     def count(self) -> int: ...
@@ -225,6 +228,18 @@ class ExtrudeFeatureList:
 class ExtrudeFeature:
     @property
     def healthState(self) -> int: ...
+    @property
+    def bodies(self) -> "BRepBodyList": ...
+    def deleteMe(self) -> None: ...
+
+
+class ExtrudeFeatureInput:
+    @property
+    def participantBodies(self) -> object: ...
+    @participantBodies.setter
+    def participantBodies(self, value: object) -> None: ...
+    def setSymmetricExtent(self, extent: object, symmetric: bool) -> None: ...
+    def setOneSideExtent(self, extent: object, direction: int) -> None: ...
 
 
 class RectangularPatternFeatureList:
@@ -260,8 +275,16 @@ class ConstructionPlane:
 
 
 class FeatureOperations:
-    pass
+    CutFeatureOperation: int
+    JoinFeatureOperation: int
+    NewBodyFeatureOperation: int
+
+
+class DistanceExtentDefinition:
+    @staticmethod
+    def create(distance: object) -> "DistanceExtentDefinition": ...
 
 
 class ExtentDirections:
-    pass
+    PositiveExtentDirection: int
+    NegativeExtentDirection: int

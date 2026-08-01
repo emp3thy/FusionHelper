@@ -154,14 +154,14 @@ class BuildCtx:
     # ---- cuts and joins (volume-threshold validation by default) --------
 
     def _one_side(self, inp, dist_expr, direction):
-        ext = adsk.fusion.DistanceExtentDefinition.create(self.cbs(dist_expr))  # type: ignore
-        inp.setOneSideExtent(ext, direction)  # type: ignore
+        ext = adsk.fusion.DistanceExtentDefinition.create(self.cbs(dist_expr))
+        inp.setOneSideExtent(ext, direction)
 
     def _try_dirs(self, kind):
         if kind in self._resolved:
             return (self._resolved[kind], None)
-        return (self.dirs.PositiveExtentDirection,  # type: ignore
-                self.dirs.NegativeExtentDirection)  # type: ignore
+        return (self.dirs.PositiveExtentDirection,
+                self.dirs.NegativeExtentDirection)
 
     def faces_of(self, bodies):
         return sum(b.faces.count for b in bodies)
@@ -175,10 +175,10 @@ class BuildCtx:
 
     def sym_cut(self, profs, depth_expr, participants, *, min_vol_cm3=0.02):
         v0 = sum(b.volume for b in participants)
-        inp = self.extrudes.createInput(profs, self.ops.CutFeatureOperation)  # type: ignore
-        inp.setSymmetricExtent(self.cbs(depth_expr), True)  # type: ignore
-        inp.participantBodies = participants  # type: ignore
-        f = self.extrudes.add(inp)  # type: ignore
+        inp = self.extrudes.createInput(profs, self.ops.CutFeatureOperation)
+        inp.setSymmetricExtent(self.cbs(depth_expr), True)
+        inp.participantBodies = participants
+        f = self.extrudes.add(inp)
         if v0 - sum(b.volume for b in participants) <= min_vol_cm3:
             raise RuntimeError("symmetric cut removed no volume")
         return f
@@ -189,43 +189,43 @@ class BuildCtx:
         for d in self._try_dirs(kind):
             if d is None:
                 break
-            inp = self.extrudes.createInput(  # type: ignore
-                profs, self.ops.CutFeatureOperation)  # type: ignore
+            inp = self.extrudes.createInput(
+                profs, self.ops.CutFeatureOperation)
             self._one_side(inp, dist_expr, d)
-            inp.participantBodies = participants  # type: ignore
-            f = self.extrudes.add(inp)  # type: ignore
+            inp.participantBodies = participants
+            f = self.extrudes.add(inp)
             if v0 - sum(b.volume for b in participants) > min_vol_cm3:
                 self._resolved[kind] = d
                 return f
-            f.deleteMe()  # type: ignore
+            f.deleteMe()
         raise RuntimeError("blind cut cut nothing (%s)" % kind)
 
     def checked_join(self, profs, dist_expr, target, predicate, kind):
         for d in self._try_dirs(kind):
             if d is None:
                 break
-            inp = self.extrudes.createInput(  # type: ignore
-                profs, self.ops.JoinFeatureOperation)  # type: ignore
+            inp = self.extrudes.createInput(
+                profs, self.ops.JoinFeatureOperation)
             self._one_side(inp, dist_expr, d)
-            inp.participantBodies = [target]  # type: ignore
-            f = self.extrudes.add(inp)  # type: ignore
+            inp.participantBodies = [target]
+            f = self.extrudes.add(inp)
             if predicate(target):
                 self._resolved[kind] = d
                 return f
-            f.deleteMe()  # type: ignore
+            f.deleteMe()
         raise RuntimeError("join never satisfied predicate (%s)" % kind)
 
     def checked_newbody(self, profs, dist_expr, predicate, kind):
         for d in self._try_dirs(kind):
             if d is None:
                 break
-            inp = self.extrudes.createInput(  # type: ignore
-                profs, self.ops.NewBodyFeatureOperation)  # type: ignore
+            inp = self.extrudes.createInput(
+                profs, self.ops.NewBodyFeatureOperation)
             self._one_side(inp, dist_expr, d)
-            f = self.extrudes.add(inp)  # type: ignore
-            body = f.bodies.item(0)  # type: ignore
+            f = self.extrudes.add(inp)
+            body = f.bodies.item(0)
             if predicate(body):
                 self._resolved[kind] = d
                 return f, body
-            f.deleteMe()  # type: ignore
+            f.deleteMe()
         raise RuntimeError("new body never satisfied predicate (%s)" % kind)
