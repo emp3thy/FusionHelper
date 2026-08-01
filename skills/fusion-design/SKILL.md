@@ -119,6 +119,29 @@ More measured rules:
   embedded object's size**: a d/4 rod embed cannot fit a shell thinner
   than ~3d/4. The thickness-proof seat is centre = layer_base + t/2 + d/2
   (dips t/2 into the layer, stays t/2 clear of what's beneath, any t).
+- **Patch, gate, launch — three separate commands** (measured 2026-08-01):
+  a string-replace patch that asserted on a whitespace mismatch still
+  relaunched the pipeline because the relaunch was chained in the same
+  shell line — a full run of known-stale code. After any scripted edit,
+  grep for a symbol the patch introduced before launching anything.
+- **Match patch old-strings against CAPTURED on-disk text**, not memory:
+  two patch failures came from assumed continuation indentation and a
+  stale debug print left in a helper (`cat -A` the exact block first).
+  Corollary: strip debug instrumentation the moment its diagnosis is done
+  — it poisons every later text match against that function.
+- **Verify geometry with measured signatures, not renders.** Screenshots
+  cannot show occluded features (interior skirt notches are invisible
+  from the front — a "confirming" shot proves nothing). Cheap analytic
+  probes are conclusive and scriptable: a per-body volume signature
+  (edge covers heavier than interior covers by exactly N notch-volumes)
+  or an exhaustive position-vs-bbox clearance sweep. Prefer these as the
+  evidence you report.
+- **Overlay subsystems get an overlap check at design time**: features
+  placed sensibly in isolation (service holes; mounting plates) collided
+  on 6 of 8 rows when overlaid. Ten lines of analytic footprint math at
+  layout time beats a rebuild. When both collide, relocate the cheap
+  feature (holes) rather than weaken the structural one (windowing
+  plates).
 
 ## Working in an existing document (calibrated live, 2026-07-28)
 
