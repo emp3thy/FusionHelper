@@ -36,6 +36,9 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 "tests/fixtures/lint/good/corpus_verify_tail.py" = ["E401", "I001"]
 # author fixture: minimal valid author script with FH_ATTEMPT/FH_OPTS at top
 "tests/fixtures/bundle/author_ok.py" = ["E402", "F403", "F405"]
+# calibration script: author script with FH_ATTEMPT/FH_OPTS at module level,
+# star imports from buildkit, and spec-mandated percent-format print
+"tests/integration/calibration_buildkit.py" = ["E402", "F403", "F405", "UP031"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

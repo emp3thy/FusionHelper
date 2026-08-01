@@ -96,6 +96,14 @@ Every rule traces to a measured probe. The gate cites rules by number.
    history, state the document's condition, ask one specific question, and
    attach a render.
 
+## Buildkit workflow
+
+- Buildkit workflow: author scripts import `from fusionhelper.buildkit
+  import *` and contain no stub; `python -m fusionhelper.bundle` expands
+  the kit and appends the stub; preflight/lint gate the BUNDLED artifact
+  and the artifact is what is sent. After editing an author script:
+  re-bundle, grep the artifact for the edited symbol, then launch.
+
 ## Script hygiene (measured)
 
 `fusion_mcp_execute` REUSES the Python namespace across calls: stale globals
