@@ -886,3 +886,41 @@ a saved document is never even inspected for a tag, let alone closed.
 - **Shell-out hygiene**: gating through a pipe (`preflight | head`)
   swallows the exit code; an ungated script reached Fusion. Gate with an
   explicit exit-code check.
+
+## 15. Pattern-seed findings (measured 2026-08-01, LED wall v14-v16)
+
+- **Pattern seed cuts must cut exactly one body.** A seed extrude-cut
+  whose profile removed material from TWO bodies at once (a skirt notch
+  spanning a panel seam, cutting both adjacent covers) never replicated:
+  every direction/compute combination raised `R-Pattern85 / Compute
+  Failed // PATTERN_FEATURES_NO_PASTE`, including with
+  `AdjustPatternCompute`. Nothing in the error names the cause. Reshaping
+  the seed to sever one wall only — 2.05 mm tall, overshooting into the
+  0.2 mm seam air gap without touching the neighbour body — made the same
+  pattern compute cleanly on the first try. Cost three full pipeline runs
+  to isolate.
+- **Validate patterned cuts by volume threshold, not face count**
+  (refines the §14 face-count bullet, which stands for isolated small
+  holes). For seam-adjacent or wall-severing cuts, face arithmetic is
+  meaningless — instances can simplify topology and faces can DROP.
+  Sum the watched bodies' volumes before patterning and require a
+  minimum loss: relative deltas are trustworthy even though absolute
+  `body.volume` runs low on small features. The working helper:
+
+  ```python
+  def pattern_cut_vol(feats, ax, n, d, watch, min_vol_cm3):
+      coll = adsk.core.ObjectCollection.create()
+      for f in feats:
+          coll.add(f)
+      v0 = sum(b.volume for b in watch)
+
+      def lost_volume(_f):
+          return v0 - sum(b.volume for b in watch) >= min_vol_cm3
+      return _pattern(coll, ax, n, d, lost_volume, adjust=True)
+  ```
+- **Re-check pattern counts after moving cuts across a body pattern.**
+  Notches cut on a master body before body-patterning inherit the copy
+  (15 lanes per panel × 16 panels, automatically). The same notches cut
+  AFTER body-patterning need the global count (60 lanes across the wall,
+  not 15) — the per-panel count silently under-covers by the pattern
+  factor and nothing errors.
