@@ -918,6 +918,9 @@ a saved document is never even inspected for a tag, let alone closed.
           return v0 - sum(b.volume for b in watch) >= min_vol_cm3
       return _pattern(coll, ax, n, d, lost_volume, adjust=True)
   ```
+  (The canonical version now lives in `fusionhelper/buildkit.py` as
+  `BuildCtx.pattern_cut` with `min_vol_cm3` — scripts should import the
+  kit rather than paste this snippet.)
 - **Re-check pattern counts after moving cuts across a body pattern.**
   Notches cut on a master body before body-patterning inherit the copy
   (15 lanes per panel × 16 panels, automatically). The same notches cut

@@ -40,3 +40,42 @@ def check_text(source: str) -> list[Finding]:
 
 def check(tree, source):  # rule-contract shim; engine-level runs skip R8
     return []
+
+
+# ---- author mode (buildkit workflow) ------------------------------------
+# An AUTHOR script (buildkit import present, no bundle markers) must NOT
+# contain the stub or kit-level defs: the bundler owns both. The bundled
+# ARTIFACT keeps the original rule above. Mode is selected by marker
+# presence — see fusionhelper.bundle.
+
+_KIT_DEF_NAMES = ("BuildCtx", "KIT_VERSION")
+
+
+def is_author(source: str) -> bool:
+    from fusionhelper import bundle
+    return (bundle.IMPORT_RE.search(source) is not None
+            and bundle.MARK_END not in source
+            and "# fh-bundle: kit begin" not in source)
+
+
+def check_author_text(source: str) -> list[Finding]:
+    import re
+    findings = []
+    if verify.STUB_SENTINEL in source:
+        line = source[:source.rfind(verify.STUB_SENTINEL)].count("\n") + 1
+        findings.append(Finding(
+            RULE_ID, NUMBER, line, 0, "error",
+            "author script contains the verification stub - the bundler "
+            "owns the stub in the buildkit workflow (R8 author mode)",
+            "delete the stub block; python -m fusionhelper.bundle appends it"))
+    for name in _KIT_DEF_NAMES:
+        m = re.search(rf"^((class|def) {name}\b|{name}\s*=)", source,
+                      re.MULTILINE)
+        if m:
+            line = source[:m.start()].count("\n") + 1
+            findings.append(Finding(
+                RULE_ID, NUMBER, line, 0, "error",
+                f"author script defines kit name {name!r} - it would shadow the "
+                f"inlined kit at runtime",
+                f"rename the local definition; the kit provides {name}"))
+    return findings

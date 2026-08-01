@@ -60,6 +60,8 @@ Every rule traces to a measured probe. The gate cites rules by number.
 4. **Append the stub:** `python -c "from pathlib import Path; from fusionhelper import verify; p=Path('box.py'); p.write_text(verify.append_to(p.read_text(encoding='utf-8')), encoding='utf-8')"`
    — and ensure the block is installed once per machine:
    `python -c "from fusionhelper import verify; print(verify.install_block())"`.
+   Buildkit-importing scripts skip this step — the bundler owns the stub; see
+   the Buildkit workflow section below.
 5. **Gate:** `python -m fusionhelper.preflight box.py`
    - exit 0 PASS → send to Fusion
    - exit 1 FAIL → fix the script (findings cite rule numbers). A pyright attribute error on a
@@ -95,6 +97,14 @@ Every rule traces to a measured probe. The gate cites rules by number.
 9. **When giving up:** say what is wrong in plain language, show the attempt
    history, state the document's condition, ask one specific question, and
    attach a render.
+
+## Buildkit workflow
+
+- Buildkit workflow: author scripts import `from fusionhelper.buildkit
+  import *` and contain no stub; `python -m fusionhelper.bundle` expands
+  the kit and appends the stub; preflight/lint gate the BUNDLED artifact
+  and the artifact is what is sent. After editing an author script:
+  re-bundle, grep the artifact for the edited symbol, then launch.
 
 ## Script hygiene (measured)
 

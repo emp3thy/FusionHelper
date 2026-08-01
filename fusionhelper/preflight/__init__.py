@@ -52,7 +52,10 @@ def run_preflight(script_path: Path, *, expect_stub: bool = True,
     findings = list(lint_result.findings)
     checked = {n for n, info in RULES.items() if info.checked}
     if expect_stub:
-        findings.extend(r8_stub_intact.check_text(source))
+        if r8_stub_intact.is_author(source):
+            findings.extend(r8_stub_intact.check_author_text(source))
+        else:
+            findings.extend(r8_stub_intact.check_text(source))
     else:
         checked.discard("R8")
     lock = lock_path if lock_path is not None else stubs.default_lock_path()
