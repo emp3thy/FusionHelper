@@ -12,7 +12,7 @@ from fusionhelper import bundle, verify
 FIX = Path(__file__).parent / "fixtures" / "bundle"
 AUTHOR = (FIX / "author_ok.py").read_text(encoding="utf-8")
 KIT = bundle._kit_source()
-KIT_VERSION = re.search(r'^KIT_VERSION = "(.+)"$', KIT, re.MULTILINE).group(1)
+KIT_VERSION = bundle._extract_kit_version(KIT)
 
 
 def test_bundle_expands_import_and_appends_stub():

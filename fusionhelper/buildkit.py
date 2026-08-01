@@ -59,7 +59,7 @@ class BuildCtx:
 
     def all_profiles(self, sk):
         coll = adsk.core.ObjectCollection.create()
-        for pr in sk.profiles:
+        for pr in sk.profiles:  # fusionhelper: allow R11 — collection add, not a document mutation
             coll.add(pr)
         return coll
 
@@ -187,6 +187,7 @@ class BuildCtx:
                   min_vol_cm3=0.02):
         v0 = sum(b.volume for b in participants)
         for d in self._try_dirs(kind):
+            adsk.doEvents()
             if d is None:
                 break
             inp = self.extrudes.createInput(
@@ -202,6 +203,7 @@ class BuildCtx:
 
     def checked_join(self, profs, dist_expr, target, predicate, kind):
         for d in self._try_dirs(kind):
+            adsk.doEvents()
             if d is None:
                 break
             inp = self.extrudes.createInput(
@@ -217,6 +219,7 @@ class BuildCtx:
 
     def checked_newbody(self, profs, dist_expr, predicate, kind):
         for d in self._try_dirs(kind):
+            adsk.doEvents()
             if d is None:
                 break
             inp = self.extrudes.createInput(
@@ -246,7 +249,9 @@ class BuildCtx:
         modes = ((popts.AdjustPatternCompute, popts.IdenticalPatternCompute)
                  if adjust else (None,))
         for dd in (d, "-(%s)" % d):
+            adsk.doEvents()
             for mode in modes:
+                adsk.doEvents()
                 inp = self.patterns.createInput(
                     coll, ax, self.cbs(n), self.cbs(dd),
                     adsk.fusion.PatternDistanceType
@@ -271,7 +276,7 @@ class BuildCtx:
         predicate(feature) -> bool accepts/rejects the whole pattern —
         e.g. a bounds check that every new body landed inside the part."""
         coll = adsk.core.ObjectCollection.create()
-        for b in bodies:
+        for b in bodies:  # fusionhelper: allow R11 — collection add, not a document mutation
             coll.add(b)
         f = self._pattern(coll, ax, n, d, predicate, adjust=False)
         out = []
@@ -288,7 +293,7 @@ class BuildCtx:
             raise ValueError(
                 "pass exactly one of min_vol_cm3 / min_new_faces")
         coll = adsk.core.ObjectCollection.create()
-        for f in feats:
+        for f in feats:  # fusionhelper: allow R11 — collection add, not a document mutation
             coll.add(f)
         if min_vol_cm3 is not None:
             v0 = sum(b.volume for b in watch)

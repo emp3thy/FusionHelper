@@ -62,7 +62,7 @@ Canonical helper set (one version each; drifted variants folded):
 | Area | Methods | Notes |
 |------|---------|-------|
 | Sketch | `bound_rect2`, `bound_circle`, `all_profiles`, `plane_at_z` | jittered circle creation built in; `plane_at_z` absorbs `plane_off`; position-expression contract unchanged (base = CENTRE coordinate expression) |
-| Cuts | `through_cut`, `sym_cut`, `blind_cut` | **volume-threshold validation is the default**; `validate="faces"` opt-in for small isolated holes only (api-notes §14/§15) |
+| Cuts | `through_cut`, `sym_cut`, `blind_cut` | **volume-threshold validation only** — face-count opt-in lives on `pattern_cut` (`min_new_faces`), not on the cut helpers (api-notes §14/§15) |
 | Joins/bodies | `checked_join`, `checked_newbody` | direction try-flip with caller predicate, resolved-direction cache |
 | Patterns | `pattern_cut`, `pattern_bodies` | `pattern_cut` validates by volume threshold (absorbs `pattern_cut_vol`); internal `_pattern` keeps the direction/compute-mode retry ladder incl. degenerate `setDirectionTwo` |
 | Utility | `val` | dead `seed_faces` returns dropped |
