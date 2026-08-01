@@ -26,6 +26,7 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 [tool.ruff.lint.per-file-ignores]
 "fusionhelper/verify/fh_verify.py" = ["UP", "SIM", "E501", "B", "I001"]
 "fusionhelper/verify/stub_text.py" = ["E501"]
+"fusionhelper/buildkit.py" = ["UP031"]
 "tests/test_verify_offline.py" = ["E401", "E402", "E501", "E731", "I001", "UP031"]
 "tests/fixtures/verify/stub_example.py" = ["E401", "I001"]
 # corpus fixtures: pasted verbatim from skills/fusion-design/reference/api-recipes.md
@@ -44,3 +45,4 @@ markers = [
 include = ["fusionhelper", "tests"]
 exclude = ["tests/fixtures", "tests/synthetic_stubs", "fusionhelper/verify/fh_verify.py"]
 typeCheckingMode = "basic"
+extraPaths = ["tests/synthetic_stubs"]
