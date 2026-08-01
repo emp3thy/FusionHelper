@@ -229,3 +229,75 @@ class BuildCtx:
                 return f, body
             f.deleteMe()
         raise RuntimeError("new body never satisfied predicate (%s)" % kind)
+
+    # ---- patterns -------------------------------------------------------
+
+    def _pattern(self, coll, ax, n, d, validate, adjust):
+        """Direction/compute retry ladder. NOTE (S15, measured): a seed
+        CUT that removes material from more than one body never
+        replicates (R-Pattern85 / PATTERN_FEATURES_NO_PASTE, no causal
+        error text) — reshape the seed to cut exactly one body."""
+        healthy = (
+            adsk.fusion.FeatureHealthStates.HealthyFeatureHealthState,
+            adsk.fusion.FeatureHealthStates.WarningFeatureHealthState)
+        reasons = []
+        perp = self.y_axis if ax == self.x_axis else self.x_axis
+        popts = adsk.fusion.PatternComputeOptions
+        modes = ((popts.AdjustPatternCompute, popts.IdenticalPatternCompute)
+                 if adjust else (None,))
+        for dd in (d, "-(%s)" % d):
+            for mode in modes:
+                inp = self.patterns.createInput(
+                    coll, ax, self.cbs(n), self.cbs(dd),
+                    adsk.fusion.PatternDistanceType
+                    .SpacingPatternDistanceType)
+                inp.setDirectionTwo(perp, self.cbs("1"), self.cbs("0 mm"))
+                if mode is not None:
+                    inp.patternComputeOption = mode  # pyright: ignore[reportAttributeAccessIssue]
+                try:
+                    f = self.patterns.add(inp)
+                except Exception as e:
+                    reasons.append("%s/%s add-raise %s"
+                                   % (dd, mode, str(e)[:50]))
+                    continue
+                if f.healthState in healthy and validate(f):
+                    return f
+                reasons.append("%s/%s hs=%s" % (dd, mode, f.healthState))
+                f.deleteMe()
+        raise RuntimeError("pattern never validated: " + " | ".join(reasons))
+
+    def pattern_bodies(self, bodies, ax, n, d, predicate):
+        """Body pattern (no compute-option: body patterns reject it).
+        predicate(feature) -> bool accepts/rejects the whole pattern —
+        e.g. a bounds check that every new body landed inside the part."""
+        coll = adsk.core.ObjectCollection.create()
+        for b in bodies:
+            coll.add(b)
+        f = self._pattern(coll, ax, n, d, predicate, adjust=False)
+        out = []
+        for i in range(f.bodies.count):
+            out.append(f.bodies.item(i))
+        return out
+
+    def pattern_cut(self, feats, ax, n, d, watch, *,
+                    min_vol_cm3=None, min_new_faces=None):
+        """Pattern of cut features. Volume threshold is the default
+        choice (S14/S15); face-count is opt-in for small isolated holes.
+        Exactly one of min_vol_cm3 / min_new_faces must be given."""
+        if (min_vol_cm3 is None) == (min_new_faces is None):
+            raise ValueError(
+                "pass exactly one of min_vol_cm3 / min_new_faces")
+        coll = adsk.core.ObjectCollection.create()
+        for f in feats:
+            coll.add(f)
+        if min_vol_cm3 is not None:
+            v0 = sum(b.volume for b in watch)
+
+            def validate(_f):
+                return v0 - sum(b.volume for b in watch) >= min_vol_cm3
+        else:
+            before = self.faces_of(watch)
+
+            def validate(_f):
+                return self.faces_of(watch) - before >= min_new_faces  # pyright: ignore[reportOperatorIssue]
+        return self._pattern(coll, ax, n, d, validate, adjust=True)

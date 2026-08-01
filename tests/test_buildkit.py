@@ -143,3 +143,79 @@ def test_checked_newbody_predicate_flip():
     feat, body = ctx.checked_newbody("P", "1 mm", predicate, "nb")
     assert feat is not None and body is not None
     assert ctx.extrudes.deleted == 1  # type: ignore
+
+
+class FakePatterns:
+    """Scripted pattern factory. Each add() consumes (raises, health,
+    effect); effect mutates watched bodies."""
+    def __init__(self, script):
+        self._script = list(script)
+        self.inputs = []
+        self.deleted = 0
+
+    def createInput(self, coll, ax, n, dd, dist_type):
+        inp = types.SimpleNamespace(
+            coll=coll, ax=ax, n=n, dd=dd,
+            patternComputeOption=None,
+            setDirectionTwo=lambda *a: None)
+        self.inputs.append(inp)
+        return inp
+
+    def add(self, inp):
+        raises, health, effect = self._script.pop(0)
+        if raises:
+            raise RuntimeError("R-Pattern85 / Compute Failed")
+        effect()
+        return types.SimpleNamespace(
+            healthState="HealthyFeatureHealthState",
+            deleteMe=lambda: setattr(self, "deleted", self.deleted + 1),
+            bodies=types.SimpleNamespace(count=0, item=lambda i: None))
+
+
+def _ctx_with_patterns(script):
+    ctx = buildkit.BuildCtx(FakeApp())
+    ctx.patterns = FakePatterns(script)  # type: ignore
+    return ctx
+
+
+def test_pattern_cut_requires_exactly_one_threshold():
+    ctx = buildkit.BuildCtx(FakeApp())
+    try:
+        ctx.pattern_cut([], "AX", "3", "10 mm", [])
+        raise AssertionError("expected ValueError")
+    except ValueError:
+        pass
+    try:
+        ctx.pattern_cut([], "AX", "3", "10 mm", [],
+                        min_vol_cm3=1.0, min_new_faces=4)
+        raise AssertionError("expected ValueError")
+    except ValueError:
+        pass
+
+
+def test_pattern_cut_volume_threshold_validates():
+    body = FakeBody(volume=10.0)
+    ctx = _ctx_with_patterns(
+        [(False, None, lambda: setattr(body, "volume", 8.0))])
+    f = ctx.pattern_cut(["CUT"], ctx.x_axis, "3", "10 mm", [body],
+                        min_vol_cm3=1.5)
+    assert f is not None
+
+
+def test_pattern_retries_flipped_distance_on_raise():
+    body = FakeBody(volume=10.0)
+    ctx = _ctx_with_patterns([
+        (True, None, None), (True, None, None),   # +d: both modes raise
+        (False, None, lambda: setattr(body, "volume", 8.0)),  # -d works
+    ])
+    ctx.pattern_cut(["CUT"], ctx.x_axis, "3", "10 mm", [body],
+                    min_vol_cm3=1.5)
+    dds = [inp.dd for inp in ctx.patterns.inputs]  # type: ignore
+    assert any(d[1].startswith("-(") for d in dds)
+
+
+def test_pattern_bodies_requires_predicate():
+    ctx = _ctx_with_patterns([(False, None, lambda: None)])
+    out = ctx.pattern_bodies([FakeBody(1.0)], ctx.x_axis, "2", "5 mm",
+                             lambda f: True)
+    assert out == []          # fake pattern has zero result bodies

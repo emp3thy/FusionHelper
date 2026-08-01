@@ -243,12 +243,27 @@ class ExtrudeFeatureInput:
 
 
 class RectangularPatternFeatureList:
-    def add(self, *args: Any, **kwargs: Any) -> "RectangularPatternFeature": ...
+    def createInput(
+        self, collection: object, axis: object, count: object, distance: object, distance_type: int
+    ) -> "RectangularPatternFeatureInput": ...
+    def add(self, input_obj: "RectangularPatternFeatureInput") -> "RectangularPatternFeature": ...
     def item(self, index: int) -> "RectangularPatternFeature": ...
 
 
+class RectangularPatternFeatureInput:
+    @property
+    def patternComputeOption(self) -> int | None: ...
+    @patternComputeOption.setter
+    def patternComputeOption(self, value: int) -> None: ...
+    def setDirectionTwo(self, axis: object, count: object, distance: object) -> None: ...
+
+
 class RectangularPatternFeature:
-    pass
+    @property
+    def healthState(self) -> str: ...
+    @property
+    def bodies(self) -> "BRepBodyList": ...
+    def deleteMe(self) -> None: ...
 
 
 class ConstructionPlaneList:
@@ -288,3 +303,17 @@ class DistanceExtentDefinition:
 class ExtentDirections:
     PositiveExtentDirection: int
     NegativeExtentDirection: int
+
+
+class FeatureHealthStates:
+    HealthyFeatureHealthState: str
+    WarningFeatureHealthState: str
+
+
+class PatternComputeOptions:
+    AdjustPatternCompute: int
+    IdenticalPatternCompute: int
+
+
+class PatternDistanceType:
+    SpacingPatternDistanceType: int
