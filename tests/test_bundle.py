@@ -39,6 +39,12 @@ def test_refuses_missing_import():
         bundle.bundle_text("def run(_c):\n    pass\n", KIT)
 
 
+def test_refuses_kit_version_assignment():
+    author = AUTHOR + '\n\nKIT_VERSION = "99"\n'
+    with pytest.raises(bundle.BundleError, match="collision"):
+        bundle.bundle_text(author, KIT)
+
+
 def test_refuses_author_with_stub():
     with_stub = verify.append_to(AUTHOR)
     with pytest.raises(bundle.BundleError, match="stub"):

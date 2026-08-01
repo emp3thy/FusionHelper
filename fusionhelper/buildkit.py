@@ -180,6 +180,7 @@ class BuildCtx:
         inp.participantBodies = participants
         f = self.extrudes.add(inp)
         if v0 - sum(b.volume for b in participants) <= min_vol_cm3:
+            f.deleteMe()
             raise RuntimeError("symmetric cut removed no volume")
         return f
 

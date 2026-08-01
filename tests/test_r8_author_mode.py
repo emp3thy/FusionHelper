@@ -28,6 +28,12 @@ def test_author_with_kit_def_fails():
     assert "BuildCtx" in f.message
 
 
+def test_author_with_kit_version_assignment_fails():
+    (f,) = r8.check_author_text(AUTHOR + '\nKIT_VERSION = "99"\n')
+    assert f.rule_number == "R8"
+    assert "KIT_VERSION" in f.message
+
+
 def test_bundled_artifact_is_not_author_and_passes_stub_mode():
     artifact = bundle.bundle_text(AUTHOR, KIT)
     assert not r8.is_author(artifact)          # markers present

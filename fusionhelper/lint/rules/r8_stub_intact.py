@@ -69,7 +69,8 @@ def check_author_text(source: str) -> list[Finding]:
             "owns the stub in the buildkit workflow (R8 author mode)",
             "delete the stub block; python -m fusionhelper.bundle appends it"))
     for name in _KIT_DEF_NAMES:
-        m = re.search(rf"^(class|def) {name}\b", source, re.MULTILINE)
+        m = re.search(rf"^((class|def) {name}\b|{name}\s*=)", source,
+                      re.MULTILINE)
         if m:
             line = source[:m.start()].count("\n") + 1
             findings.append(Finding(

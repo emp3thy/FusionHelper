@@ -51,7 +51,7 @@ def bundle_text(author_text: str, kit_source: str) -> str:
             "no buildkit import found - author scripts must contain "
             "'from fusionhelper.buildkit import ...'")
     for name in _KIT_NAMES:
-        if re.search(rf"^(class|def) {name}\b", author_text,
+        if re.search(rf"^((class|def) {name}\b|{name}\s*=)", author_text,
                      re.MULTILINE):
             raise BundleError(f"kit name collision: author defines {name!r}")
     kit_version = _extract_kit_version(kit_source)

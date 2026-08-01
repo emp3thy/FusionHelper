@@ -110,6 +110,7 @@ def test_sym_cut_volume_gate_fires_on_noop():
         raise AssertionError("expected RuntimeError")
     except RuntimeError as e:
         assert "removed no volume" in str(e)
+    assert ctx.extrudes.deleted == 1   # failed feature cleaned up
 
 
 def test_sym_cut_passes_when_volume_drops():
