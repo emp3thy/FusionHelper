@@ -6,20 +6,9 @@ byte-identical artifact. Preflight/lint gate the ARTIFACT."""
 import hashlib
 import re
 import sys
-import types
 from pathlib import Path
 
-# Mock adsk modules if not already loaded (for CLI use outside Fusion).
-if "adsk" not in sys.modules:
-    adsk = types.ModuleType("adsk")
-    core = types.ModuleType("adsk.core")
-    fusion = types.ModuleType("adsk.fusion")
-    adsk.core, adsk.fusion = core, fusion  # pyright: ignore[reportAttributeAccessIssue]
-    sys.modules["adsk"] = adsk
-    sys.modules["adsk.core"] = core
-    sys.modules["adsk.fusion"] = fusion
-
-from fusionhelper import buildkit, verify
+from fusionhelper import verify
 
 IMPORT_RE = re.compile(
     r"^from fusionhelper\.buildkit import .+$", re.MULTILINE)
@@ -36,7 +25,17 @@ class BundleError(RuntimeError):
 
 
 def _kit_source() -> str:
-    return Path(buildkit.__file__).read_text(encoding="utf-8")
+    kit_path = Path(__file__).parent / "buildkit.py"
+    return kit_path.read_text(encoding="utf-8")
+
+
+def _extract_kit_version(kit_source: str) -> str:
+    match = re.search(r'^KIT_VERSION = "(.+)"$', kit_source, re.MULTILINE)
+    if match is None:
+        raise BundleError(
+            "kit source missing KIT_VERSION assignment - "
+            "expected: KIT_VERSION = \"...\"")
+    return match.group(1)
 
 
 def bundle_text(author_text: str, kit_source: str) -> str:
@@ -55,9 +54,10 @@ def bundle_text(author_text: str, kit_source: str) -> str:
         if re.search(rf"^(class|def) {name}\b", author_text,
                      re.MULTILINE):
             raise BundleError(f"kit name collision: author defines {name!r}")
+    kit_version = _extract_kit_version(kit_source)
     kit_hash = hashlib.sha256(kit_source.encode("utf-8")).hexdigest()[:12]
     block = "\n".join((
-        MARK_BEGIN % (buildkit.KIT_VERSION, kit_hash),
+        MARK_BEGIN % (kit_version, kit_hash),
         kit_source.rstrip("\n"),
         MARK_END,
     ))
