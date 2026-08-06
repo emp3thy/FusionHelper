@@ -210,6 +210,33 @@ your symptom names, not the whole file:
   geometry gone dark (light bulbs) → "Heavy documents"
 - `param.dead` on a parameter you believe is live → "Editing a committed model"
 
+## Art sketches at scale (measured 2026-08-06)
+
+- **Sketch cost is superlinear; deletion is pathological.** ~300-line
+  sketches solve in seconds; one 2680-line sketch ground the UI 70+
+  minutes; deleting a ~1200-curve fixed sketch took ~20 minutes. Chunk
+  decorative line-art to ≤300 lines per sketch, set `isComputeDeferred`
+  while adding entities, and on re-entry RESUME drawing at the first
+  undrawn polygon — never delete-and-redraw a big sketch.
+- **Sketches and features share one name namespace.** An extrude named
+  identically to its sketch is silently auto-suffixed "name (1)" and an
+  `itemByName` guard then misses it. Suffix feature names (`_join`).
+- **A feature whose participants live inside a component lands in that
+  component's feature collection** — a root-only `itemByName` guard
+  misses it and the stage re-runs into zero-volume joins. Search root
+  plus `allOccurrences` components.
+- **Orphaned timed-out requests execute later in whatever document is
+  active at that moment.** After any client timeout, re-probe the active
+  document's identity before trusting state or launching anything.
+- **Some documents are "Part Design" type** — `addNewComponent` raises
+  "Part Design documents can only contain one component". A doc created
+  via `documents.add(FusionDesignDocumentType)` allowed components;
+  probe with a throwaway `addNewComponent` + `deleteMe` first.
+- **Extruding all profiles of a stroke-art sketch fills enclosed
+  voids** (each is its own profile). Don't classify profiles — design
+  the strokes pairwise-disjoint with open curls so the sketch has
+  exactly one profile per polygon (see print-in-place-design).
+
 ## Honest limits
 
 Every check verifies the model against what was *declared*. A green verdict

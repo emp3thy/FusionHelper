@@ -1,0 +1,10 @@
+C:\Users\gethi\AppData\Local\Programs\Python\Python312\Lib\site-packages\trimesh\triangles.py:302: RuntimeWarning: divide by zero encountered in divide
+  center_mass = integrated[1:4] / volume
+C:\Users\gethi\AppData\Local\Programs\Python\Python312\Lib\site-packages\trimesh\triangles.py:302: RuntimeWarning: invalid value encountered in divide
+  center_mass = integrated[1:4] / volume
+design '1': 205824 tris
+separate bodies in this spinner: 33089
+Traceback (most recent call last):
+  File "C:\Users\gethi\AppData\Local\Temp\claude\C--Users-gethi-source-fusionhelper\1d7416c3-33cc-462a-afad-676242a79420\scratchpad\refgear.py", line 17, in <module>
+    rows.sort()
+TypeError: '<' not supported between instances of 'Trimesh' and 'Trimesh'
