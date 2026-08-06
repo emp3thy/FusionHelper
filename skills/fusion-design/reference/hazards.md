@@ -68,6 +68,11 @@ only on a green verdict, with consent — see R10). This changes what
   each parameter step forces a full document recompute that
   `snapshot_exclude` cannot avoid — expect `sampled` mode and say so in
   the report.
+- **Why R11 matters:** scripts run on Fusion's UI thread — an unbroken
+  mutating loop freezes the window for its whole duration, which is why
+  `adsk.doEvents()` per iteration (SKILL.md) is not optional. The verify
+  block breathes on its own (between checks, per liveness step, every 25
+  snapshot bodies).
 - **After body moves/deletes, check the light bulbs.** Fusion spontaneously
   switches off component/occurrence `isLightBulbOn` after heavy
   reorganizations — geometry looks deleted but is only dark.

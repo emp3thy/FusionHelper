@@ -164,9 +164,12 @@ More measured rules:
 - Chunk structural operations: a ~250-component-op mega-execute froze the
   UI for an hour; the same work as ~20-op executes with `adsk.doEvents()`
   between batches ran invisibly (also restores atomic-rollback
-  granularity). R11 (warn): any document-mutating loop calls
-  `adsk.doEvents()` per iteration — but on a 500+ entity sketch loop that
+  granularity). R11 (warn): any loop that mutates the document (`add` /
+  `deleteMe` / `moveToComponent` / `addExistingComponent` / ...) calls
+  `adsk.doEvents()` per iteration — on a 500+ entity sketch loop that
   itself becomes the bottleneck, so batch to roughly every 20 entities.
+  Mechanism and cadence detail: `reference/hazards.md` under "Heavy
+  documents".
 - A distance dimension is UNSIGNED — never let its expression evaluate
   negative; Fusion snaps geometry to the positive distance, sliding the
   feature sideways by twice the half-size (measured: `buildkit.bound_rect2`
