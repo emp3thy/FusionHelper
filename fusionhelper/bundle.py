@@ -12,7 +12,8 @@ from fusionhelper import verify
 
 IMPORT_RE = re.compile(
     r"^from fusionhelper\.buildkit import .+$", re.MULTILINE)
-MARK_BEGIN = "# fh-bundle: kit begin v%s %s"
+MARK_BEGIN_PREFIX = "# fh-bundle: kit begin"
+MARK_BEGIN = MARK_BEGIN_PREFIX + " v%s %s"
 MARK_END = "# fh-bundle: kit end"
 
 # Top-level names the kit injects; an author redefining one shadows the
@@ -39,7 +40,7 @@ def _extract_kit_version(kit_source: str) -> str:
 
 
 def bundle_text(author_text: str, kit_source: str) -> str:
-    if MARK_END in author_text or "# fh-bundle: kit begin" in author_text:
+    if MARK_END in author_text or MARK_BEGIN_PREFIX in author_text:
         raise BundleError("input is already bundled")
     if verify.STUB_SENTINEL in author_text:
         raise BundleError(

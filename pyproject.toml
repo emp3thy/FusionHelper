@@ -39,6 +39,9 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 # calibration script: author script with FH_ATTEMPT/FH_OPTS at module level,
 # star imports from buildkit, and spec-mandated percent-format print
 "tests/integration/calibration_buildkit.py" = ["E402", "F403", "F405", "UP031"]
+# lint fixtures: try/except blocks are the test payload, not style violations
+"tests/fixtures/lint/bad/r9_no_catch.py" = ["SIM105"]
+"tests/fixtures/lint/good/r9_bundled_kit.py" = ["SIM105"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

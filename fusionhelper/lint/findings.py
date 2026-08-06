@@ -6,7 +6,7 @@ class RuleInfo:
     rule_id: str
     number: str
     restatement: str
-    checked: bool  # False for R3/R9 — runtime/convention; named in the coverage line
+    checked: bool  # False only for R3 — runtime rule; named in the coverage line
 
 
 @dataclass(frozen=True)
@@ -38,7 +38,8 @@ RULES: dict[str, RuleInfo] = {
     "R8": RuleInfo("verify-stub-intact", "R8",
                    "The file ends with the verification stub, unmodified", True),
     "R9": RuleInfo("no-catch", "R9",
-                   "Never catch exceptions in generated scripts (convention)", False),
+                   "Never catch exceptions in generated scripts — the traceback "
+                   "is the diagnostic", True),
     "R10": RuleInfo("no-save", "R10",
                     "Never save the document — checkpoint saves need a waiver "
                     "naming user consent", True),
