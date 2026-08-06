@@ -254,6 +254,47 @@ only on a green verdict, with consent — see R10). This changes what
   switches off component/occurrence `isLightBulbOn` after heavy
   reorganizations — geometry looks deleted but is only dark.
 
+## Editing a committed model (measured 2026-08-02/05)
+
+- **A distance dimension is UNSIGNED — never let its expression evaluate
+  negative.** Fusion stores the negative value but the solver snaps the
+  geometry to the positive distance, sliding the feature sideways by twice
+  the half-size. This was a live `buildkit.bound_rect2` bug: any rectangle
+  centred on the sketch origin emitted `0 mm - (9.65 mm)` and landed a full
+  width off. Fixed in kit v2 by wrapping corner expressions in `abs( … )`,
+  which Fusion accepts and which stays parametric. Probe first if you emit a
+  computed expression that could go negative.
+- **Preserve the SIGN when you rewrite a committed extent.** `blind_cut`
+  encodes cut direction in a negative distance (`-( expr )`). Writing a
+  positive expression flips the cut into air: the feature and every pattern
+  of it fail with `No target body`. Read `ext.distance.expression`, detect a
+  leading `-`, and re-wrap.
+- **Liveness steps EVERY root parameter at once.** A clearance stack made of
+  literals survives one-at-a-time probing and clashes under the combined
+  step. Derive the stack (`14 mm - floor - ceiling - 0.5 mm`), and where
+  downstream geometry is fixed art, pin the far face (`11 mm - base_t`)
+  instead of parameterising the height — otherwise the top marches into it.
+- **A parameter whose feature bottoms out in a void reads as `param.dead`.**
+  Parameterise the member that actually drives the stack, not the cut that is
+  insensitive to it.
+- **A revolve/extrude cut profile truncated at a parametric surface leaves an
+  uncut ring when that parameter grows.** Overshoot the nominal surface.
+- **Check a volume delta on every feature.** A JOIN whose start extent leaves
+  a gap to its target adds zero volume and returns success — silently.
+- **`isFixed` on a curve does NOT fix its points.** Fixed-art sketches must
+  sweep `sketch.sketchPoints` too, or verify reports `sketch.unconstrained`
+  with loose points.
+- **R11 has an upper bound.** `adsk.doEvents()` per iteration is right for
+  document mutations, but on a 500+ entity sketch loop it is itself the
+  bottleneck and causes client timeouts — batch to roughly every 20 entities.
+- **Grouping bodies into a component:** collect them into a Python list
+  first (`moveToComponent` mutates `root.bRepBodies`, so live iteration drops
+  bodies), then compare the sorted name set and total volume before/after.
+- **Auditing overhangs is scriptable and worth it.** Sample face normals via
+  `face.evaluator.getNormalsAtParameters(<list of Point2D>)` and flag any
+  `normal.z < -0.7075` (steeper than a 45° overhang), skipping faces that lie
+  on z=0. Renders cannot show this; the sweep found every one.
+
 ## Honest limits
 
 Every check verifies the model against what was *declared*. A green verdict
