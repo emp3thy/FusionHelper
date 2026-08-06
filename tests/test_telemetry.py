@@ -58,3 +58,30 @@ def test_cli_summary_with_no_file_reports_zero_sessions(tmp_path, capsys, monkey
     monkeypatch.setenv("FH_TELEMETRY", str(tmp_path / "missing.jsonl"))
     assert telemetry.main(["summary"]) == 0
     assert "sessions: 0" in capsys.readouterr().out
+
+
+def test_summarize_skips_corrupt_line(tmp_path):
+    path = tmp_path / "t.jsonl"
+    telemetry.record_entry(script="a.py", verdict="pass", executes=1, path=path)
+    telemetry.record_entry(script="b.py", verdict="pass", executes=1, path=path)
+    with path.open("a", encoding="utf-8") as f:
+        f.write("{not valid json, truncated\n")
+    s = telemetry.summarize(path)
+    assert s["sessions"] == 2
+    assert s["skipped_lines"] == 1
+
+
+def test_render_summary_omits_skipped_line_row_when_zero():
+    rendered = telemetry._render_summary({
+        "sessions": 1, "first_execute_green": 1, "mean_executes": 1.0,
+        "rule_counts": {}, "skipped_lines": 0,
+    })
+    assert "skipped lines" not in rendered
+
+
+def test_render_summary_shows_skipped_line_row_when_nonzero():
+    rendered = telemetry._render_summary({
+        "sessions": 2, "first_execute_green": 1, "mean_executes": 1.0,
+        "rule_counts": {}, "skipped_lines": 1,
+    })
+    assert "skipped lines: 1" in rendered

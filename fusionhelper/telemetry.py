@@ -48,10 +48,14 @@ def record_entry(*, script: str, verdict: str, executes: int,
 def summarize(path: Path | None = None) -> dict:
     target = path if path is not None else default_path()
     entries = []
+    skipped_lines = 0
     if target.is_file():
         for line in target.read_text(encoding="utf-8").splitlines():
             if line.strip():
-                entries.append(json.loads(line))
+                try:
+                    entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    skipped_lines += 1
     sessions = len(entries)
     green = sum(1 for e in entries
                 if e.get("verdict") == "pass" and e.get("executes") == 1)
@@ -61,7 +65,8 @@ def summarize(path: Path | None = None) -> dict:
         for r in e.get("rules_fired", []):
             rule_counts[r] = rule_counts.get(r, 0) + 1
     return {"sessions": sessions, "first_execute_green": green,
-            "mean_executes": mean, "rule_counts": rule_counts}
+            "mean_executes": mean, "rule_counts": rule_counts,
+            "skipped_lines": skipped_lines}
 
 
 def _render_summary(s: dict) -> str:
@@ -69,12 +74,15 @@ def _render_summary(s: dict) -> str:
     pct = (100.0 * s["first_execute_green"] / s["sessions"]) if s["sessions"] else 0.0
     rules = " ".join(f"{k}={v}" for k, v in
                      sorted(s["rule_counts"].items(), key=lambda kv: -kv[1]))
-    return "\n".join([
+    lines = [
         f"sessions: {s['sessions']}",
         f"first-execute green: {rate} ({pct:.0f}%)",
         f"mean executes: {s['mean_executes']:.1f}",
         f"rules fired: {rules or '(none)'}",
-    ])
+    ]
+    if s.get("skipped_lines", 0) > 0:
+        lines.append(f"skipped lines: {s['skipped_lines']}")
+    return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:
