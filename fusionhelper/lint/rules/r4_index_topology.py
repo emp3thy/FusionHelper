@@ -26,10 +26,67 @@ def _chain_text(node: ast.expr) -> str | None:
     return None
 
 
-def _collection_receiver(node: ast.expr) -> str | None:
-    """Return chain text when node is <dotted chain>.<collection>, else None."""
+def _collection_chain(node: ast.expr) -> str | None:
+    """Chain text when node is a pure dotted chain ending in a collection."""
     if isinstance(node, ast.Attribute) and node.attr in _COLLECTIONS:
         return _chain_text(node)
+    return None
+
+
+def _bind_targets(target: ast.expr, bind) -> None:
+    """Call `bind(name)` for each Name in a TRUE binding position.
+
+    Attribute/Subscript targets (`faces.some_attr = 5`, `faces[0] = None`) are
+    writes THROUGH the receiver expression, not a rebind of the name itself —
+    treated as opaque and never walked into. Only Name (direct bind) and
+    Tuple/List/Starred (destructuring) recurse.
+    """
+    if isinstance(target, ast.Name):
+        bind(target.id)
+    elif isinstance(target, (ast.Tuple, ast.List)):
+        for elt in target.elts:
+            _bind_targets(elt, bind)
+    elif isinstance(target, ast.Starred):
+        _bind_targets(target.value, bind)
+    # Attribute / Subscript: opaque receiver expression, no binds.
+
+
+def _alias_map(tree: ast.AST) -> dict[str, str]:
+    """Names assigned EXACTLY ONCE in the file, to a collection chain.
+
+    Whole-file, single-assignment scope on purpose: generated scripts are
+    flat, and a name rebound anywhere is no longer a trusted alias (the
+    false-positive guard). A local alias walking past the rule was the
+    review-confirmed false negative this closes.
+    """
+    counts: dict[str, int] = {}
+    values: dict[str, str] = {}
+
+    def _bind(name: str) -> None:
+        counts[name] = counts.get(name, 0) + 1
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for t in node.targets:
+                _bind_targets(t, _bind)
+            if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+                chain = _collection_chain(node.value)
+                if chain:
+                    values[node.targets[0].id] = chain
+        elif isinstance(node, (ast.AnnAssign, ast.AugAssign, ast.For, ast.AsyncFor,
+                                ast.comprehension)):
+            _bind_targets(node.target, _bind)
+        elif isinstance(node, ast.arg):
+            _bind(node.arg)
+    return {name: chain for name, chain in values.items() if counts.get(name) == 1}
+
+
+def _receiver(node: ast.expr, aliases: dict[str, str]) -> str | None:
+    chain = _collection_chain(node)
+    if chain is not None:
+        return chain
+    if isinstance(node, ast.Name):
+        return aliases.get(node.id)
     return None
 
 
@@ -42,7 +99,8 @@ class _RangeIterationTracker(ast.NodeVisitor):
     elsewhere in the file once any range-count loop over that chain existed.)
     """
 
-    def __init__(self):
+    def __init__(self, aliases: dict[str, str]):
+        self.aliases = aliases
         self.exempt_nodes: set[int] = set()
 
     def visit_For(self, node: ast.For):
@@ -52,7 +110,7 @@ class _RangeIterationTracker(ast.NodeVisitor):
                 and isinstance(it.args[0], ast.Attribute)
                 and it.args[0].attr == "count"
                 and isinstance(node.target, ast.Name)):
-            recv = _collection_receiver(it.args[0].value)
+            recv = _receiver(it.args[0].value, self.aliases)
             loop_var = node.target.id
 
             def _is_loop_var(expr):
@@ -64,13 +122,13 @@ class _RangeIterationTracker(ast.NodeVisitor):
                 # still the P4 hazard (BugBot, PR #1, second pass)
                 for sub in ast.walk(node):
                     if isinstance(sub, ast.Subscript):
-                        if (_collection_receiver(sub.value) == recv
+                        if (_receiver(sub.value, self.aliases) == recv
                                 and _is_loop_var(sub.slice)):
                             self.exempt_nodes.add(id(sub))
                     elif (isinstance(sub, ast.Call)
                           and isinstance(sub.func, ast.Attribute)
                           and sub.func.attr == "item"
-                          and _collection_receiver(sub.func.value) == recv
+                          and _receiver(sub.func.value, self.aliases) == recv
                           and len(sub.args) == 1
                           and _is_loop_var(sub.args[0])):
                         self.exempt_nodes.add(id(sub))
@@ -78,12 +136,13 @@ class _RangeIterationTracker(ast.NodeVisitor):
 
 
 def check(tree: ast.AST, source: str) -> list[Finding]:
-    tracker = _RangeIterationTracker()
+    aliases = _alias_map(tree)
+    tracker = _RangeIterationTracker(aliases)
     tracker.visit(tree)
     findings = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Subscript):
-            recv = _collection_receiver(node.value)
+            recv = _receiver(node.value, aliases)
             if recv is not None and id(node) not in tracker.exempt_nodes:
                 # profiles.item(0) exclusion is structural: "profiles" is not in _COLLECTIONS
                 findings.append(Finding(RULE_ID, NUMBER, node.lineno, node.col_offset, "error",
@@ -92,7 +151,7 @@ def check(tree: ast.AST, source: str) -> list[Finding]:
                                         "after a chamfer)", _FIX))
         elif (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
               and node.func.attr == "item"):
-            recv = _collection_receiver(node.func.value)
+            recv = _receiver(node.func.value, aliases)
             if recv is not None and id(node) not in tracker.exempt_nodes:
                 # profiles.item(0) exclusion is structural: "profiles" is not in _COLLECTIONS
                 findings.append(Finding(RULE_ID, NUMBER, node.lineno, node.col_offset, "error",

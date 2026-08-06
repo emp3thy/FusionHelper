@@ -70,8 +70,8 @@ Numbered because the gate cites them by number — see §3.
 | R6 | Derive axis mapping from `sketchToModelSpace()` at runtime | gate |
 | R7 | Parameter names are multi-character `snake_case` | gate |
 | R8 | The verification stub is present and its rebinding is last in the file | gate |
-| R9 | Never catch exceptions in generated scripts | convention |
-| R10 | Never save the document | convention |
+| R9 | Never catch exceptions in generated scripts | gate (stub/kit regions exempt via `lint/regions.py`) |
+| R10 | Never save the document | gate (waivable per line for a consented checkpoint) |
 
 ### Progressive disclosure — and why the split is not just about tokens
 
@@ -264,7 +264,7 @@ rules actually exercised this run — never hardcoded, so it cannot claim R8 was
 that skipped it (`--no-stub` / `expect_stub=False`):
 
 ```
-checked: R1 R2 R4 R5 R6 R7 R8 · not checked: R3 R9 R10 · R5 covers parameter-change only
+checked: R1 R2 R4 R5 R6 R7 R8 R9 R10 R11 · not checked: R3 · R5 covers parameter-change only
 ```
 
 This closes a hole that follows from the anti-drift design itself: if rules re-enter context by

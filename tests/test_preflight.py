@@ -80,15 +80,15 @@ def test_missing_stub_fails_when_expected(tmp_path):
 
 def test_expect_stub_true_default_checks_r8(tmp_path):
     r = preflight.run_preflight(write(tmp_path, GOOD))
-    assert "checked: R1 R2 R4 R5 R6 R7 R8 R11 ·" in r.report
-    assert "not checked: R3 R9 R10" in r.report
+    assert "checked: R1 R2 R4 R5 R6 R7 R8 R9 R10 R11 ·" in r.report
+    assert "not checked: R3" in r.report
 
 
 def test_expect_stub_false_moves_r8_to_not_checked(tmp_path):
     r = preflight.run_preflight(write(tmp_path, GOOD, stub=False), expect_stub=False)
     assert r.outcome is preflight.Outcome.PASS, r.report
-    assert "checked: R1 R2 R4 R5 R6 R7 R11 ·" in r.report
-    assert "not checked: R3 R8 R9 R10" in r.report
+    assert "checked: R1 R2 R4 R5 R6 R7 R9 R10 R11 ·" in r.report
+    assert "not checked: R3 R8" in r.report
 
 
 def test_pyright_version_drift_is_reported_not_absorbed(tmp_path, monkeypatch):

@@ -48,6 +48,12 @@ Every rule traces to a measured probe. The gate cites rules by number.
   Fusion cloud docs are fully versioned — every save is a new version and
   old versions restore from the Data Panel, which is what makes (b) safe.
 
+Waivers (`# fusionhelper: allow ...`) apply to the checked rules
+(R1 R2 R4 R5 R6 R7 R9 R10 R11). R3 is a runtime rule — nothing fires, so
+waiving it reports "unused suppression". R8 is not waivable by design.
+Checkpoint saves are the sanctioned R10 waiver: state the user's consent in
+the reason.
+
 ## Workflow (phase 1)
 
 1. **Parameter table first.** Named `snake_case` user parameters before any
@@ -83,7 +89,7 @@ Every rule traces to a measured probe. The gate cites rules by number.
    numeric read-back is the oracle, not your eyes). Anything else → repair loop.
    Verify options go in module globals: `FH_OPTS = {...}` before `run`, keys:
    `force_liveness` (run liveness even after a cheap-check failure — essential in
-   a pre-existing document, see below), `only_params` (scope liveness to YOUR
+   a pre-existing document, see `reference/hazards.md`), `only_params` (scope liveness to YOUR
    parameters), `liveness_budget_s` (default 20 s samples large tables — raise it
    to cover every parameter), `liveness: False`, `canary`, `max_bodies`.
 8. **Repair loop.** Budgets: preflight fixes 3 (offline, separate); runtime with
@@ -97,6 +103,10 @@ Every rule traces to a measured probe. The gate cites rules by number.
 9. **When giving up:** say what is wrong in plain language, show the attempt
    history, state the document's condition, ask one specific question, and
    attach a render.
+10. **Record telemetry** (final act, pass or give-up):
+    `python -m fusionhelper.telemetry record --script <file> --verdict pass|fail|abandoned --executes <n> --preflight-attempts <n> --rules-fired R2,R4`
+    — one line per part request. `python -m fusionhelper.telemetry summary`
+    prints the green-on-first-execute rate this skill is judged by.
 
 ## Buildkit workflow
 
@@ -116,143 +126,89 @@ seeds: probe a second mapped point to learn which sketch axis is which —
 H/V dims assigned to the wrong plane-local axes relocate geometry silently.
 
 More measured rules:
-- **A feature add can succeed while the feature lands in error state** —
-  `filletFeatures.add()` returned normally with the fillet erroring in the
-  timeline. Never trust add() success alone; the timeline health check is
-  what catches it. Fillet radii are bounded by the SHORTEST edge in the
-  chain (scalloped rims bound at ~0.8 mm by lens-emergence slivers;
-  measured fails at 1.0/1.18/1.43 mm and as a compounding second pass).
-- **Delete parameters together with their features** — an orphaned
-  parameter (feature removed, param left in the table) is correctly
-  flagged by liveness as `param.dead`.
-- **Derive embed depths from the THINNEST layer penetrated, not from the
-  embedded object's size**: a d/4 rod embed cannot fit a shell thinner
-  than ~3d/4. The thickness-proof seat is centre = layer_base + t/2 + d/2
-  (dips t/2 into the layer, stays t/2 clear of what's beneath, any t).
-- **Patch, gate, launch — three separate commands** (measured 2026-08-01):
-  a string-replace patch that asserted on a whitespace mismatch still
-  relaunched the pipeline because the relaunch was chained in the same
-  shell line — a full run of known-stale code. After any scripted edit,
-  grep for a symbol the patch introduced before launching anything.
-- **Match patch old-strings against CAPTURED on-disk text**, not memory:
-  two patch failures came from assumed continuation indentation and a
-  stale debug print left in a helper (`cat -A` the exact block first).
-  Corollary: strip debug instrumentation the moment its diagnosis is done
-  — it poisons every later text match against that function.
-- **Verify geometry with measured signatures, not renders.** Screenshots
-  cannot show occluded features (interior skirt notches are invisible
-  from the front — a "confirming" shot proves nothing). Cheap analytic
-  probes are conclusive and scriptable: a per-body volume signature
-  (edge covers heavier than interior covers by exactly N notch-volumes)
-  or an exhaustive position-vs-bbox clearance sweep. Prefer these as the
-  evidence you report.
-- **Overlay subsystems get an overlap check at design time**: features
-  placed sensibly in isolation (service holes; mounting plates) collided
-  on 6 of 8 rows when overlaid. Ten lines of analytic footprint math at
-  layout time beats a rebuild. When both collide, relocate the cheap
-  feature (holes) rather than weaken the structural one (windowing
-  plates).
-
-## Working in an existing document (calibrated live, 2026-07-28)
-
-The five checks sweep the WHOLE document, so a user's pre-existing unconstrained
-sketches fail your build's verdict and skip liveness with `prior_failure`. In an
-existing document: expect `constraints: fail` from entities you did not create,
-read the `FH_CHECK1` sketch names to separate yours from theirs, and re-verify
-with `FH_OPTS = {"force_liveness": True, "only_params": [<your params>]}`.
-
-Timeline hazards in someone else's document:
-- `healthState 4` = a feature the USER rolled back (deliberate state, not damage).
-- **Never call `timeline.moveToEnd()` blindly** — it rolls past and ACTIVATES the
-  user's rolled-back tail, changing their model. Record `timeline.markerPosition`
-  before any history edit and restore it (marker position is NOT part of the
-  script transaction, and verify does not yet detect a moved marker).
-- New features insert AT the marker, and `feature.timelineObject.rollTo(True)`
-  plus delete/re-add replaces a feature in place — the right way to fix a
-  committed-but-wrong feature without rebuilding.
-
-Recovery semantics (measured): a FAILED `fusion_mcp_execute` rolls back
-atomically — its parameter adds, deletes, and features all revert, so a crashed
-attempt leaves the document as it was. Undo of COMMITTED calls goes through
-`fusion_mcp_update` with `{"featureType": "undo"}`. Read-only survey/probe
-scripts (gate them with `--no-stub`) do not count against the 5-execute repair
-cap — the cap governs build/repair attempts.
-
-Waivers (`# fusionhelper: allow ...`) apply only to the checked lint rules
-(R1 R2 R4 R5 R6 R7); waiving R3/R9/R10 always reports "unused suppression"
-because nothing fires for them — they are runtime/convention rules.
-
-## Checkpoint versioning (the reset story)
-
-Scripts build from a BASELINE, not from an empty file: v1 = the user's
-hand-made parts and nothing else; later checkpoints layer verified script
-output on top (v2 = v1 + sub-assembly, v3 = v2 + main build, each saved
-only on a green verdict, with consent — see R10). This changes what
-"regenerate from zero" costs:
-
-- Architecture change / teardown: NEVER surgically delete generated bodies
-  in a live heavy document (measured: ~20-30 s per `deleteMe` in a
-  361-feature / 11k-occurrence doc — a wall teardown cost ~40 min).
-  Restore the baseline version from the Data Panel and re-run the scripts.
-- Never re-run a build script on a document that already contains its
-  output — name collisions produce silently coincident " (N)"-suffixed
-  duplicate bodies that renders and the current attempt's interference
-  check cannot see. Version-restore makes this scenario impossible.
-- Parameter-level changes never need a rebuild at all: edit the parameter.
-
-## Heavy documents and transport discipline (measured 2026-07-31)
-
-- **A dead client is NOT a rolled-back script.** A client that times out or
-  is killed mid-`fusion_mcp_execute` may leave Fusion to finish and COMMIT
-  the script — or abort partway with no rollback. Measured leaks: stepped
-  parameters left as `( 5 mm ) + 0.25 mm`, duplicate body sets, and
-  half-applied reorganizations. After ANY client timeout: probe before
-  re-running (double-build hazard), audit parameter expressions for step
-  wrappers, and audit body counts for " (N)" suffixes and unexpected root
-  bodies.
-- **Orphaned requests still run.** Requests queued by killed clients
-  execute in order when Fusion frees up. Never stack retries while Fusion
-  is busy; poll with a single patient probe. Distinguish busy from frozen
-  from outside: process CPU + `Responding` (a script on the UI thread
-  shows a white window while working).
-- **Chunk structural operations.** Scripts run on Fusion's UI thread. One
-  mega-execute (~250 component ops) froze the UI for an hour; the same
-  work as ~20-op executes with `adsk.doEvents()` between batches ran
-  invisibly. Chunking also restores atomic-rollback granularity and makes
-  client timeouts irrelevant.
-- **Instanced-component count dominates every cost.** 60 instances of a
-  180-part component (≈11k leaf occurrences) took each verify liveness
-  step to ~6 min (snapshot mass-properties) and each body delete to ~30 s.
-  Exclude visual-only instanced components from verification with
-  `FH_OPTS = {"snapshot_exclude": ["<component name prefix>", ...]}`, and
-  scope `only_params` to what the step can actually exercise.
-- **Never gate through a pipe.** `preflight | head` masks the gate's exit
-  code (pipeline exit = last command) — a FAILED gate let an ungated
-  script execute. Check the gate's exit code explicitly, then run.
-- **Sketch circles: create jittered.** Circles created at coincident
-  coordinates trigger silent alignment inference; the later origin dim
-  then over-constrains (`VCS_SKETCH_OVER_CONSTRAINTS`). Create each circle
-  at a small unique offset (+0.1-0.3 mm, incremented per circle) and let
-  the driving dims snap it home. Rectangles are immune.
-- **Patterns: trust nothing, validate topology.** Cut/feature patterns
-  need `AdjustPatternCompute` (default dies with
-  `PATTERN_FEATURES_NO_PASTE_INT_EDGES`); body patterns reject it.
+- `filletFeatures.add()` can return success while the fillet errors in the
+  timeline — never trust add() alone, check timeline health. Fillet radii
+  are bounded by the SHORTEST edge in the chain (scalloped rims bound at
+  ~0.8 mm; measured fails at 1.0/1.18/1.43 mm and as a compounding second
+  pass).
+- Delete parameters together with their features — an orphaned parameter
+  is correctly flagged by liveness as `param.dead`.
+- Derive embed depths from the THINNEST layer penetrated, not from the
+  embedded object's size: a d/4 rod embed cannot fit a shell thinner than
+  ~3d/4. Thickness-proof seat: `centre = layer_base + t/2 + d/2`.
+- Patch, gate, launch are three separate commands (measured 2026-08-01) —
+  chaining them in one shell line let a stale relaunch hide a patch
+  assertion failure. Grep for a symbol the patch introduced before
+  launching anything. Match patch old-strings against CAPTURED on-disk
+  text, not memory (`cat -A` the exact block); strip debug instrumentation
+  the moment its diagnosis is done — it poisons later text matches.
+- Verify geometry with measured signatures, not renders — screenshots
+  cannot show occluded features. Use a per-body volume signature (edge
+  covers heavier than interior covers by exactly N notch-volumes) or an
+  exhaustive position-vs-bbox clearance sweep.
+- Overlay subsystems get an overlap check at design time: features placed
+  sensibly in isolation collided on 6 of 8 rows when overlaid. Ten lines
+  of analytic footprint math at layout time beats a rebuild; when both
+  collide, relocate the cheap feature (holes), not the structural one.
+- Never gate through a pipe — `preflight | head` masks the gate's exit
+  code (pipeline exit = last command). Check the exit code explicitly.
+- Sketch circles: create jittered. Coincident-coordinate circles trigger
+  silent alignment inference and later over-constrain
+  (`VCS_SKETCH_OVER_CONSTRAINTS`). Offset each circle +0.1-0.3 mm,
+  incremented, and let driving dims snap it home. Rectangles are immune.
+- Patterns: cut/feature patterns need `AdjustPatternCompute` (default dies
+  with `PATTERN_FEATURES_NO_PASTE_INT_EDGES`); body patterns reject it.
   Direction sign is unreliable — try flipped distances until validated.
-  Validate cut patterns by FACE-COUNT delta on the participants, never by
-  `body.volume` (a low-accuracy estimate, measured 24% off on small
-  holes); floor at ~4 faces per expected instance, not the seed's count.
-- **Loops must breathe (R11, warn).** Any loop that mutates the document
-  (add / deleteMe / moveToComponent / addExistingComponent / ...) calls
-  `adsk.doEvents()` per iteration — scripts run on the UI thread and an
-  unbroken loop freezes the window for its whole duration. The verify
-  block breathes on its own (between checks, per liveness step, every 25
-  snapshot bodies). Liveness on instanced-heavy documents remains
-  budget-limited regardless: each parameter step forces a full document
-  recompute that `snapshot_exclude` cannot avoid — expect `sampled` mode
-  and say so in the report.
-- **After body moves/deletes, check the light bulbs.** Fusion spontaneously
-  switches off component/occurrence `isLightBulbOn` after heavy
-  reorganizations — geometry looks deleted but is only dark.
+  Validate cut patterns by FACE-COUNT delta, never `body.volume` (measured
+  24% off on small holes); floor at ~4 faces per expected instance.
+- Chunk structural operations: a ~250-component-op mega-execute froze the
+  UI for an hour; the same work as ~20-op executes with `adsk.doEvents()`
+  between batches ran invisibly (also restores atomic-rollback
+  granularity). R11 (warn): any loop that mutates the document (`add` /
+  `deleteMe` / `moveToComponent` / `addExistingComponent` / ...) calls
+  `adsk.doEvents()` per iteration — on a 500+ entity sketch loop that
+  itself becomes the bottleneck, so batch to roughly every 20 entities.
+  Mechanism and cadence detail: `reference/hazards.md` under "Heavy
+  documents".
+- A distance dimension is UNSIGNED — never let its expression evaluate
+  negative; Fusion snaps geometry to the positive distance, sliding the
+  feature sideways by twice the half-size (measured: `buildkit.bound_rect2`
+  emitted `0 mm - (9.65 mm)` and landed a full width off). Fixed in kit v2
+  by wrapping corner expressions in `abs( … )`. Probe first if you emit a
+  computed expression that could go negative.
+- Preserve the SIGN when rewriting a committed extent — `blind_cut` encodes
+  cut direction as a negative distance (`-( expr )`); a positive rewrite
+  flips the cut into air (`No target body`). Read `ext.distance.expression`,
+  detect a leading `-`, re-wrap.
+- Liveness steps EVERY root parameter at once — a clearance stack of
+  literals survives one-at-a-time probing but clashes under the combined
+  step. Derive the stack (`14 mm - floor - ceiling - 0.5 mm`); where
+  downstream geometry is fixed art, pin the far face (`11 mm - base_t`)
+  instead of parameterising the height.
+- A revolve/extrude cut profile truncated at a parametric surface leaves an
+  uncut ring when that parameter grows — overshoot the nominal surface.
+- Check a volume delta on every feature — a JOIN whose start extent leaves
+  a gap to its target adds zero volume and returns success silently.
+- `isFixed` on a curve does NOT fix its points — fixed-art sketches must
+  sweep `sketch.sketchPoints` too, or verify reports `sketch.unconstrained`.
+- Grouping bodies into a component: collect them into a Python list first
+  (`moveToComponent` mutates `root.bRepBodies`, live iteration drops
+  bodies), then compare the sorted name set and total volume before/after.
+- Auditing overhangs is scriptable: sample face normals via
+  `face.evaluator.getNormalsAtParameters(<list of Point2D>)` and flag any
+  `normal.z < -0.7075` (steeper than a 45° overhang), skipping faces on
+  z=0. Renders cannot show this; the sweep found every one.
+
+## When something is off, read the hazard file
+
+Symptom-triggered lore lives in `reference/hazards.md` — read the section
+your symptom names, not the whole file:
+- pre-existing document (constraints fail you didn't cause, prior_failure,
+  someone else's timeline, healthState 4) → "Working in an existing document"
+- teardown / rebuild / duplicate " (N)" bodies → "Checkpoint versioning"
+- client timeout, orphaned request, busy-vs-frozen, instanced-heavy cost,
+  geometry gone dark (light bulbs) → "Heavy documents"
+- `param.dead` on a parameter you believe is live → "Editing a committed model"
 
 ## Honest limits
 

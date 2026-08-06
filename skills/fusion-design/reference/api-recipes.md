@@ -290,12 +290,59 @@ the generator rule that makes the timeline legible and the references stable.
 ## Deriving placement from the sketch plane at runtime
 
 ```python
-m = sk.sketchToModelSpace()          # Matrix3D: sketch space -> world
+world = sk.sketchToModelSpace(sketch_point.geometry)   # Point3D -> Point3D
+local = sk.modelToSketchSpace(world_point)             # the inverse
 ```
 
-Read the mapping from this at runtime and derive the placement from it (**R6**). Do not
-hardcode a plane-to-axis table. See `axis-mapping.md` — but read it only when *diagnosing*
-an inversion, never to compute a placement.
+**`sketchToModelSpace` takes a point and returns a point — it is not a no-arg matrix
+accessor** (measured 2026-08-03; the no-arg form fails the gate as
+`Argument missing for parameter "sketchCoordinate"`). To find a sketch entity by its world
+position — e.g. locating the axis line of a revolve on an offset station — transform each
+endpoint and compare:
+
+```python
+for ln in sk.sketchCurves.sketchLines:
+    s = sk.sketchToModelSpace(ln.startSketchPoint.geometry)
+    e = sk.sketchToModelSpace(ln.endSketchPoint.geometry)
+    if abs(s.x - station_r) < 1e-4 and abs(e.x - station_r) < 1e-4:
+        axis = ln
+```
+
+Read the mapping at runtime and derive the placement from it (**R6**). Do not hardcode a
+plane-to-axis table. See `axis-mapping.md` — but read it only when *diagnosing* an
+inversion, never to compute a placement.
+
+## Chamfers: `createInput2`, and edge sets
+
+`ChamferFeatures.createInput` is **absent from the shipped stub** — a stub-gap class like
+`setDistanceExtent`. The gate-clean and runtime-valid form is `createInput2()` plus an edge
+set:
+
+```python
+ci = root.features.chamferFeatures.createInput2()
+ci.chamferEdgeSets.addEqualDistanceChamferEdgeSet(
+    edge_collection, adsk.core.ValueInput.createByString('lead_ch'), True)
+f = root.features.chamferFeatures.add(ci)
+```
+
+Chamfer **circular edges only**. A chamfer applied to a spline or chorded outline fails with
+`ASM_BL_CAP_COMPLEX`; leave those outlines alone and let the slicer's elephant-foot
+compensation handle the bottom edge.
+
+## Surface evaluator return shapes
+
+`SurfaceEvaluator` disagrees with its stub in two places (measured 2026-08-03):
+
+```python
+prange  = f.evaluator.parametricRange()          # returns the range DIRECTLY
+res     = f.evaluator.getNormalsAtParameters(pts)  # pts is a plain LIST
+normals = res[1]                                 # runtime returns [ok, [Vector3D, ...]]
+```
+
+The stub declares `(bool, …)` tuples for both; `parametricRange()` actually returns the
+`BoundingBox2D` itself, and `getNormalsAtParameters` returns a two-element list whose second
+element holds the vectors. Passing an `ObjectCollection` of points raises a `TypeError` —
+use a plain Python list.
 
 ## entityToken capture and round-trip
 

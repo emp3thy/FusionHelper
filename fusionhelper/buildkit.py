@@ -18,7 +18,7 @@ error text).
 import adsk.core
 import adsk.fusion
 
-KIT_VERSION = "1"
+KIT_VERSION = "2"
 
 __all__ = ["KIT_VERSION", "BuildCtx"]
 
@@ -118,7 +118,14 @@ class BuildCtx:
             if pos is None:
                 d.parameter.expression = "%.4f mm" % (abs(cval - half_sz) * 10)
             else:
-                d.parameter.expression = "%s %s (%s)" % (
+                # abs() is load-bearing: a distance dimension is unsigned,
+                # so a corner expression that evaluates NEGATIVE (any rect
+                # centred on the sketch origin, e.g. '0 mm - (9.65 mm)')
+                # is stored negative but SNAPPED POSITIVE by the solver,
+                # sliding the whole rectangle sideways by its full width.
+                # Measured 2026-08-02; abs() confirmed valid in a Fusion
+                # expression and keeps the dimension parametric.
+                d.parameter.expression = "abs( %s %s (%s) )" % (
                     pos[0], "-" if sign > 0 else "+", pos[1])
 
     def bound_circle(self, sk, w, r_cm, dia_expr, x_pos=None, v_pos=None):
