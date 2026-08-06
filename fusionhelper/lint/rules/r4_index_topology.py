@@ -33,6 +33,24 @@ def _collection_chain(node: ast.expr) -> str | None:
     return None
 
 
+def _bind_targets(target: ast.expr, bind) -> None:
+    """Call `bind(name)` for each Name in a TRUE binding position.
+
+    Attribute/Subscript targets (`faces.some_attr = 5`, `faces[0] = None`) are
+    writes THROUGH the receiver expression, not a rebind of the name itself —
+    treated as opaque and never walked into. Only Name (direct bind) and
+    Tuple/List/Starred (destructuring) recurse.
+    """
+    if isinstance(target, ast.Name):
+        bind(target.id)
+    elif isinstance(target, (ast.Tuple, ast.List)):
+        for elt in target.elts:
+            _bind_targets(elt, bind)
+    elif isinstance(target, ast.Starred):
+        _bind_targets(target.value, bind)
+    # Attribute / Subscript: opaque receiver expression, no binds.
+
+
 def _alias_map(tree: ast.AST) -> dict[str, str]:
     """Names assigned EXACTLY ONCE in the file, to a collection chain.
 
@@ -50,18 +68,14 @@ def _alias_map(tree: ast.AST) -> dict[str, str]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign):
             for t in node.targets:
-                for n in ast.walk(t):
-                    if isinstance(n, ast.Name):
-                        _bind(n.id)
+                _bind_targets(t, _bind)
             if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
                 chain = _collection_chain(node.value)
                 if chain:
                     values[node.targets[0].id] = chain
         elif isinstance(node, (ast.AnnAssign, ast.AugAssign, ast.For, ast.AsyncFor,
                                 ast.comprehension)):
-            for n in ast.walk(node.target):
-                if isinstance(n, ast.Name):
-                    _bind(n.id)
+            _bind_targets(node.target, _bind)
         elif isinstance(node, ast.arg):
             _bind(node.arg)
     return {name: chain for name, chain in values.items() if counts.get(name) == 1}
