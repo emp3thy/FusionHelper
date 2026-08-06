@@ -6,7 +6,7 @@ class RuleInfo:
     rule_id: str
     number: str
     restatement: str
-    checked: bool  # False for R3/R9/R10 — runtime/convention; named in the coverage line
+    checked: bool  # False for R3/R9 — runtime/convention; named in the coverage line
 
 
 @dataclass(frozen=True)
@@ -40,7 +40,8 @@ RULES: dict[str, RuleInfo] = {
     "R9": RuleInfo("no-catch", "R9",
                    "Never catch exceptions in generated scripts (convention)", False),
     "R10": RuleInfo("no-save", "R10",
-                    "Never save the document (convention)", False),
+                    "Never save the document — checkpoint saves need a waiver "
+                    "naming user consent", True),
     "R11": RuleInfo("loops-must-breathe", "R11",
                     "Loops that mutate the document call adsk.doEvents() "
                     "per iteration", True),

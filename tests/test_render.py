@@ -25,8 +25,8 @@ def test_fail_report_shape():
     # checked (that only happens via preflight's expect_stub=True), so R8
     # belongs in "not checked" here, not "checked" — see test_preflight.py's
     # test_expect_stub_true_default_checks_r8 for the case where it moves.
-    assert lines[-1].startswith("checked: R1 R2 R4 R5 R6 R7 R11 ·")
-    assert "not checked: R3 R8 R9 R10" in lines[-1]
+    assert lines[-1].startswith("checked: R1 R2 R4 R5 R6 R7 R10 R11 ·")
+    assert "not checked: R3 R8 R9" in lines[-1]
     assert "R5 covers parameter-change only" in lines[-1]
 
 
@@ -45,8 +45,8 @@ def test_explicit_checked_set_moves_r8_into_checked():
     all_checked = {n for n, info in RULES.items() if info.checked}
     text = render.report([], [], CLEAN, "box.py", checked=all_checked)
     last = text.splitlines()[-1]
-    assert last.startswith("checked: R1 R2 R4 R5 R6 R7 R8 R11 ·")
-    assert "not checked: R3 R9 R10" in last
+    assert last.startswith("checked: R1 R2 R4 R5 R6 R7 R8 R10 R11 ·")
+    assert "not checked: R3 R9" in last
 
 
 def test_pass_report_still_has_coverage_and_waivers():
