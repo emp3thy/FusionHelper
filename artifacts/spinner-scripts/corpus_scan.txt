@@ -1,0 +1,97 @@
+== Custom_18_Gyro4Twist_01_EdgesAMS_stls (1 parts)
+   obj_1_Custom_Spinner_Twists-Combo.stl         55.0x 55.0x 16.0mm m= 39.0g bore~11.96 rim=0.93 sym~4
+== Fidgit_Spinner_stls (9 parts)
+   obj_1_Assembly.stl                            76.7x 69.9x  5.1mm m= 10.7g bore~ 8.16 rim=0.77 sym~3
+   obj_2_spiner finle.stl_1.stl                  25.2x 25.2x  5.6mm m=  1.7g bore~ 7.17 rim=0.87 sym~10
+   obj_3_spiner finle.stl_1.stl                  25.2x 25.2x  5.6mm m=  1.7g bore~ 7.17 rim=0.87 sym~10
+   obj_4_spiner finle.stl_1.stl                  25.2x 25.2x  5.6mm m=  1.7g bore~ 7.17 rim=0.87 sym~10
+== FloW_Arcspin_plain_M_Silk_20262101_stls (1 parts)
+   obj_1_Zusammenbau.stl                         66.0x 61.5x 16.5mm m= 38.5g bore~ 3.60 rim=0.77 sym~5
+== FloW_SpinDot+_v3_20260119_stls (1 parts)
+   obj_1_Zusammenbau.stl                         32.0x 32.0x 30.0mm m= 21.5g bore~ 4.00 rim=0.66 sym~12
+== G-Man+Projects+-+Geometric+Spinner+-+Core+-+Monocolour_stls (1 parts)
+   obj_1_non circular circle 2.5 0.15 0.16 tigh  84.8x 84.8x 14.2mm m= 47.8g bore~17.17 rim=1.04 sym~6
+== G-Man+Projects+-+Geometric+Spinner+-+Razor+-+Multicolour+2_stls (1 parts)
+   obj_1_non circular 6 2.5 0.15 0.16 0.02 0.10  82.3x 82.3x 14.2mm m= 42.9g bore~17.30 rim=1.04 sym~12
+== G-Man+Projects+-+Square+Spinner+-+Fragment+-+Multicolour+1_stls (1 parts)
+   obj_1_mainframe 0.12 2.6 0.13.STEP.stl        89.6x 89.6x 14.2mm m= 46.8g bore~16.99 rim=1.10 sym~12
+== G-Man+Projects+Heavy+Duty+Planetary+Gears+-+Blade_stls (1 parts)
+   obj_1_test-split-ams-fat-boy.STEP.stl         84.5x 84.5x 14.2mm m= 39.4g bore~17.11 rim=0.96 sym~6
+== G-Man+Projects+Planetary+Gears+Fidget+Spinner_stls (6 parts)
+   obj_6_planetary-gears-cog-10-large.STEP.stl   87.8x 88.6x 12.0mm m= 45.6g bore~33.15 rim=1.17 sym~10
+   obj_5_planetary-gears-spike-10-large.STEP.st  84.3x 85.6x 12.0mm m= 36.6g bore~33.15 rim=1.09 sym~4
+   obj_4_planetary-gears-cog-8-large.STEP.stl    84.3x 85.2x 12.0mm m= 39.3g bore~33.15 rim=1.19 sym~8
+   obj_3_planetary-gears-spike-8-large.STEP.stl  81.5x 81.4x 12.0mm m= 30.9g bore~33.15 rim=1.11 sym~8
+== Gun+Toy+Fidget+Spinner (8 parts)
+   9mm Luger.3mf                                 10.0x 10.0x 29.7mm m=  2.4g bore~ 0.00 rim=0.91 sym~3
+   Wheel2.3mf                                    37.7x 38.0x  7.5mm m=  3.5g bore~25.00 rim=1.43 sym~1
+   Muzzle.3mf                                    37.1x 28.0x 20.0mm m= 11.4g bore~ 0.93 rim=0.58 sym~2
+   Body1.3mf                                     65.0x 46.6x  8.0mm m=  6.5g bore~ 0.85 rim=0.47 sym~2
+== Gyro+Fidget+Rings (12 parts)
+   gyro_ring_all_sizes.3mf                      151.5x158.4x  4.0mm m= 57.3g bore~ 0.19 rim=0.70 sym~4
+   gyro_spinner_7_rings.stl                      67.0x 67.0x  4.0mm m= 14.1g bore~15.86 rim=1.05 sym~12
+   gyro_spinner_6_rings.stl                      60.0x 60.0x  4.0mm m= 11.1g bore~15.86 rim=1.06 sym~10
+   gyro_spinner_5_rings.stl                      53.0x 53.0x  4.0mm m=  8.5g bore~15.86 rim=1.08 sym~8
+== Helix+Space+Rocket+(fidget+vortex+spinner+toy) (8 parts)
+   Rocket.stl                                    41.3x 36.7x 73.4mm m= 20.7g bore~ 5.19 rim=0.62 sym~3
+   Flame - Fidget version.stl                    23.0x 23.0x 74.0mm m= 17.2g bore~ 0.00 rim=0.85 sym~6
+   Rocket - Fidget version.stl                   41.3x 36.7x 73.4mm m= 19.6g bore~ 5.19 rim=0.66 sym~3
+   Flame - Wide - Boosters.stl                   23.2x 23.2x 73.8mm m= 20.2g bore~ 3.00 rim=0.90 sym~12
+== Impossible+Passthrough+Spinner (2 parts)
+   Spinner Hexagon Bottom.stl                    49.9x 57.6x 72.0mm m= 30.0g bore~10.56 rim=0.70 sym~6
+   Spinner Hexagon Top.stl                       46.8x 46.8x 86.4mm m= 39.3g bore~ 0.31 rim=0.55 sym~6
+== Keychain+Spinner+ (2 parts)
+   Spinner keychain.stl                          32.0x  6.0x 57.3mm m=  5.1g bore~ 0.10 rim=0.52 sym~2
+   Spinner keychain Bambu labs.3mf               32.0x 57.3x  6.0mm m=  5.1g bore~ 3.29 rim=0.53 sym~2
+== Kunai+Fidget+Spinner: NO mesh files
+== Med+1+C+Dahlia+Fidget_stls (1 parts)
+   obj_1_Center.stl                             128.2x128.2x179.3mm m= 72.5g bore~10.68 rim=0.45 sym~8
+== Planetary+Screw+Gear+_+Fidget+Spinners (6 parts)
+   01_Ring_Gear.stl                              83.2x 83.2x 20.8mm m= 25.5g bore~67.96 rim=1.69 sym~10
+   02_Sun_Gear.stl                               24.7x 24.7x 20.9mm m=  5.9g bore~ 5.98 rim=0.77 sym~1
+   03_Planet_Gear.stl                            24.7x 24.7x  9.8mm m=  3.8g bore~ 9.80 rim=1.01 sym~12
+   04_Carrier.stl                                83.2x 25.0x 83.2mm m= 23.8g bore~ 0.12 rim=0.56 sym~1
+== Pop-On+Cap+Propeller+–+Snap+&+Spin+with+Style! (6 parts)
+   Cap propeller v2.3mf                         401.0x451.6x 18.0mm m= 29.9g bore~204.24 rim=0.99 sym~6
+   Squatchee Cap Button Propellor.stl            18.4x132.0x 27.3mm m=  4.3g bore~ 4.54 rim=0.34 sym~2
+   Propeller Blade Designer v3.stl              143.9x129.3x  7.5mm m=  7.5g bore~ 6.40 rim=0.71 sym~3
+   Squatchee Cap Button Propellor.step: LOAD FAIL No module named 'cascadio'
+== Print+in+Place+Planetary+Gear+Spinner (1 parts)
+   Planetary Gear Spinner.stl                    84.7x 85.0x 15.0mm m= 61.3g bore~18.62 rim=1.08 sym~3
+== Smooth_stls (1 parts)
+   obj_1_Smooth.stl                              45.3x 45.3x  9.0mm m= 14.5g bore~ 0.00 rim=0.96 sym~9
+== Spinning+Bearing+Shuriken+better+brim_stls (1 parts)
+   obj_1_Assembly.stl                           166.4x191.5x 10.0mm m=106.6g bore~20.30 rim=0.59 sym~12
+== Squspi+ball_stls (23 parts)
+   obj_10_baza.stl                               33.4x 35.9x  7.5mm m=  2.7g bore~ 4.20 rim=0.75 sym~6
+   obj_8_baza.stl                                33.4x 35.9x  7.5mm m=  2.7g bore~ 4.20 rim=0.75 sym~6
+   obj_11_Fateta minge 2.stp.stl                 16.0x 23.3x 19.4mm m=  1.8g bore~ 0.17 rim=0.58 sym~5
+   obj_12_Fateta minge 2.stp.stl                 16.0x 23.3x 19.4mm m=  1.8g bore~ 0.17 rim=0.58 sym~5
+== Tactile+Fidget+Rings+(spinning+fun+toy) (9 parts)
+   Layers.stl                                    40.0x 40.0x 13.0mm m= 16.5g bore~ 3.75 rim=0.97 sym~7
+   Knurled.stl                                   40.0x 40.0x 13.0mm m= 15.9g bore~ 3.75 rim=0.96 sym~12
+   Mix 2.stl                                     40.0x 40.0x 13.0mm m= 15.9g bore~ 3.75 rim=0.97 sym~9
+   Mix 3.stl                                     40.0x 40.0x 13.0mm m= 15.8g bore~ 3.75 rim=0.97 sym~12
+== Thor's+Hammer+Fidget+Spinner+and+Clicker (1 parts)
+   KeySwitchHammer_base_spiny_inside_5mm_bearin  23.8x 23.8x 24.0mm m=  7.8g bore~14.71 rim=0.86 sym~4
+== Triple+helix+gear+spinner (6 parts)
+   External gear 3X.stl                          30.0x 30.0x 18.0mm m=  7.6g bore~ 8.25 rim=1.02 sym~6
+   Central gear.stl                              30.0x 30.0x 18.0mm m=  8.4g bore~ 6.98 rim=0.94 sym~6
+   Cage 2X.stl                                   63.5x 61.4x 20.2mm m=  4.4g bore~ 7.27 rim=0.89 sym~3
+   Knob 2x.stl                                   22.0x 22.0x  6.0mm m=  2.3g bore~ 0.00 rim=1.06 sym~11
+== Vega_stls (22 parts)
+   obj_1_Vega-5.stl_1.stl                        22.5x 22.5x  8.6mm m=  0.5g bore~17.97 rim=1.65 sym~12
+   obj_3_Vega-6.stl_1.stl                        23.3x 23.3x  8.6mm m=  0.5g bore~18.77 rim=1.66 sym~6
+   obj_7_Vega-8.stl_1.stl                        24.9x 24.9x  8.6mm m=  0.6g bore~20.37 rim=1.68 sym~12
+   obj_13_Vega-11.stl_1.stl                      27.4x 27.4x  8.6mm m=  0.6g bore~22.87 rim=1.71 sym~12
+== Vortex+Ball+Fidget+–+Spinning+Core+Twist+Toy (1 parts)
+   Vortex Ball Fidget.stl                        50.0x 50.0x 90.5mm m= 82.4g bore~ 5.23 rim=0.87 sym~8
+== _Wave_+Gyro+Fidget+Spinner+Heavy+Duty (1 parts)
+   Wave Gyro Fidget Spinner.stl                  90.0x 89.3x 14.0mm m= 68.4g bore~17.30 rim=0.98 sym~4
+== daisy-fidget-1-better-adhesion_stls (1 parts)
+   obj_1_daisy-fidget-better-adhesion.stl        67.0x 67.0x  8.0mm m= 22.3g bore~ 9.20 rim=0.85 sym~4
+== magic+spinning+top+_stls (4 parts)
+   obj_3_magic spinning top upper piece.stl      73.1x 73.1x 41.3mm m=  7.5g bore~ 0.00 rim=0.89 sym~3
+   obj_2_magic spinning top lower piece.stl      73.1x 73.1x 13.4mm m=  5.9g bore~ 0.00 rim=1.12 sym~3
+   obj_1_magic spinning top connector.stl         7.6x  6.6x  6.4mm m=  0.2g bore~ 8.75 rim=0.50 sym~2
+   obj_4_magic spinning top connector PLA.stl     7.6x  6.6x  6.4mm m=  0.2g bore~ 8.83 rim=0.50 sym~2
