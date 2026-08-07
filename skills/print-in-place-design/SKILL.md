@@ -34,6 +34,45 @@ Corollary worth knowing: a part slides outward when `ω²r > µg` — **mass can
 You cannot fix a sluggish centrifugal mechanism by making the mass heavier. Only
 friction and rest-radius are levers.
 
+## Retention: a 45° face does not retain, it cams
+
+**PRINT-PROVEN, the expensive way.** Orrery mk3 rev 3 printed cleanly, meshed
+well, and shed every planet the first time it was held horizontally and spun.
+Every retention face in it was a 45° ramp, chosen because 45° is the
+self-supporting limit. But a 45° face has a camming ratio of **1.0**: axial
+load becomes radial load one-for-one, so the captured part is actively pushed
+out of its own capture. Add printed clearance and a thin flange, and it walks
+out under nothing more than gravity plus gyroscopic wobble.
+
+> **Retention faces must be square (horizontal).** Ramps are for *entry*, never
+> for holding. A square shoulder has zero camming ratio: to escape, the part
+> must deflect the whole engagement depth.
+
+The consequence is that a square shoulder is a downward-facing face — an
+overhang — and that is simply the price. Keep it to a short annular ledge
+(0.7–1.0 mm measured) and it prints; the shipped commercial reference does
+exactly this and so does rev 4. Sizing that worked:
+
+| | value |
+|---|---|
+| Flange protrusion | 1.0 mm |
+| Engagement (square overlap) | 0.5 mm |
+| Radial clearance, flange to groove | 0.2 mm |
+| Axial float per end | 0.3 mm |
+| Entry ramp | 45–48°, self-supporting |
+
+Put the lip **inside the mating gear's root circle** so the tooth-space cut
+never crosses it: the lip stays one uninterrupted, stiff annulus. And note the
+capture is *mutual* — the same shoulder that stops a planet rising stops the
+sun falling, so a whole free-floating train is retained with one feature pair
+per interface.
+
+**Verify it by lifting, not by looking.** Translate one part axially in the
+model and re-run the interference check at a distance inside the float and one
+outside it. Rev 4 measures 0 mm³ at ±0.2 mm and 0.34 mm³ at ±0.4 mm on both
+stages — that pair of numbers is the proof the shoulder engages, and no render
+can show it.
+
 ## The structural fact everything follows from
 
 **An unanchored floating first layer cannot be printed.** Bridging is only
@@ -131,10 +170,12 @@ model oscillates; bisection is overlap-proof.
   against backlash.** 0.35 mm backlash at 25° makes 10T planets pointed;
   0.20 mm keeps a ~0.16 mm land with 0.10 mm/side flank clearance.
 - **Retention lives at the ENDS, never mid-band** (commercial reference:
-  full-height bodies, no caps, teeth chamfered ~45° into end recesses).
-  Size end recesses from the mating flange past the tooth ROOT (+0.55 mm),
-  never from the tip — tip-referenced recesses force deep grooves that
-  invade the tooth band.
+  full-height bodies, no caps, teeth ramped into end recesses). Size end
+  recesses from the mating flange, referenced past the tooth ROOT, never
+  from the tip — tip-referenced recesses force deep grooves that invade
+  the tooth band. Hold the retention faces square (see the camming
+  section above); a lip-and-groove sized from the flange lands the lip
+  inside the root circle for free.
 - **Make build scripts idempotent, stage by stage.** A timed-out MCP client
   leaves the script running AND may retry it; every stage checks its
   committed output (body / join feature by name) and skips, so re-entry is

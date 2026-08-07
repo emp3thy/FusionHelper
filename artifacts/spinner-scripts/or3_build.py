@@ -1,4 +1,4 @@
-"""ORRERY mk3 - planets on BOTH faces of the ring.
+"""ORRERY mk3 rev 4 - planets on BOTH faces of the ring.
 
 Five coaxial gear stages, every one standing on the build plate:
 
@@ -15,21 +15,35 @@ Free, the sun is still captive: it is trapped by the inner planets,
 which are trapped by the ring, which is trapped by the outer planets.
 Nothing needs a post, a carrier or an axle.
 
-Retention (rev 2) lives at the ENDS, never mid-band - the scheme
-measured off the working commercial reference (Gear+fidget+spinner.3mf):
+Retention (rev 4) is LIP-AND-GROOVE with SQUARE shoulders, at the ends.
 
-  - planets carry full-circle end flanges at tip + 0.6 mm, z 0-1.2 and
-    z 13.3-14.5; the top flange underside is chamfered 45 deg so it
-    prints on its own cone;
-  - sun / ring / housing are recessed at both ends to ROOT -/+ 0.55 mm.
-    Root-referenced: tip-referenced sizing is what produced 2.8 mm-deep
-    grooves and the 5.4 mm mid-band recess that cut across the tooth
-    band on rev 1;
-  - a 45 deg tooth-entry chamfer joins each recess to its tip band, so
-    no tooth tip overhangs a recess. Tip band z 4.55-9.95.
+Rev 3 printed well and meshed well but the gears fell out when the
+spinner was held horizontally and spun. Cause: every retention face was
+a 45 deg ramp, and a 45 deg face does not block - it CAMS, converting
+axial load one-for-one into radial load. The thin 0.6 mm flange rode up
+its own ramp inside 0.75 mm of axial float and popped free; once one
+planet left, its stage unloaded and the rest followed. The commercial
+reference retains with a square lip and groove, which is what rev 4
+copies:
 
-Every body is full height, z0 to z14.5. There are no caps. Flange sits
-0.2 mm radially clear of every recess; axial float ~0.75 mm per stage.
+  - each planet carries a full-circle end flange at tip + 1.0 mm, over
+    z 0-1.2 (on the plate) and z 13.3-14.5, both faces SQUARE;
+  - each mating gear carries a full-circle LIP that overlaps that flange
+    by 0.5 mm radially, over z 1.5-2.5 and z 12.0-13.0, with a groove
+    behind it at flange + 0.2 mm. The lip lies inside its gear's ROOT
+    circle, so the tooth-space cut never touches it: every lip is an
+    uninterrupted, stiff annulus;
+  - the blocking faces are horizontal, so the camming ratio is zero: to
+    escape, the flange must now deflect the full 0.5 mm engagement.
+
+Axial float is 0.3 mm per end (was 0.75 mm). The lip/flange pair
+retains BOTH parts mutually - the same shoulder that stops a planet
+rising stops the sun (or ring, or housing) falling.
+
+Every body is full height, z0 to z14.5. There are no caps. The only
+downward-facing faces are two short annular ledges per interface, 0.7
+and 1.0 mm wide - the same feature the reference ships and the same one
+rev 3 printed cleanly 100 times.
 
 Mesh (rev 2): 25 deg pressure angle, backlash 0.20 mm, tips shortened
 (sun 10.95, ring-int 19.25, ring-ext 28.40, housing 36.70). At 20 deg
@@ -76,13 +90,15 @@ INTERFERENCE_ALLOWED = []
 PANG = math.radians(25)
 BACKLASH = 0.020
 H = 1.45                       # full stack; every body spans z0..H
-FL_H, FL_R = 0.12, 0.06        # planet end flange: height, radial protrusion
-RC_CLR = 0.055                 # recess clears the gear's own ROOT by this
-CH = 0.28                      # entry-chamfer z span; radial spans 0.255-0.275
-#                                so every chamfer is 45.6-47.7 deg, printable
-RZ0 = 0.175                    # bottom recess ceiling; top floor at H - RZ0
-RZ1 = H - RZ0
-ZB0, ZB1 = RZ0 + CH, RZ1 - CH  # full-profile tip band, z 4.55..9.95 mm
+FL_H, FL_R = 0.12, 0.10        # planet end flange: height, radial protrusion
+AX_G = 0.03                    # axial float per end (0.3 mm)
+RAD_G = 0.02                   # radial clearance, flange to groove (0.2 mm)
+ENG = 0.05                     # square-shoulder engagement (0.5 mm)
+LIP_H = 0.10                   # mating-gear lip height
+ZL0 = FL_H + AX_G              # 1.5 mm  lip underside = groove ceiling
+ZL1 = ZL0 + LIP_H              # 2.5 mm  lip top, entry ramp starts
+ZB0, ZB1 = 0.50, H - 0.50      # full-profile tip band, z 5.0..9.5 mm
+ZH0, ZH1 = H - ZL1, H - ZL0    # 12.0, 13.0 mm  top lip
 
 SUN = dict(N=20, rp=1.00, tip=1.095, root=0.875, internal=False)
 PLI = dict(N=10, rp=0.50, tip=0.60, root=0.375, internal=False)
@@ -95,9 +111,16 @@ HOUSE_OUT = 4.50
 N_PL = 5
 
 
-def _rc(g):
-    """End-recess radius: 0.55 mm beyond the gear's own tooth root."""
-    return g["root"] + RC_CLR if g["internal"] else g["root"] - RC_CLR
+def _grv(station, inboard):
+    """(groove, lip) radii for a gear meshing with planets at `station`.
+
+    inboard=True when the gear sits at smaller radius than the planets
+    (sun, ring-external face); False when it wraps them (ring-internal
+    face, housing). The groove clears the planet flange by RAD_G; the
+    lip overlaps it by ENG, which is the square-shoulder engagement."""
+    fr = PLI["tip"] + FL_R
+    s = 1.0 if inboard else -1.0
+    return (station - s * (fr + RAD_G), station - s * (fr - ENG))
 
 
 # ---- engraved-scrollwork generator (pure math, cm) --------------------
@@ -451,28 +474,48 @@ def run(_context: str):
             cut_teeth(b, g, cname, ph)
         return b
 
+    # Each face runs: groove -> SQUARE shoulder -> lip -> entry ramp ->
+    # tip band -> mirrored back. Both lips sit inside their own gear's
+    # root circle, so the tooth-space cut leaves them whole.
+    (rgs, rls) = _grv(ST_IN, True)      # sun, inboard of inner planets
+    (rgi, rli) = _grv(ST_IN, False)     # ring internal, wrapping them
+    (rge, rle) = _grv(ST_OUT, True)     # ring external, inboard of outer
+    (rgh, rlh) = _grv(ST_OUT, False)    # housing, wrapping outer planets
+    for nm, rg, rl, g in (("sun", rgs, rls, SUN), ("ring_int", rgi, rli, RGI),
+                          ("ring_ext", rge, rle, RGE),
+                          ("housing", rgh, rlh, HSG)):
+        ramp = math.degrees(math.atan2(ZB0 - ZL1, abs(g["tip"] - rl)))
+        print("FH %s groove %.3f lip %.3f tip %.3f ramp %.1f deg"
+              % (nm, rg * 10, rl * 10, g["tip"] * 10, ramp))
+        if ramp < 45.0:
+            raise RuntimeError("%s entry ramp %.1f deg < 45" % (nm, ramp))
+
     # ---- sun: free idler ---------------------------------------------
-    rcs = _rc(SUN)
     sun = gear("o3_sun", [
-        (0.0, 0.0), (rcs, 0.0), (rcs, RZ0), (SUN["tip"], ZB0),
-        (SUN["tip"], ZB1), (rcs, RZ1), (rcs, H), (0.0, H)],
+        (0.0, 0.0), (rgs, 0.0), (rgs, ZL0), (rls, ZL0), (rls, ZL1),
+        (SUN["tip"], ZB0), (SUN["tip"], ZB1), (rls, ZH0), (rls, ZH1),
+        (rgs, ZH1), (rgs, H), (0.0, H)],
         [(SUN, "sun_tooth", 0.0)])
     print("FH sun %.3f cm3" % sun.volume)
 
     # ---- ring: teeth on both faces -----------------------------------
-    rci, rce = _rc(RGI), _rc(RGE)
     ring = gear("o3_ring", [
-        (rci, 0.0), (rce, 0.0), (rce, RZ0), (RGE["tip"], ZB0),
-        (RGE["tip"], ZB1), (rce, RZ1), (rce, H), (rci, H),
-        (rci, RZ1), (RGI["tip"], ZB1), (RGI["tip"], ZB0), (rci, RZ0)],
+        (rgi, 0.0), (rge, 0.0),
+        (rge, ZL0), (rle, ZL0), (rle, ZL1),
+        (RGE["tip"], ZB0), (RGE["tip"], ZB1),
+        (rle, ZH0), (rle, ZH1), (rge, ZH1), (rge, H),
+        (rgi, H), (rgi, ZH1), (rli, ZH1), (rli, ZH0),
+        (RGI["tip"], ZB1), (RGI["tip"], ZB0),
+        (rli, ZL1), (rli, ZL0), (rgi, ZL0)],
         [(RGI, "ring_int", 0.0), (RGE, "ring_ext", 0.0)])
     print("FH ring %.3f cm3" % ring.volume)
 
     # ---- housing: the part you hold ----------------------------------
-    rch = _rc(HSG)
     house = gear("o3_housing", [
-        (rch, 0.0), (HOUSE_OUT, 0.0), (HOUSE_OUT, H), (rch, H),
-        (rch, RZ1), (HSG["tip"], ZB1), (HSG["tip"], ZB0), (rch, RZ0)],
+        (rgh, 0.0), (HOUSE_OUT, 0.0), (HOUSE_OUT, H), (rgh, H),
+        (rgh, ZH1), (rlh, ZH1), (rlh, ZH0),
+        (HSG["tip"], ZB1), (HSG["tip"], ZB0),
+        (rlh, ZL1), (rlh, ZL0), (rgh, ZL0)],
         [(HSG, "house_tooth", 0.0)])
     print("FH housing %.3f cm3" % house.volume)
 
@@ -497,14 +540,17 @@ def run(_context: str):
         body.name = name + "_1"
         cut_teeth(body, g, name + "_tooth", phase=math.pi / g["N"])
 
+        # Both flanges are SQUARE both ends. Rev 3 chamfered the top
+        # flange's underside 45 deg to make it self-supporting; that
+        # chamfer was the camming face the planets escaped over. The
+        # square underside is a 1.0 mm annular ledge - an overhang, and
+        # deliberately so: the reference part ships the same feature.
         fr = g["tip"] + FL_R
-        zc = H - FL_H - FL_R           # top flange under-chamfer start
         for fname, prof in (
                 (name + "_flange_lo", [(0.30, 0.0), (fr, 0.0),
                                        (fr, FL_H), (0.30, FL_H)]),
-                (name + "_flange_hi", [(0.30, zc), (g["tip"], zc),
-                                       (fr, zc + FL_R), (fr, H),
-                                       (0.30, H)])):
+                (name + "_flange_hi", [(0.30, H - FL_H), (fr, H - FL_H),
+                                       (fr, H), (0.30, H)])):
             adsk.doEvents()
             skb = root.sketches.add(root.xZConstructionPlane)
             skb.name = fname
@@ -665,8 +711,10 @@ def run(_context: str):
     # sketches solve in seconds
     for k in range(8):
         adsk.doEvents()
+        # vscale 0.60: rev 4's lip-and-groove moved the ring's top face
+        # in to 22.2..25.3 mm, so the band narrows to keep 0.5 mm clear
         decor("o3_dec_ring_%d" % k,
-              dec_band(dec_ring_unit(), 2.375, 2 * math.pi * k / 8, 0.80),
+              dec_band(dec_ring_unit(), 2.375, 2 * math.pi * k / 8, 0.60),
               [ring], 0.003)
 
     for k in range(10):
