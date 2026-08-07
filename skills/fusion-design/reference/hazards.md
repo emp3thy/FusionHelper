@@ -82,3 +82,38 @@ only on a green verdict, with consent — see R10). This changes what
 - **A parameter whose feature bottoms out in a void reads as `param.dead`.**
   Parameterise the member that actually drives the stack, not the cut that is
   insensitive to it.
+
+## Art sketches at scale (measured 2026-08-06)
+
+Decorative line-art (engraved scrollwork, logos, guilloche) breaks assumptions
+that hold fine for a dozen feature sketches.
+
+- **Sketch cost is superlinear; deletion is pathological.** ~300-line sketches
+  solve in seconds; one 2680-line sketch ground the UI for 70+ minutes; and
+  DELETING a ~1200-curve fixed sketch took ~20 minutes. Chunk line-art to <=300
+  lines per sketch, set `isComputeDeferred` while adding entities, and on
+  re-entry RESUME drawing at the first undrawn polygon — never delete-and-redraw
+  a big sketch to recover.
+- **Sketches and features share one name namespace.** An extrude named
+  identically to its sketch is silently auto-suffixed "name (1)", and an
+  `itemByName` idempotency guard then misses it and re-runs the stage. Suffix
+  feature names (`_join`).
+- **A feature whose participants live inside a component lands in THAT
+  component's feature collection**, not root's — a root-only `itemByName` guard
+  misses it and the stage re-runs into a zero-volume join. Search root plus
+  every `allOccurrences` component.
+- **Orphaned timed-out requests execute later in whatever document is active at
+  that moment.** After any client timeout, re-probe the active document's
+  identity before trusting state or launching anything: a "vanished" build had
+  in fact been completed by an orphan while a different document was in front.
+- **Some documents are "Part Design" type** — `occurrences.addNewComponent`
+  raises "Part Design documents can only contain one component". A document
+  created via `documents.add(FusionDesignDocumentType)` allowed components.
+  Probe with a throwaway `addNewComponent` + `deleteMe` before building
+  anything that groups bodies.
+- **Extruding every profile of a stroke-art sketch fills the enclosed voids**
+  (each closed region is its own profile, so curl eyes come out solid). Do not
+  try to classify profiles after the fact — an area match misses fragments and
+  a centroid test fails outright, because a C-shaped strip's centroid lies in
+  its own eye. Design the strokes pairwise-disjoint with open curls, and the
+  sketch yields exactly one profile per polygon. See `print-in-place-design`.

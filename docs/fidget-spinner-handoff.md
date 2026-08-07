@@ -55,7 +55,8 @@ printed rev B — is also genuinely saved in the cloud.
 | `orrery-mk2-sun-ring.f3d` | 13 | sun + planets + ring, inner mesh only |
 | `orrery-mk3-double-mesh.f3d` | 13 | rev 1 — mid-band retention, 8.43 mm³ interference |
 | `orrery-mk3-double-mesh-rev2.f3d` | 13 | end-flange retention, interference PASS (2026-08-06) |
-| `orrery-mk3-rev3-component-decor.f3d` | 13 | **current** — rev 2 + raised top decor, all bodies in component `orrery_mk3_90` |
+| `orrery-mk3-rev3-component-decor.f3d` | 13 | rev 2 + raised top decor, component `orrery_mk3_90` — **PRINTED; gears fell out, see 2b** |
+| `orrery-mk3-rev4-square-retention.f3d` | 13 | **current** — lip-and-groove square retention |
 
 Five earlier designs (Pentaroule, Comet, both print-in-place variants, Vernier,
 Governor) were lost by closing their documents unsaved before archives were
@@ -65,6 +66,22 @@ each rebuilds in about two minutes.
 Body-name prefixes identify a document when the title does not: `sn2_` rev B,
 `sn3_` rev C/D, `ci_` Cicada, `pb_` Pulsar, `hw_` Haywire, `or_` Orrery mk1,
 `o2_` mk2, `o3_` mk3.
+
+## 2b. Orrery mk3 rev 3 — PRINTED, and what it taught (2026-08-07)
+
+The user printed rev 3. It came off the plate well and the gears meshed and
+turned. **Then every planet fell out** the first time it was held horizontally
+and spun — the outer stage first, the inner stage the same way.
+
+The cause was not clearance and not the mesh. Every retention face in rev 3
+was a **45° ramp**, and a 45° face has a camming ratio of 1.0: axial load
+converts one-for-one into radial load, so the flange was actively driven out
+of its own capture. With 0.75 mm of axial float and a 0.6 mm flange, gravity
+plus gyroscopic wobble was enough.
+
+**Rev 4 replaces it with lip-and-groove and square shoulders** — see section 4.
+The lesson is now in `skills/print-in-place-design/SKILL.md` as PRINT-PROVEN:
+*ramps are for entry, never for holding.*
 
 ## 3. The one piece of empirical data
 
@@ -93,7 +110,40 @@ and play × cos 45° is the normal clearance. Worked example, as built:
 Two V-ways are required, not one. A single mid-height capture stops the part
 dropping and shifting but does not stop it **cocking**.
 
-## 4. Orrery mk3 retention — RESOLVED 2026-08-06 (rev 2 built, exported)
+## 4. Orrery mk3 retention — rev 4, square shoulders (2026-08-07)
+
+Rev 4 is the answer to the rev 3 print failure in section 2b. Retention is now
+**lip-and-groove with square blocking faces**, sized off the planet flange:
+
+| | value |
+|---|---|
+| Planet flange | tip + 1.0 mm, 1.2 mm tall, **square both faces** |
+| Gear lip | overlaps the flange by 0.5 mm, 1.0 mm tall, z 1.5–2.5 and 12.0–13.0 |
+| Groove | flange + 0.2 mm radial |
+| Axial float | 0.3 mm per end (was 0.75 mm) |
+| Entry ramp | 45.6–48.0°, self-supporting, measured per gear |
+| Tip band | z 5.0–9.5 mm |
+
+Measured radii (mm): sun groove 7.80 / lip 8.50; ring-int groove 22.20 /
+lip 21.50; ring-ext groove 25.30 / lip 26.00; housing groove 39.70 /
+lip 39.00. Every lip lands **inside its own gear's root circle**, so the
+tooth-space cut never crosses it and each lip is one uninterrupted annulus.
+
+Retention verified by an axial **lift test** — translate a planet and re-run
+the interference check:
+
+| offset | inner planet vs sun+ring | outer planet vs ring+housing |
+|---|---|---|
+| rest | 0.000 mm³ | 0.000 mm³ |
+| ±0.2 mm (inside float) | 0.000 mm³ | 0.000 mm³ |
+| ±0.4 mm (past float) | 0.340 mm³ | 0.347 mm³ |
+
+Free to float, blocked beyond it, symmetric in both directions and on both
+stages. Overhang sweep: **14 faces**, exactly the designed shoulders (four
+0.7 mm gear-lip ledges at z1.5, ten 1.0 mm planet-flange ledges at z13.3) —
+down from 100 in rev 3. Archive: `orrery-mk3-rev4-square-retention.f3d`.
+
+## 4b. Rev 2/3 retention — historical (RESOLVED 2026-08-06)
 
 > **Status update.** The section 4 rebuild below was executed and it worked,
 > with one major addition. The "~8.43 mm³ mesh interference" was NOT the

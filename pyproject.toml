@@ -17,6 +17,13 @@ packages = ["fusionhelper"]
 
 [tool.ruff]
 line-length = 100
+# Fusion-side scripts, not library code: they run inside Fusion's own
+# interpreter, are never imported by the package, and are gated by
+# `python -m fusionhelper.preflight` (rules R1-R11 + pyright against
+# Autodesk's stubs) rather than by this project's style rules. The
+# buildkit author pattern is `from fusionhelper.buildkit import *`,
+# which is F403/F405 by construction. Matches pyright's include scope.
+extend-exclude = ["artifacts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
