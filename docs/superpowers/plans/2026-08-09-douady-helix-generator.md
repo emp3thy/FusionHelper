@@ -841,6 +841,30 @@ def test_no_degenerate_faces():
     m = build_shell(SMALL)
     areas = m.area_faces
     assert (areas > 1e-10).all(), "zero-area triangles present"
+
+
+def test_real_surface_respects_the_overhang_limit():
+    """The design's central claim is that printability is a clamp on a scalar
+    field. Nothing enforced it until here: profile.max_slope() measures the
+    ENVELOPE, not the actual fractal surface. This measures |dr/dz| at fixed
+    theta -- what the nozzle actually experiences as it climbs.
+
+    Measured on the un-low-passed field this failed at 52.88 deg; the spec's
+    Gaussian sigma = 0.5 mm brings it to 44.10 deg with zero loss of relief.
+    """
+    import numpy as np
+
+    from fractalvase.julia import normalised_field
+    from fractalvase.profile import radius_at, relief_amplitude
+
+    cfg = VaseConfig(n_theta=320, n_z=400)
+    z = np.linspace(cfg.band_lo, cfg.band_hi, cfg.n_z)
+    field = normalised_field(cfg, cfg.n_theta, cfg.n_z)
+    r = radius_at(z)[None, :] + relief_amplitude(z, cfg)[None, :] * np.tanh(1.6 * field)
+
+    drdz = np.gradient(r, z[1] - z[0], axis=1)
+    worst = np.degrees(np.arctan(np.abs(drdz).max()))
+    assert worst <= 45.0, f"real surface overhangs at {worst:.2f} deg (limit 45)"
 ```
 
 - [ ] **Step 3: Run it to confirm it fails**
