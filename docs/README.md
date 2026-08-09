@@ -9,6 +9,7 @@ Read in this order.
 | [`probe-results.md`](probe-results.md) | **The evidence.** Eight probes run against a live Fusion install. Every design decision traces to one of these. |
 | [`fusion-api-notes.md`](fusion-api-notes.md) | **The working reference.** Verified Fusion API behaviour, traps, and recipes. Keep this open while implementing. |
 | [`research-findings.md`](research-findings.md) | **The literature.** LLM spatial-reasoning and CAD-generation research, prior art, and the reasoning behind the architecture. |
+| [`superpowers/specs/2026-08-09-fractal-julia-vase-design.md`](superpowers/specs/2026-08-09-fractal-julia-vase-design.md) + [`superpowers/plans/2026-08-09-douady-helix-generator.md`](superpowers/plans/2026-08-09-douady-helix-generator.md) | **The Douady Helix vase.** `fractalvase/`'s spec and implementation plan — a standalone mesh generator outside the Fusion pipeline above; see the README "What ships" table. |
 
 Wired together (skill → gate → verification):
 

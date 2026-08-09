@@ -34,6 +34,7 @@ Autodesk ships one inside Fusion, and it works.
 | `fusionhelper.preflight` | Offline gate, ~1 s: pyright vs Autodesk's own API stubs + lint rules. Catches hallucinated calls **before Fusion sees them** — 7/7 in measurement, 0 false positives |
 | `fusionhelper.verify` | A block appended to every script: constraints, timeline health, interference, clearances, and parameter **liveness** — the only check that catches a model that *looks* parametric and is silently dead |
 | `fusionhelper.buildkit` + `fusionhelper.bundle` | One canonical copy of the helpers every build script used to copy-paste; the bundler inlines the kit and appends the verify stub so a single self-contained, gated artifact reaches Fusion |
+| `fractalvase/` | Standalone geometry generator, no Fusion involved: a Julia field on a Koenigs-centred log-polar grid becomes a closed manifold shell, pierced by boolean subtraction and gated before export to a slicer-ready 3MF — a deliberate departure from the rest of this repo's Fusion-script pipeline |
 
 The gate cannot fail open: a known-bad canary rides along on every run, and a
 gate that stops working reports `GATE_BROKEN`, never `PASS`.
