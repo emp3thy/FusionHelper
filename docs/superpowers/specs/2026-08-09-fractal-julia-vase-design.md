@@ -432,7 +432,7 @@ The original analysis of each is retained below.
 ### Minor / accepted
 
 - Z-seam exists in multi-wall — align to a lobe cusp or randomise
-- 3MF over STL (3.8× smaller measured, carries units)
+- 3MF over STL. Measured on THIS mesh at 855,068 triangles: 3MF 13,528,396 bytes against binary STL 42,753,484 — a ratio of **3.16×**, not the 3.8× quoted from an icosphere during toolchain research. The ratio is mesh-specific, not a constant. 3MF also carries units, which STL does not.
 - 30–40 h print
 - Not resizable — cell sizes tuned to extrusion width
 
