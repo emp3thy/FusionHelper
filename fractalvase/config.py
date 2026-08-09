@@ -42,8 +42,15 @@ class VaseConfig:
     relief_peak: float = 7.0
     relief_peak_z: float = 130.0
 
-    # --- piercing (spec 3.3) ---
-    pierce_threshold: float = 0.62
+    # --- piercing: seeded lattice, not a threshold (spec 3.3 rewritten --
+    # thresholding nu_hat gives one connected blob, see fractalvase/holes.py) ---
+    pierce_lo: float = 150.0
+    pierce_hi: float = 225.0
+    hole_row_pitch: float = 12.0
+    hole_col_pitch: float = 14.0
+    hole_open_cut: float = 0.35
+    hole_size_min: float = 3.0
+    hole_size_max: float = 8.0
     min_ligament: float = 2.0
     max_hole_span: float = 12.0
     arch_apex_deg: float = 45.0
