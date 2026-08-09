@@ -122,9 +122,18 @@ def test_wall_is_never_thinner_than_specified():
     """The throat is where this fails, and where the vase would snap.
 
     smooth_radius bulges OUTWARD at concave kinks; at z = 262 mm it exceeds
-    the raw profile by 1.4202 mm, which would leave a 0.5798 mm wall -- about
-    1.3 extrusion widths -- at the vase's narrowest point. _inner_radius
-    clamps against the raw profile to prevent exactly this.
+    the raw profile by 1.4202 mm at that exact z. What that does to the
+    built wall depends on the sampling grid it's measured at, since the
+    formula is only ever evaluated where a real config actually places a z
+    sample: production's own 166-point grid measures 0.6339 mm at z=262.2 mm
+    (see _inner_radius's docstring); the SMALL config this test actually
+    uses, at its own coarser 26-point grid, measures **1.1794 mm at
+    z=264.4 mm** instead -- still well under the 2.0 mm nominal, just not
+    the exact worst point, because 26 samples over 297 mm don't land on
+    z=262. If this assertion ever fires, expect a number near 1.18 mm, not
+    0.58 or 0.63 -- those are what finer grids see, and this test doesn't
+    use one. _inner_radius clamps against the raw profile to prevent all of
+    the above.
 
     Calls the real _inner_radius rather than recomputing its formula inline:
     an inline copy of the clamp formula would still pass this test even if

@@ -113,10 +113,17 @@ def _inner_radius(cfg: VaseConfig) -> tuple[np.ndarray, np.ndarray]:
 
     The ``minimum`` is load-bearing, not defensive. ``smooth_radius`` bulges
     OUTWARD at concave kinks, and at the throat (z = 262 mm, the vase's
-    narrowest point) it exceeds the raw profile by 1.4202 mm -- which eats
-    the wall down to 0.5798 mm, about 1.3 extrusion widths, exactly where the
-    vase is most likely to snap. Clamping to the raw profile restores a full
-    2.0000 mm minimum and costs 0.13% of interior volume.
+    narrowest point) it exceeds the raw profile by 1.4202 mm at that exact z
+    -- eating the wall down to **0.6339 mm at z=262.2 mm**, measured at
+    production's own 166-point z sampling (``max(500 // 3, 24)``), the
+    resolution this function actually builds at. The often-quoted 0.5798 mm
+    at z=262.0 mm is the continuum limit -- a 3001-point sweep finer than
+    any real ``VaseConfig`` ever resolves, not what the built mesh does; see
+    ``test_wall_is_never_thinner_than_specified`` for the SMALL config's own
+    measured figure. Either way it is structurally unacceptable against the
+    2.0 mm nominal, exactly where the vase is most likely to snap. Clamping
+    to the raw profile restores a full 2.0000 mm minimum and costs 0.13% of
+    interior volume.
 
     Starts at ``z = cfg.base_thickness``, not 0: running the cavity to z=0
     leaves a zero-thickness floor (the base membrane and the cavity floor
