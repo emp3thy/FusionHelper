@@ -1097,6 +1097,15 @@ Task 1 shipped a `pierce_threshold: float = 0.62` field for the threshold rule t
 
 This edits a file from a completed task, which is deliberate and scoped: it is additive apart from the one removal, and `pierce_threshold` has no remaining consumers. Run the full suite afterwards to confirm nothing referenced it.
 
+**The failure mode to design against: a boolean that succeeds and does nothing.**
+
+Measured on the real shell before this task was dispatched. A cutter placed so its inner face is *tangent* to the wall's outer surface — rather than spanning it — yields a zero-volume intersection. `trimesh.boolean.difference` returns successfully, the triangle count is **identical**, and the result is watertight, single-bodied, genus 0. In other words: a flawless vase with no holes in it, passing every check except one.
+
+Two consequences, both mandatory here:
+
+1. **Cutters must span the wall radially with margin on BOTH sides** — from inside the inner surface to outside the outer surface at that (θ, z). Do not place them at a fixed radius. The outer radius varies with the field (up to +7 mm of relief) and the inner with the profile, so compute both at each site and size the prism's radial extent from them.
+2. **`euler_number == 2 − 2·n_holes` is the gate that catches it.** Verified directly: a solid with 3 genuine through-holes gives euler −4 = 2−2·3; the unpierced solid gives 2, which fails that assertion; and a cutter positioned to miss entirely reproduces the silent no-op and is caught. Assert it in this task, not only in Task 6 — if the boolean no-ops you want to know here, while the cutter geometry is still in front of you.
+
 - [ ] **Step 1: Spike the boolean engine before writing any arch code**
 
 Run this exactly:
