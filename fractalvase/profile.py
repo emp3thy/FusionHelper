@@ -38,24 +38,45 @@ def smooth_radius(z: np.ndarray, window: float = 9.0, samples: int = 13) -> np.n
 
     Samples that fall outside [0, 300] are taken by slope-preserving (odd)
     reflection about the nearest edge -- ``2*radius_at(edge) -
-    radius_at(mirror)`` -- not by clamping to the edge value. Both boundary
-    segments (z 0->40 and z 262->300) are exactly linear over the default
-    window, so this reproduces radius_at(edge) exactly. Clamping instead
-    biases the average toward the interior slope (+0.30 mm at z=0, -0.32 mm
-    at z=300 for the default window+samples); mirroring the sample
-    coordinate itself through radius_at (radius_at(|z|) /
-    radius_at(600-z)) is worse, not better (+0.61 mm / -0.64 mm): a
-    monotonic boundary segment is not symmetric about its own edge, so that
-    doubles the slope's contribution instead of cancelling it. Assumes
-    ``window`` does not exceed either boundary segment's length (40 mm /
-    38 mm here) -- true for the default and any reasonable call.
+    radius_at(mirror)`` -- not by clamping to the edge value. At the exact
+    edges (z=0, z=300) this reproduces radius_at(edge) EXACTLY for any
+    window: the reflected term and the direct term it's paired with are
+    the same sampled values reindexed, so they cancel algebraically
+    regardless of window size or the boundary segment's shape (verified up
+    to window=250 mm). What the guard below actually protects is the
+    general near-edge case -- any z strictly inside the domain, not the
+    two exact edges -- where the reflected samples must stay within the
+    single boundary segment physically attached to that edge; past that,
+    reflection pulls in mirrored geometry from an unrelated interior
+    segment, a distortion distinct from the corner-rounding this function
+    already performs intentionally at interior breakpoints.
+
+    Raises ValueError if the window reaches past either boundary segment's
+    own span (read from BREAKPOINTS, not hardcoded). Clamping the old way
+    biased the average toward the interior slope (+0.30 mm at z=0, -0.32 mm
+    at z=300 for the default window+samples). Naive even/mirror reflection
+    of the sample coordinate (radius_at(|z|) / radius_at(600-z)) is worse,
+    not better (+0.61 mm / -0.64 mm): a monotonic boundary segment is not
+    symmetric about its own edge, so that doubles the slope's contribution
+    instead of cancelling it.
 
     The inner wall is built from this, never from the relief-bearing outer
     surface: an inward offset of a detailed surface self-intersects wherever
     the wall thickness exceeds the local radius of curvature.
     """
-    z = np.asarray(z, dtype=float)
     offsets = np.linspace(-window, window, samples)
+    reach = float(np.abs(offsets).max()) if offsets.size else 0.0
+    lo_span = float(_ZS[1] - _ZS[0])
+    hi_span = float(_ZS[-1] - _ZS[-2])
+    if reach > lo_span or reach > hi_span:
+        raise ValueError(
+            f"window={window} reaches {reach:g} mm from each sample point, exceeding "
+            f"the first ({lo_span:g} mm) or last ({hi_span:g} mm) BREAKPOINTS segment "
+            "span -- the boundary reflection is only meaningful within a single linear "
+            "segment"
+        )
+
+    z = np.asarray(z, dtype=float)
 
     def sample(zz: np.ndarray) -> np.ndarray:
         below = zz < 0.0

@@ -106,20 +106,42 @@ def test_smoothing_does_not_move_the_widest_point_much():
 
 
 def test_smoothing_reproduces_the_edge_value_exactly():
-    """Both boundary segments (z 0->40, z 262->300) are themselves exactly
-    linear over the default +/-9 mm window, so slope-preserving (odd)
-    reflection should reproduce radius_at(edge) to floating-point
-    precision -- not merely "close". 1e-9 covers float roundoff only, with
-    no slack for a systematic bias: clamping the old way was off by +0.30 mm
-    / -0.32 mm, and naive coordinate mirroring is off by +0.61 mm / -0.64 mm
-    (both measured independently), so any regression back to either would
-    fail this by six orders of magnitude."""
+    """At the exact domain edges, slope-preserving (odd) reflection is
+    exact for ANY window: the reflected term and the direct term it's
+    paired with are the same sampled values reindexed, so they cancel
+    algebraically regardless of window size (see smooth_radius's
+    docstring). 1e-9 covers float roundoff only, with no slack for a
+    systematic bias: clamping the old way was off by +0.30 mm / -0.32 mm,
+    and naive coordinate mirroring is off by +0.61 mm / -0.64 mm (both
+    measured independently), so any regression back to either would fail
+    this by six orders of magnitude."""
     assert smooth_radius(np.array([0.0]))[0] == pytest.approx(
         radius_at(np.array([0.0]))[0], abs=1e-9
     )
     assert smooth_radius(np.array([300.0]))[0] == pytest.approx(
         radius_at(np.array([300.0]))[0], abs=1e-9
     )
+
+
+def test_smoothing_rejects_a_window_wider_than_the_boundary_segments():
+    """A window that reaches past the first (40 mm) or last (38 mm)
+    BREAKPOINTS segment span makes the boundary reflection pull in
+    mirrored geometry from a different, unrelated segment -- silently, if
+    unguarded. window=45 exceeds both spans."""
+    with pytest.raises(ValueError, match="window"):
+        smooth_radius(np.array([0.0]), window=45.0)
+
+
+def test_default_window_is_genuinely_inside_the_boundary_segment_spans():
+    """Non-vacuous companion to the rejection test above: confirm the
+    default window (9.0 mm) sits with real margin inside both the first
+    (z 0->40, 40 mm) and last (z 262->300, 38 mm) segment spans -- not
+    merely that smooth_radius(z) happens not to raise for it."""
+    lo_span = BREAKPOINTS[1][0] - BREAKPOINTS[0][0]
+    hi_span = BREAKPOINTS[-1][0] - BREAKPOINTS[-2][0]
+    assert lo_span > 9.0
+    assert hi_span > 9.0
+    smooth_radius(np.linspace(0.0, 300.0, 11))  # must not raise
 
 
 def test_combined_slope_stays_within_the_overhang_limit():
