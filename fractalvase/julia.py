@@ -50,12 +50,12 @@ def smooth_escape(z0: np.ndarray, cfg: VaseConfig) -> tuple[np.ndarray, np.ndarr
 def _base_grid(cfg: VaseConfig, n_theta: int, n_z: int) -> tuple[np.ndarray, np.ndarray]:
     """The (theta, h) sample grid before any supersample offset is applied.
 
-    theta uses endpoint=False: the axis is periodic (2*pi is the same angle
-    as 0), so including both endpoints would sample that angle twice,
-    doubling the seam column. This is the ONLY place that builds the base
-    theta axis -- koenigs_grid and _supersampled_field both go through it,
-    so a regression here (e.g. to endpoint=True) cannot hide behind an
-    unguarded second copy.
+    theta excludes its own upper bound: the axis is periodic (2*pi is the
+    same angle as 0), so including both bounds would sample that angle
+    twice, doubling the seam column. This is the ONLY place that builds the
+    base theta axis -- koenigs_grid and _supersampled_field both go through
+    it, so flipping that one flag cannot hide behind an unguarded second
+    copy the way it could before this was extracted.
     """
     theta = np.linspace(0.0, 2 * np.pi, n_theta, endpoint=False)
     h = np.linspace(cfg.band_lo, cfg.band_hi, n_z)
