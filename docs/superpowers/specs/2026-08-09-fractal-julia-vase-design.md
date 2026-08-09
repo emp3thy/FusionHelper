@@ -221,11 +221,11 @@ Sampling checks: arc step 0.5694 mm at r = 58 (at or below nozzle width, so noth
 2. Band-limit **before** geometry: 4× rotated-grid supersample, Gaussian low-pass σ = 0.5 mm, gradient clamp. A fractal has unbounded detail — no sample rate is sufficient, so the field must be filtered, not merely sampled finely.
 3. Outer vertices `[r cosθ, r sinθ, z]`; `θ = linspace(0, 2π, Nθ, endpoint=False)` with **no duplicate seam vertex** — wrap with `np.roll`.
 4. Inner surface from the **smoothed profile offset inward by 2.0 mm** — never an offset of the detailed outer surface, which self-intersects wherever wall thickness exceeds local curvature radius.
-5. Mark cells where ν̂ > 0.62; delete those quads from both surfaces; stitch each hole's boundary loop between outer and inner with a quad strip.
-6. Rim: quad strip joining outer and inner top rings. Base: triangle fan to a centre vertex at z = 0.
+5. Rim: quad strip joining outer and inner top rings. Base: triangle fan to a centre vertex at z = 0. The shell is now closed and manifold.
+6. **Holes by boolean subtraction (decision C1-B).** Build one cutter solid per hole — a pointed-arch prism, apex oriented from the *local surface normal* (decision C4-A), swept through the wall — union the cutters, then `trimesh.boolean.difference([shell, cutters])`. The kernel guarantees the result rather than relying on hand-rolled stitching.
 7. Validate (§5). Export 3MF.
 
-Stack is already installed: numpy 2.3.3, trimesh 4.11.5, scipy 1.17.0, lxml 6.0.2. No new dependencies.
+**Dependencies.** numpy 2.3.3, trimesh 4.11.5, scipy 1.17.0, lxml 6.0.2 are installed. **`manifold3d` is required by C1-B and is NOT currently installed** — `pip install manifold3d`. This is the one new dependency the design takes on; it is the price of the kernel-guaranteed boolean, and it also unlocks the self-intersection check that trimesh cannot do natively.
 
 ---
 
@@ -260,26 +260,31 @@ Note: `mesh.remove_degenerate_faces()` does **not** exist in trimesh 4.11.5 — 
 
 ## 6. Print settings
 
-| Setting | Value |
-|---|---|
-| Layer height | 0.15 mm |
-| Perimeters | 4 |
-| Infill | 0 % |
-| Bottom layers | 5 |
-| Top layers | lip rim only, ironed |
-| Outer wall speed | 40–60 mm/s |
-| Input shaping | on |
-| Brim | 10 mm |
-| **Slice gap closing radius** | **0** |
-| Supports | none |
-| Material | PLA or PETG |
-| Estimate | 30–40 h, ~350 g |
+**Scope.** The deliverable is a 3MF carrying geometry: a closed shell with a **2.0 mm wall**. Perimeter count, infill density and pattern are slicer-profile settings the operator owns — this spec does not prescribe them, and the geometry does not depend on them.
 
-Gap closing radius is the single most frequently documented failure across published fractal models — slicers silently merge intentional gaps at default settings.
+Two settings *are* called out, because they are geometry-dependent rather than preference:
+
+| Setting | Value | Why it is not a preference |
+|---|---|---|
+| **Slice gap closing radius** | **0** | The single most frequently documented failure across published fractal models. At default settings slicers silently merge the intentional gaps, and the lattice fills in. |
+| **Supports** | **none** | The pointed-arch hole geometry is designed to be self-supporting (§3.3). Supports would scar the fractal surface unrecoverably, and are not needed. |
+
+Suggested starting profile, offered as a starting point only: 0.15 mm layer, 5 bottom layers, ironed lip rim, 40–60 mm/s outer wall, input shaping on, 10 mm brim, PLA or PETG. Rough order: 30–40 h, ~350 g, before whatever the boolean and infill choices add.
 
 ---
 
 ## 7. Assumptions
+
+### Resolutions — decided 2026-08-09
+
+| | Concern | Decision | Consequence |
+|---|---|---|---|
+| **C1** | Hole-boundary stitching can break the mesh | **B — boolean subtraction** | Adds `manifold3d` dependency. Kernel guarantees the result; hand-rolled stitching removed from §4. |
+| **C2** | Rabbit has no mirror plane | **A — accept, full 7.0 mm relief** | Design runs deliberately hot on complexity. The −82° helix is the organising rule in place of a reflection. |
+| **C3** | Finest level at 2.096 mm, under the 2.2 mm floor | **A — accept** | Non-issue on inspection: 2.2 was an artefact of building the ladder on exactly *e*. The real floor is the 1.0 mm minimum ridge, and 2.096 is 2.1× it. |
+| **C4** | Arch apex vs. helical lean | **A — per-hole local normal** | Cutter prisms oriented from the local surface normal, not global Z. |
+
+The original analysis of each is retained below.
 
 ### Real concerns — pick a mitigation
 
@@ -310,7 +315,8 @@ Gap closing radius is the single most frequently documented failure across publi
 - Chord sagitta 0.000699 mm — faceting invisible
 - ~815 k triangles < 1 M slicer comfort threshold; ~16 MB 3MF
 - |μ|/e within 0.34 %
-- No new Python dependencies
+
+**Superseded by C1-B:** "no new Python dependencies" was true of the stitching approach and is no longer true. `manifold3d` must be installed. Boolean subtraction will also raise the triangle count above the ~815 k estimate — to be measured, not assumed, and decimated if it crosses 1 M.
 
 ### Minor / accepted
 
