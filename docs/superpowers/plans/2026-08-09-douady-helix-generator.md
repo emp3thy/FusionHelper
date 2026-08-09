@@ -1229,8 +1229,8 @@ def hole_regions(field: np.ndarray, cfg: VaseConfig, z: np.ndarray) -> list[dict
         if lab == 0:
             continue
         ti, zi = np.nonzero(labels == lab)
-        span_z = min((zi.ptp() + 1) * dz, cfg.max_hole_span)
-        span_t = (ti.ptp() + 1) * dtheta
+        span_z = min((np.ptp(zi) + 1) * dz, cfg.max_hole_span)
+        span_t = (np.ptp(ti) + 1) * dtheta
         # reject slivers that would leave sub-ligament walls
         if span_z < cfg.min_ligament or span_t * radius_at(
             np.array([z[int(zi.mean())]])
