@@ -46,6 +46,10 @@ class VaseConfig:
     n_theta: int = 640
     n_z: int = 500
 
+    # --- band-limiting (spec 4 step 2) ---
+    lowpass_sigma_mm: float = 0.5
+    lowpass_ref_radius_mm: float = 58.0
+
     @property
     def alpha(self) -> complex:
         """Repelling fixed point of z^2 + c."""

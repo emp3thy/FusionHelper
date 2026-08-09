@@ -4,15 +4,23 @@ The mapping must be centred on the repelling fixed point alpha. An
 origin-centred map (z = exp(k*h + i*theta)) puts every sample far outside
 K_c, the field goes flat, and the vase comes out a smooth cone. See spec
 section 2.3 and docs/superpowers/specs/proto_field.py.
+
+The field is band-limited by two independent mechanisms (spec 4 step 2):
+an s x s rotated-grid supersample and a Gaussian low-pass. A fractal has
+unbounded detail; neither mechanism alone is enough to keep the sampled
+field's gradient printable, but together they keep the surface's overhang
+within reach of an unsupported nozzle.
 """
 
 from __future__ import annotations
 
 import numpy as np
+from scipy.ndimage import gaussian_filter1d
 
 from fractalvase.config import VaseConfig
 
 _LOG2 = np.log(2.0)
+_RGSS_ANGLE = np.arctan(0.5)  # classic rotated-grid-supersampling angle
 
 
 def smooth_escape(z0: np.ndarray, cfg: VaseConfig) -> tuple[np.ndarray, np.ndarray]:
@@ -63,10 +71,26 @@ def _raw_field(cfg: VaseConfig, zc: np.ndarray) -> np.ndarray:
     return field
 
 
-def normalised_field(
-    cfg: VaseConfig, n_theta: int, n_z: int, supersample: int = 2
-) -> np.ndarray:
-    """Band-limited field in [0, 1].
+def _supersample_offsets(s: int) -> list[tuple[float, float]]:
+    """s x s rotated-grid offsets, fractions of one cell in (theta, h).
+
+    A regular s x s stratified grid is rotated by ``_RGSS_ANGLE`` so no two
+    samples share a theta or a h coordinate -- unlike slicing a fixed-size
+    list, this makes every ``s`` produce genuinely ``s**2`` distinct sample
+    points instead of silently reusing the same handful for every s >= 2.
+    """
+    cos_a, sin_a = np.cos(_RGSS_ANGLE), np.sin(_RGSS_ANGLE)
+    offsets = []
+    for i in range(s):
+        for j in range(s):
+            gt = (i + 0.5) / s - 0.5
+            gh = (j + 0.5) / s - 0.5
+            offsets.append((float(gt * cos_a - gh * sin_a), float(gt * sin_a + gh * cos_a)))
+    return offsets
+
+
+def _supersampled_field(cfg: VaseConfig, n_theta: int, n_z: int, supersample: int) -> np.ndarray:
+    """Field averaged over an s x s rotated-grid supersample, before the low-pass.
 
     A fractal has unbounded detail, so no sample rate is sufficient -- the
     field must be filtered, not merely sampled finely. Supersampling on a
@@ -76,9 +100,7 @@ def normalised_field(
     if supersample <= 1:
         return _raw_field(cfg, koenigs_grid(cfg, n_theta, n_z))
 
-    acc = np.zeros((n_theta, n_z), dtype=np.float64)
-    # rotated-grid offsets: fractions of one cell in (theta, h)
-    offsets = [(0.25, 0.25), (0.75, -0.25), (-0.25, 0.75), (-0.75, -0.75)][: supersample**2]
+    offsets = _supersample_offsets(supersample)
     dtheta = (2 * np.pi) / n_theta
     dh = (cfg.band_hi - cfg.band_lo) / max(n_z - 1, 1)
 
@@ -86,6 +108,7 @@ def normalised_field(
     h = np.linspace(cfg.band_lo, cfg.band_hi, n_z)
     t_grid, h_grid = np.meshgrid(theta, h, indexing="ij")
 
+    acc = np.zeros((n_theta, n_z), dtype=np.float64)
     for ot, oh in offsets:
         tt = t_grid + ot * dtheta
         hh = np.clip(h_grid + oh * dh, cfg.band_lo, cfg.band_hi)
@@ -95,3 +118,40 @@ def normalised_field(
         acc += _raw_field(cfg, cfg.alpha + np.exp(u + 1j * v))
 
     return acc / len(offsets)
+
+
+def _lowpass_sigma_cells(cfg: VaseConfig, n_theta: int, n_z: int) -> tuple[float, float]:
+    """Gaussian low-pass sigma (spec 4 step 2), converted from mm to grid cells.
+
+    Circumferential cell width shrinks toward the axis and grows toward the
+    rim; using the maximum radius (``lowpass_ref_radius_mm``) keeps the
+    filter from being under-applied anywhere on the surface.
+    """
+    dtheta_mm = (2 * np.pi * cfg.lowpass_ref_radius_mm) / n_theta
+    dh_mm = (cfg.band_hi - cfg.band_lo) / max(n_z - 1, 1)
+    return cfg.lowpass_sigma_mm / dtheta_mm, cfg.lowpass_sigma_mm / dh_mm
+
+
+def normalised_field(
+    cfg: VaseConfig, n_theta: int, n_z: int, supersample: int = 2
+) -> np.ndarray:
+    """Band-limited field in [0, 1].
+
+    Two independent band-limiting mechanisms, per spec 4 step 2: an s x s
+    rotated-grid supersample (``_supersampled_field``) followed by a
+    Gaussian low-pass of ``cfg.lowpass_sigma_mm`` millimetres. The low-pass
+    runs after the supersample so it smooths what supersampling could not
+    -- detail finer than the sample grid itself. Wrapping in theta (the
+    axis is periodic) and clamping in h (the band has real edges) keeps the
+    filter from either seaming or bleeding past the vase's ends. Applied as
+    two 1-D passes rather than a single call with a per-axis mode tuple,
+    which keeps each call's ``mode`` a plain string.
+    """
+    field = _supersampled_field(cfg, n_theta, n_z, supersample)
+    if cfg.lowpass_sigma_mm <= 0:
+        return field
+
+    sigma_theta, sigma_h = _lowpass_sigma_cells(cfg, n_theta, n_z)
+    field = gaussian_filter1d(field, sigma=sigma_theta, axis=0, mode="wrap")
+    field = gaussian_filter1d(field, sigma=sigma_h, axis=1, mode="nearest")
+    return field

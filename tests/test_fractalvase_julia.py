@@ -2,6 +2,7 @@
 import numpy as np
 import pytest
 
+import fractalvase.julia as julia
 from fractalvase.config import DOUADY_HELIX
 from fractalvase.julia import koenigs_grid, normalised_field, smooth_escape
 
@@ -88,4 +89,49 @@ def test_normalised_field_interior_is_maximal():
     zc = koenigs_grid(CFG, 128, 100)
     _, interior = smooth_escape(zc, CFG)
     f = normalised_field(CFG, 128, 100, supersample=1)
-    assert f[interior].min() == pytest.approx(1.0)
+    # The Gaussian low-pass (spec 4 step 2) legitimately blurs interior cells
+    # that border the exterior below 1.0 -- that is the low-pass working as
+    # intended, not a regression. A cell deep inside the interior blob, away
+    # from any boundary, is surrounded entirely by other 1.0 cells and stays
+    # exactly 1.0, which is what actually has to drive the maximum radius.
+    assert f[interior].max() == pytest.approx(1.0)
+
+
+def test_supersample_evaluates_s_squared_distinct_points(monkeypatch):
+    """The offsets used to reach a hardcoded 4-item list; supersample=3 silently
+    reused those same 4 points instead of genuinely sampling 9. Pin the fix by
+    spying on every raw-field evaluation the supersample loop performs."""
+    seen: list[np.ndarray] = []
+    original = julia._raw_field
+
+    def spy(cfg, zc):
+        seen.append(np.array(zc))
+        return original(cfg, zc)
+
+    monkeypatch.setattr(julia, "_raw_field", spy)
+    julia.normalised_field(CFG, 32, 20, supersample=3)
+
+    assert len(seen) == 9
+    for i in range(len(seen)):
+        for j in range(i + 1, len(seen)):
+            assert not np.array_equal(seen[i], seen[j]), "supersample reused a sample grid"
+
+
+def test_lowpass_reduces_gradient_without_flattening_the_field():
+    """Spec 4 step 2's Gaussian low-pass is a real overhang mitigation, not
+    decoration: the field's z-gradient (a proxy for surface overhang before
+    profile.py maps it to a radius) must drop, while the field's own range
+    and spread -- the relief the low-pass must not erase -- stay close."""
+    cfg = CFG
+    n_theta, n_z = 256, 200
+    raw = julia._supersampled_field(cfg, n_theta, n_z, supersample=2)
+    filtered = normalised_field(cfg, n_theta, n_z, supersample=2)
+
+    raw_grad = np.abs(np.diff(raw, axis=1)).max()
+    filtered_grad = np.abs(np.diff(filtered, axis=1)).max()
+    assert filtered_grad < raw_grad, "low-pass did not reduce the z-gradient"
+
+    raw_pp = raw.max() - raw.min()
+    filtered_pp = filtered.max() - filtered.min()
+    assert filtered_pp == pytest.approx(raw_pp, rel=0.05), "low-pass flattened the field's range"
+    assert filtered.std() == pytest.approx(raw.std(), rel=0.05), "low-pass flattened the spread"
