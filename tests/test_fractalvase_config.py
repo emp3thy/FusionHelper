@@ -64,3 +64,19 @@ def test_envelope_is_respected_by_construction():
     cfg = VaseConfig()
     assert cfg.height <= 300.0
     assert cfg.band_lo < cfg.band_hi <= cfg.height
+
+
+def test_derived_quantities_recompute_from_a_different_config():
+    """Guards the "computed, not stored" contract: swapping c/periods must move
+    every derived quantity, and each one must still satisfy its own defining
+    equation for the NEW config -- not merely differ from DOUADY_HELIX, which a
+    hardcoded wrong value could also do."""
+    cfg = VaseConfig(c=0.1 + 0.6j, periods=7)
+
+    assert cfg.alpha != DOUADY_HELIX.alpha
+    # alpha must satisfy alpha^2 + c = alpha for the NEW c
+    assert abs(cfg.alpha**2 + cfg.c - cfg.alpha) < 1e-12
+    assert cfg.mu == pytest.approx(2 * cfg.alpha)
+    assert cfg.period == pytest.approx(cfg.band / cfg.periods)
+    assert cfg.k == pytest.approx(cfg.ln_mu / cfg.period)
+    assert cfg.twist_rate_rad_per_mm == pytest.approx(cfg.arg_mu / cfg.period)
