@@ -83,11 +83,53 @@ Five levels, ≈1.7 decades, matching the empirical span of natural fractals.
 
 ### 2.3 Mapping
 
-Log-polar: **z = exp(k·h + iθ)**.
+> **Corrected 2026-08-09 after numerical prototyping.** An earlier draft of this
+> section gave the map as `z = exp(k·h + iθ)`. That is wrong. Over the band it
+> produces |z| from 2.2 to 123, while K_c lives inside |z| ≲ 1.5 — every sample
+> escapes at iteration 1–2 and the vase comes out a smooth cone with no fractal
+> on it. Koenigs linearisation describes the neighbourhood of **α**, so the map
+> must be centred there. The corrected form is below and is numerically verified.
 
-`θ = Im(w)` is 2π-periodic by construction, so **the seam cannot exist** — no wrap artefact to engineer around. Scaling self-similarity becomes translation, so the ornament repeats up the height at a fixed ratio.
+Self-similarity lives at the repelling fixed point: near α the set is asymptotically invariant under `ζ → μζ`, where `ζ = z − α`. Writing `ζ = e^{u+iv}`, that invariance is a **translation** `u → u + ln|μ|`, `v → v + arg μ`.
 
-Because arg μ ≠ 0 the repeat is a **screw**: rising by ln|μ|/k also rotates by arg μ.
+Mapping the vase's (θ, h) into those coordinates:
+
+```
+u(h) = ln(ζ_min) + k·(h − h_lo)
+v(θ,h) = θ + (arg μ / ln|μ|)·k·(h − h_lo)
+z(θ,h) = α + exp( u(h) + i·v(θ,h) )
+```
+
+with `ζ_min = 0.02`, `h_lo = 40 mm`, `k = 0.0200673 mm⁻¹`.
+
+Rising by one period `Δh = ln|μ|/k = 50 mm` advances `u` by exactly `ln|μ|` **and** `v` by exactly `arg μ` — which *is* the Koenigs map. The pattern therefore reproduces itself once per period, rotated by arg μ. The twist is not decoration added afterwards; it is the second component of the same invariance.
+
+`v` is 2π-periodic in θ, so **the seam cannot exist** — verified exactly, not approximately (see below).
+
+The twist coefficient `(arg μ / ln|μ|)·k = arg μ / Δh = −0.0071884 rad/mm = −0.4119°/mm`, which reproduces the twist rate in §3.4 independently.
+
+**Numerically verified** (`proto_field.py`, Nθ=256, Nz=200):
+
+| Check | Result | Wanted |
+|---|---|---|
+| \|ζ\| range | 0.0200 → 1.1068 | = ζ_min × \|μ\|⁴ ✓ |
+| Interior fraction of grid | **0.1057** | neither 0 nor 1 ✓ |
+| Escaped ν spread | 0.227 → 79.118, σ = 3.751 | real structure ✓ |
+| Self-similarity across one period | **r = 0.9866** | high; mis-rolled control 0.7792 ✓ |
+| Seam ν(θ=0) vs ν(θ=2π) | **Δ = 0.00e+00** | exact ✓ |
+
+### 2.3.1 Direction and normalisation
+
+`u` increases with height, so **ζ moves away from α as the vase rises** — coarser structure at the top, finest near the foot. This is a free sign choice (`k → −k` inverts it) and should be settled from a render, not from theory. Exposed as a config flag.
+
+ν is heavy-tailed (max 79 against σ 3.75), so normalise with a clamp rather than by the maximum:
+
+```
+ν̂ = clip(ν / ν_ref, 0, 1)        ν_ref = 12 (config)
+ν̂ = 1 for interior points        (interior is solid → maximum radius)
+```
+
+Without the clamp a handful of slow-escaping samples would compress all the visible structure into the bottom few percent of the range.
 
 Fractal band z = 40…240 mm (200 mm), **P = 4 periods**:
 
