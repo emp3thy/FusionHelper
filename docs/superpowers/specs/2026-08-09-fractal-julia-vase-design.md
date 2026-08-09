@@ -224,9 +224,31 @@ Three things consume the overhang budget and they are not independent — the pr
 | Meridional total | 0.7222 | |
 | Tangential drift from twist at r = 58 | 0.4169 (22.63°) | widest point |
 | **Combined \|∇r\|** | **0.8339** | |
-| **Angle from vertical** | **39.82°** | limit 45° — **PASS, 5.18° margin** |
+| **Angle from vertical** | **39.82°** | envelope only — **see correction below** |
 
-This bound is deliberately pessimistic: it stacks the shoulder's steepest taper against the peak relief gradient and the twist drift at maximum radius, and those three do not co-occur. At the actual shoulder (r ≈ 39–48 mm) twist drift is 0.28, giving 37.8°. The real margin is larger than 5.18°; the design is specified against the pessimistic figure.
+> **Corrected 2026-08-09 after measuring the real surface.** The table above,
+> and the `max_envelope_slope` function derived from it, bound the **smooth
+> envelope** — `radius_at` + `relief_amplitude` — and **do not bound the
+> textured surface**. They never see the Julia field's own z-gradient, which is
+> what drives the steepest local slopes. Two corrections:
+>
+> 1. The tangential term used r = 58.0 mm, the profile-only maximum. The true
+>    maximum combined radius is **62.446 mm at z ≈ 151.3**, raising the
+>    envelope bound to 0.8503 → **40.38°**.
+> 2. The real textured surface measures **43.71°** (`predict_shell.py`,
+>    production grid, |dr/dz| at fixed θ). The envelope figure understates it
+>    by 3.33° even after correction (1).
+>
+> **The true margin against the 45° limit is 1.29°, not 5.18°.** Still passing,
+> and passing on the number that matters — the measured surface, not the
+> envelope — but four times tighter than this table originally implied.
+>
+> The envelope bound is retained because it is cheap and catches gross profile
+> errors, but it is renamed `max_envelope_slope` so nothing mistakes it for the
+> printability gate. The gate is `test_real_surface_respects_the_overhang_limit`
+> in Task 4, which measures the actual radius field.
+
+Why 43.71° and not worse: the Gaussian low-pass (§4 step 2) is what holds it there. Without it the same surface measures 52.88°, over the limit — see the band-limiting note in §4.
 
 Per-segment profile slopes, all individually well inside limit:
 

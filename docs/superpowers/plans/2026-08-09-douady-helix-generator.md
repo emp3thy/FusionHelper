@@ -546,7 +546,7 @@ git commit -m "feat(fractalvase): Koenigs-centred Julia field with band-limiting
   - `radius_at(z: np.ndarray) -> np.ndarray`
   - `smooth_radius(z: np.ndarray, window: float = 9.0) -> np.ndarray`
   - `relief_amplitude(z: np.ndarray, cfg: VaseConfig) -> np.ndarray`
-  - `max_slope(cfg: VaseConfig) -> float`
+  - `max_envelope_slope(cfg: VaseConfig) -> float`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -559,7 +559,7 @@ import pytest
 from fractalvase.config import DOUADY_HELIX
 from fractalvase.profile import (
     BREAKPOINTS,
-    max_slope,
+    max_envelope_slope,
     radius_at,
     relief_amplitude,
     smooth_radius,
@@ -621,8 +621,8 @@ def test_smoothing_does_not_move_the_widest_point_much():
 
 def test_combined_slope_stays_within_the_overhang_limit():
     """Profile taper + relief gradient + helical lean, composed."""
-    assert max_slope(CFG) < 1.0
-    assert np.degrees(np.arctan(max_slope(CFG))) < 45.0
+    assert max_envelope_slope(CFG) < 1.0
+    assert np.degrees(np.arctan(max_envelope_slope(CFG))) < 45.0
 ```
 
 - [ ] **Step 2: Run it to confirm it fails**
@@ -697,7 +697,7 @@ def relief_amplitude(z: np.ndarray, cfg: VaseConfig) -> np.ndarray:
     return out
 
 
-def max_slope(cfg: VaseConfig) -> float:
+def max_envelope_slope(cfg: VaseConfig) -> float:
     """Worst-case |grad r|, composing profile taper, relief and helical lean.
 
     Deliberately pessimistic: it stacks the steepest taper against the peak
@@ -870,7 +870,7 @@ def test_no_degenerate_faces():
 
 def test_real_surface_respects_the_overhang_limit():
     """The design's central claim is that printability is a clamp on a scalar
-    field. Nothing enforced it until here: profile.max_slope() measures the
+    field. Nothing enforced it until here: profile.max_envelope_slope() measures the
     ENVELOPE, not the actual fractal surface. This measures |dr/dz| at fixed
     theta -- what the nozzle actually experiences as it climbs.
 
@@ -1664,7 +1664,7 @@ git commit -m "feat(fractalvase): end-to-end build, CLI, and docs sync"
 
 ## Self-Review
 
-**Spec coverage.** §2.1 constants → Task 1. §2.2 scale ladder → Task 1. §2.3 corrected mapping and §2.3.1 normalisation → Task 2. §3.1 profile and relief → Task 3. §3.2 viewing distances → design intent, no code. §3.3 piercing rules → Task 5. §3.4 slope constraint → Task 3 (`max_slope`). §4 pipeline and triangle budget → Tasks 4, 5, 7 Step 4. §5 validation gate → Task 6. §6 scope (geometry only) → Global Constraints. §7 decisions C1-B, C4-A → Task 5; C2-A and C3-A are parameter values already in the Task 1 config.
+**Spec coverage.** §2.1 constants → Task 1. §2.2 scale ladder → Task 1. §2.3 corrected mapping and §2.3.1 normalisation → Task 2. §3.1 profile and relief → Task 3. §3.2 viewing distances → design intent, no code. §3.3 piercing rules → Task 5. §3.4 slope constraint → Task 3 (`max_envelope_slope`). §4 pipeline and triangle budget → Tasks 4, 5, 7 Step 4. §5 validation gate → Task 6. §6 scope (geometry only) → Global Constraints. §7 decisions C1-B, C4-A → Task 5; C2-A and C3-A are parameter values already in the Task 1 config.
 
 **Placeholders.** None. Every code step carries runnable code; every "if it fails" branch names a specific action rather than "handle errors".
 
