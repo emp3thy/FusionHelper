@@ -31,6 +31,12 @@ class VaseConfig:
     band_lo: float = 40.0
     band_hi: float = 240.0
     wall: float = 2.0
+    # Solid floor separating the outer base from the (otherwise open, z=0)
+    # cavity floor. Without it the inner surface runs to z=0 too and the
+    # base is a zero-thickness membrane -- a real defect found by building
+    # the shell (Task 4), not a slicer nicety. 3.0 mm for a 300 mm vase:
+    # stiff and reliable over a brim without wasting material.
+    base_thickness: float = 3.0
 
     # --- relief envelope A(z) (spec 3.1) ---
     relief_peak: float = 7.0
@@ -69,6 +75,8 @@ class VaseConfig:
             raise ValueError(f"zeta_min must be > 0 (got {self.zeta_min})")
         if self.wall <= 0.0:
             raise ValueError(f"wall must be > 0 (got {self.wall})")
+        if self.base_thickness <= 0.0:
+            raise ValueError(f"base_thickness must be > 0 (got {self.base_thickness})")
 
     @property
     def alpha(self) -> complex:
