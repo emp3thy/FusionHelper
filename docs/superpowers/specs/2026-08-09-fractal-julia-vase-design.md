@@ -230,12 +230,45 @@ Placement and scale are both genuinely fractal-derived — the field decides whi
 | Size range | **3.0 → 8.0 mm** | realised 3.09 → 8.00 mm, a 2.6× spread so the field's variation reads |
 | **Minimum ligament, measured** | — | **4.62 mm** against the 2.0 mm floor |
 
+**The lattice ornaments one face, not the full circumference — accepted 2026-08-09.**
+Measured on the shipped lattice, all 43 holes fall inside a single **~103° arc**
+(θ 3.590 → 5.386 of 2π). Per row: 103°, 90°, 77°, 80°, 86°, 63°, all centred on
+roughly the same side. Every site is independently field-gated; the Julia field's
+high region simply sits in one sector at every pierced height, and the −82° helix
+rotates it only about 25° across the 60 mm band — not enough to wrap.
+
+The user was shown this and **chose to keep it**: one face reads as pierced
+openwork, the remaining two-thirds as unbroken fractal relief, and the unpierced
+side stays structurally stronger. This is intended behaviour, not a defect to
+correct. Do not "fix" the clustering by decoupling site placement from the field.
+
 Alternatives measured, for the record: 10 × 12 mm pitch at the same cut gives 55 holes but only **2.25 mm** of ligament — 0.25 mm of margin, too little on a part that must also survive printing. 14 × 16 mm gives 20 holes and 6.31 mm. Evidence: `seed_lattice.py`.
 
 | Rule | Value | Reason |
 |---|---|---|
 | Hole shape | **pointed arch (gothic), apex ≥ 45°** | A round hole's crown is an unsupported bridge. A pointed arch is self-supporting — this is what buys R7 despite the piercing. |
-| **Arch apex measured against the local surface tangent, not global Z** | correction = local lean, up to 22.63° | The helix leans features off vertical. An arch built to global Z degrades toward a bridge on the leaning face. |
+| **Arch apex measured against GLOBAL Z** — see the correction below | no lean correction | FDM layers are horizontal in global Z and do not tilt with the surface. |
+> **C4-A REVERSED 2026-08-09 after measurement.** The decision recorded below —
+> orienting each arch crown against the LOCAL surface tangent — is wrong and has
+> been removed from the code. Two independent reviewers found it, and it was
+> verified directly on real cutter output: with the lean correction every one of
+> the 43 holes had a roof face at **49.90° from vertical**, over the 45° limit —
+> a near-flat unsupported bridge, on the very feature the pointed arch exists to
+> avoid. With the correction removed both faces sit at **26.57°, symmetric**.
+>
+> The reasoning error: FDM layers are horizontal in **global Z** and do not tilt
+> with the surface, so a crown is self-supporting relative to the *build
+> direction*, not to the wall. Worse, the premise was false to begin with —
+> `revolve_grid` places vertices at `(r cosθ, r sinθ, z)` with θ from a plain
+> linspace that never depends on z, and `twist_rate_rad_per_mm` only steers which
+> point of the *field* is sampled. **The solid is a plain surface of revolution
+> with no shear; there was never a lean to correct for.**
+>
+> The failure was also mathematically forced: rotating a symmetric 45°/45° apex
+> about that axis pushes one roof line toward horizontal and the other toward
+> vertical by the same amount, for either sign. No magnitude of the mechanism
+> keeps both sides under 45°.
+
 | Min ligament between holes | **2.0 mm** (5 lines) — realised 4.62 mm | Below this the lattice snaps in hand. Now guaranteed by the lattice pitch rather than hoped for from a level set. |
 | Max hole span | **12 mm** | Well inside the 30–40 mm bridging limit even if an arch degrades. |
 | Edge fillet | 1.2 mm | Prevents knife-edges slicing to zero width. |
