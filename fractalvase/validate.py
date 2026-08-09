@@ -10,10 +10,11 @@ silently did nothing": a cutter too shallow to span the wall leaves
 ``is_watertight``, ``is_winding_consistent``, ``is_volume``, ``body_count``,
 and positive volume all green on an effectively unpierced solid (see
 holes.pierce's docstring and task-5-report.md for a measured case). Every
-other check here guards a distinct, independently-triggerable defect: a
-flipped single face leaves a mesh watertight with a volume that is still
-positive but wrong (measured: 500 mm^3 instead of 1000 mm^3 for a 10x10x10
-box with one face reversed) and only ``is_winding_consistent`` catches it.
+other check here guards a distinct, independently-triggerable defect except
+``broken_faces`` -- see its own comment below -- a flipped single face
+leaves a mesh watertight with a volume that is still positive but wrong
+(measured: 500 mm^3 instead of 1000 mm^3 for a 10x10x10 box with one face
+reversed) and only ``is_winding_consistent`` catches it.
 """
 
 from __future__ import annotations
@@ -47,6 +48,17 @@ def validate(mesh: trimesh.Trimesh, cfg: VaseConfig, n_holes: int) -> dict[str, 
             f"(genus mismatch for {n_holes} holes): hole topology is wrong"
         )
 
+    # Redundant with is_watertight by definition, not merely in practice:
+    # broken_faces flags faces touching an edge NOT shared by exactly two
+    # faces, and is_watertight means every edge IS shared by exactly two
+    # faces, so watertight => broken_faces is empty. Confirmed directly: a
+    # closed box, a torus, and an icosphere all give watertight=True with
+    # broken_faces=0; an open box gives watertight=False AND broken_faces
+    # nonempty (never nonempty alone). Mutation-tested: disabling this
+    # check leaves every test in tests/test_fractalvase_validate.py green,
+    # confirming no case in this suite depends on it in isolation. Kept
+    # anyway as a zero-cost guard against that trimesh implication ever
+    # changing, not as an independently meaningful check.
     broken = trimesh.repair.broken_faces(mesh)
     if len(broken):
         problems.append(f"{len(broken)} broken faces")
