@@ -36,13 +36,36 @@ def radius_at(z: np.ndarray) -> np.ndarray:
 def smooth_radius(z: np.ndarray, window: float = 9.0, samples: int = 13) -> np.ndarray:
     """Box-average the piecewise profile so breakpoints read as curves.
 
+    Samples that fall outside [0, 300] are taken by slope-preserving (odd)
+    reflection about the nearest edge -- ``2*radius_at(edge) -
+    radius_at(mirror)`` -- not by clamping to the edge value. Both boundary
+    segments (z 0->40 and z 262->300) are exactly linear over the default
+    window, so this reproduces radius_at(edge) exactly. Clamping instead
+    biases the average toward the interior slope (+0.30 mm at z=0, -0.32 mm
+    at z=300 for the default window+samples); mirroring the sample
+    coordinate itself through radius_at (radius_at(|z|) /
+    radius_at(600-z)) is worse, not better (+0.61 mm / -0.64 mm): a
+    monotonic boundary segment is not symmetric about its own edge, so that
+    doubles the slope's contribution instead of cancelling it. Assumes
+    ``window`` does not exceed either boundary segment's length (40 mm /
+    38 mm here) -- true for the default and any reasonable call.
+
     The inner wall is built from this, never from the relief-bearing outer
     surface: an inward offset of a detailed surface self-intersects wherever
     the wall thickness exceeds the local radius of curvature.
     """
     z = np.asarray(z, dtype=float)
     offsets = np.linspace(-window, window, samples)
-    stack = np.stack([radius_at(np.clip(z + d, 0.0, 300.0)) for d in offsets])
+
+    def sample(zz: np.ndarray) -> np.ndarray:
+        below = zz < 0.0
+        above = zz > 300.0
+        out = radius_at(np.clip(zz, 0.0, 300.0))
+        out[below] = 2 * _RS[0] - radius_at(-zz[below])
+        out[above] = 2 * _RS[-1] - radius_at(600.0 - zz[above])
+        return out
+
+    stack = np.stack([sample(z + d) for d in offsets])
     return stack.mean(axis=0)
 
 
@@ -60,12 +83,25 @@ def relief_amplitude(z: np.ndarray, cfg: VaseConfig) -> np.ndarray:
     return out
 
 
-def max_slope(cfg: VaseConfig) -> float:
-    """Worst-case |grad r|, composing profile taper, relief and helical lean.
+def max_envelope_slope(cfg: VaseConfig) -> float:
+    """Worst-case |grad r| of the SMOOTH ENVELOPE -- profile + relief + twist.
 
-    Deliberately pessimistic: it stacks the steepest taper against the peak
-    relief gradient and the twist drift at maximum radius, which do not
-    co-occur. Spec section 3.4 records 0.8339 -> 39.82 degrees.
+    This bounds ``radius_at`` and ``relief_amplitude`` only. It has no
+    access to the Julia field and must not gain one: the field's own
+    z-gradient is what actually drives the steepest local slopes on the
+    textured surface, and this function never sees it. The real
+    printability gate is a separate check against the actual radius field
+    (Task 4) -- do not treat this as that guarantee. Measured: the printed
+    vase's textured surface reaches ~43.71 degrees against the 45-degree
+    limit (margin 1.29 degrees), while this envelope bound -- corrected for
+    the true profile+relief combined maximum radius (62.446 mm at z=151.3,
+    not the profile-only 58 mm) -- comes out to ~0.8503 (40.38 degrees),
+    understating the real surface by 3.33 degrees.
+
+    Within its own scope it is still deliberately pessimistic: it stacks
+    the steepest profile taper against the peak relief gradient and the
+    twist drift at maximum combined radius, three things that do not
+    co-occur on the real surface either.
     """
     z = np.linspace(0.0, 300.0, 30001)
 
@@ -73,7 +109,7 @@ def max_slope(cfg: VaseConfig) -> float:
     relief_grad = np.abs(np.gradient(relief_amplitude(z, cfg), z)).max()
     meridional = seg + relief_grad
 
-    r_max = _RS.max()
+    r_max = (radius_at(z) + relief_amplitude(z, cfg)).max()
     tangential = r_max * abs(cfg.twist_rate_rad_per_mm)
 
     return float(np.hypot(meridional, tangential))

@@ -4,7 +4,7 @@ import pytest
 from fractalvase.config import DOUADY_HELIX
 from fractalvase.profile import (
     BREAKPOINTS,
-    max_slope,
+    max_envelope_slope,
     radius_at,
     relief_amplitude,
     smooth_radius,
@@ -50,13 +50,54 @@ def test_relief_samples_match_spec():
         assert got == pytest.approx(expected, abs=1e-3)
 
 
-def test_relief_has_zero_slope_at_both_band_ends():
-    """Zero-slope entry is what stops a visible start line."""
-    eps = 0.01
+def test_relief_derivative_vanishes_at_both_band_ends():
+    """Zero-slope entry is what stops a visible start line.
+
+    A(z) is a raised cosine, so its value near an edge falls off
+    quadratically, not linearly: A(edge + 0.01) is ~2e-7, not merely
+    "< 0.01". A value-only check at that scale has four orders of
+    magnitude of slack -- a regression that swapped in a *linear* onset
+    with slope up to ~0.9 mm/mm would still satisfy "< 0.01" at eps=0.01.
+    Check the derivative itself instead, via a tight central difference
+    (h=1e-5, chosen because the analytic derivative is exactly 0 at both
+    edges -- sin(0) and sin(pi) -- so the central-difference estimate is
+    itself O(h) and shrinks with h; 1e-5 keeps float noise well below the
+    1e-4 threshold while staying far above where dA/dz would land under a
+    genuine abrupt-onset regression).
+    """
+    h = 1e-5
     for edge in (CFG.band_lo, CFG.band_hi):
-        inside = edge + eps if edge == CFG.band_lo else edge - eps
-        a = relief_amplitude(np.array([inside]), CFG)[0]
-        assert a < 0.01, f"relief enters abruptly at z={edge}"
+        d = (
+            relief_amplitude(np.array([edge + h]), CFG)[0]
+            - relief_amplitude(np.array([edge - h]), CFG)[0]
+        ) / (2 * h)
+        assert abs(d) < 1e-4, f"relief slope at z={edge} is {d}, not ~0"
+
+
+def test_relief_rise_and_fall_pieces_agree_in_value_and_slope_at_the_peak():
+    """relief_amplitude only ever evaluates the rise formula at z ==
+    relief_peak_z (rise uses z <= pk, fall uses z > pk). Confirm the two
+    closed forms -- not just the branched function -- agree at that join,
+    both in value and in derivative, so the branch itself introduces no
+    kink."""
+
+    def rise_only(z):
+        z = np.asarray(z, dtype=float)
+        lo, pk = CFG.band_lo, CFG.relief_peak_z
+        return CFG.relief_peak * (1 - np.cos(np.pi * (z - lo) / (pk - lo))) / 2
+
+    def fall_only(z):
+        z = np.asarray(z, dtype=float)
+        pk, hi = CFG.relief_peak_z, CFG.band_hi
+        return CFG.relief_peak * (1 + np.cos(np.pi * (z - pk) / (hi - pk))) / 2
+
+    pk = CFG.relief_peak_z
+    assert rise_only(np.array([pk]))[0] == pytest.approx(fall_only(np.array([pk]))[0], abs=1e-9)
+
+    h = 1e-5
+    d_rise = (rise_only(np.array([pk + h]))[0] - rise_only(np.array([pk - h]))[0]) / (2 * h)
+    d_fall = (fall_only(np.array([pk + h]))[0] - fall_only(np.array([pk - h]))[0]) / (2 * h)
+    assert d_rise == pytest.approx(d_fall, abs=1e-6)
 
 
 def test_smoothing_does_not_move_the_widest_point_much():
@@ -64,7 +105,39 @@ def test_smoothing_does_not_move_the_widest_point_much():
     assert z[np.argmax(smooth_radius(z))] == pytest.approx(185.0, abs=6.0)
 
 
+def test_smoothing_reproduces_the_edge_value_exactly():
+    """Both boundary segments (z 0->40, z 262->300) are themselves exactly
+    linear over the default +/-9 mm window, so slope-preserving (odd)
+    reflection should reproduce radius_at(edge) to floating-point
+    precision -- not merely "close". 1e-9 covers float roundoff only, with
+    no slack for a systematic bias: clamping the old way was off by +0.30 mm
+    / -0.32 mm, and naive coordinate mirroring is off by +0.61 mm / -0.64 mm
+    (both measured independently), so any regression back to either would
+    fail this by six orders of magnitude."""
+    assert smooth_radius(np.array([0.0]))[0] == pytest.approx(
+        radius_at(np.array([0.0]))[0], abs=1e-9
+    )
+    assert smooth_radius(np.array([300.0]))[0] == pytest.approx(
+        radius_at(np.array([300.0]))[0], abs=1e-9
+    )
+
+
 def test_combined_slope_stays_within_the_overhang_limit():
-    """Profile taper + relief gradient + helical lean, composed."""
-    assert max_slope(CFG) < 1.0
-    assert np.degrees(np.arctan(max_slope(CFG))) < 45.0
+    """Profile taper + relief gradient + helical lean, composed.
+
+    This is a bound on the smooth envelope only -- see max_envelope_slope's
+    docstring for why it does not, and cannot, bound the actual textured
+    surface (that check is Task 4's).
+    """
+    assert max_envelope_slope(CFG) < 1.0
+    assert np.degrees(np.arctan(max_envelope_slope(CFG))) < 45.0
+
+
+def test_envelope_slope_matches_the_corrected_reference_value():
+    """Pins the corrected value so a future change (e.g. reverting to the
+    profile-only r_max, or changing BREAKPOINTS/relief_peak) cannot move it
+    silently. Corrected for the true profile+relief combined maximum radius
+    (62.446 mm at z~151.3) rather than the profile-only maximum (58 mm);
+    the uncorrected figure was 0.8339 (39.82 deg)."""
+    assert max_envelope_slope(CFG) == pytest.approx(0.8503, abs=1e-3)
+    assert np.degrees(np.arctan(max_envelope_slope(CFG))) == pytest.approx(40.38, abs=0.01)
