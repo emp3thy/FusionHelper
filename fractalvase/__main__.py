@@ -14,7 +14,14 @@ from fractalvase.validate import MeshInvalid
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="fractalvase")
     ap.add_argument("--out", default="douady_helix.3mf", help="output path (.3mf)")
-    ap.add_argument("--fast", action="store_true", help="coarse grid, for iteration")
+    ap.add_argument(
+        "--fast",
+        action="store_true",
+        help=(
+            "coarse grid, for iteration -- the lattice follows the coarser field, so "
+            "hole count/euler_number differ from the documented production figures"
+        ),
+    )
     args = ap.parse_args(argv)
 
     cfg = VaseConfig(n_theta=96, n_z=80) if args.fast else DOUADY_HELIX
