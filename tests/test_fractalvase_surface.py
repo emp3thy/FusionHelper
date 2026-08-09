@@ -3,26 +3,69 @@ import pytest
 import trimesh
 
 from fractalvase.config import VaseConfig
-from fractalvase.surface import _assemble, _inner_radius, build_shell, revolve_grid
+from fractalvase.surface import (
+    _assemble,
+    _bridge_rings,
+    _fan,
+    _inner_radius,
+    build_shell,
+    revolve_grid,
+)
 
 # small grid: these tests check topology, not detail
 SMALL = VaseConfig(n_theta=96, n_z=80)
 
 
 def test_revolve_grid_seam_has_no_duplicate_vertices():
+    """revolve_grid must build theta via linspace(..., endpoint=False). Using
+    endpoint=True instead would emit theta=0 and theta=2*pi as two separate
+    columns -- the exact duplicate-seam bug this test names -- but
+    len(v) == n_theta * n_z stays true either way, since linspace always
+    returns n_theta points regardless of endpoint; that assertion alone
+    counts rows, it never looks at what angle any of them land on. Checks
+    the theta axis itself instead, the way
+    test_koenigs_grid_theta_axis_has_no_duplicate_seam does for koenigs_grid:
+    distinct angles, a uniform step between them, and a wrap-around step
+    that matches.
+    """
     n_t, n_z = 16, 5
     r = np.full((n_t, n_z), 5.0)
     z = np.linspace(0, 10, n_z)
     v, f = revolve_grid(r, z)
     assert len(v) == n_t * n_z, "seam vertex duplicated; theta must not include 2pi"
 
+    # z index 0 column: vertex i*n_z + 0 is theta index i
+    theta = np.mod(np.arctan2(v[::n_z, 1], v[::n_z, 0]), 2 * np.pi)
+    distinct = len(np.unique(np.round(theta, 9)))
+    assert distinct == n_t, f"only {distinct}/{n_t} distinct theta columns: seam duplicated"
+
+    uniform_step = 2 * np.pi / n_t
+    ordered = np.sort(theta)
+    assert np.allclose(np.diff(ordered), uniform_step, rtol=1e-9), "theta steps are not uniform"
+    wrap_step = (2 * np.pi - ordered[-1]) + ordered[0]
+    assert wrap_step == pytest.approx(uniform_step, rel=1e-9), "wrap-around step is not uniform"
+
 
 def test_revolve_grid_winding_is_outward():
+    """is_winding_consistent alone passes for a consistently-wound but
+    globally INWARD mesh too -- it only checks that adjacent faces agree
+    with each other, not which way they face. Ports the brief's own Step 1
+    spike check (never committed as a test, per the team lead's review):
+    face normals must point away from the rotation axis, not merely agree.
+    """
     n_t, n_z = 32, 4
     r = np.full((n_t, n_z), 10.0)
     z = np.linspace(0, 20, n_z)
     m = trimesh.Trimesh(*revolve_grid(r, z), process=False)
     assert m.is_winding_consistent
+
+    radial_dot = np.einsum(
+        "ij,ij->i",
+        m.face_normals,
+        m.triangles_center
+        / np.linalg.norm(m.triangles_center[:, :2], axis=1, keepdims=True).clip(1e-9),
+    )
+    assert radial_dot.mean() > 0, "normals point toward the axis, not away from it"
 
 
 def test_shell_is_a_valid_solid():
@@ -119,12 +162,84 @@ def test_base_has_a_genuinely_solid_floor():
     inner surface higher up, leaving a solid slab below it -- check that
     slab is actually solid material, not just a mesh that happens to be
     watertight for unrelated reasons.
+
+    Both probe points below were originally derived from SMALL.base_thickness
+    itself (base_thickness/2, base_thickness+10), so the test passed
+    identically whether the real floor was 2, 3 or 8 mm thick -- it proved
+    SOME positive floor under SOME cavity, never that the floor is the 3.0 mm
+    base_thickness actually specifies, which is pinned nowhere else in the
+    tree. Measures the real floor thickness independently via a ray cast
+    along the z-axis (not m.contains at a config-derived height) and pins it
+    to the literal 3.0 mm value.
     """
     m = build_shell(SMALL)
     below = np.array([[0.0, 0.0, SMALL.base_thickness / 2]])
     above = np.array([[0.0, 0.0, SMALL.base_thickness + 10.0]])
     assert m.contains(below)[0], "point under the floor should be inside solid material"
     assert not m.contains(above)[0], "point above the floor should be inside the hollow cavity"
+
+    origins = np.array([[0.0, 0.0, -10.0]])
+    directions = np.array([[0.0, 0.0, 1.0]])
+    locations, _, _ = m.ray.intersects_location(origins, directions)
+    assert len(locations) >= 2, "expected at least an outer-floor and an inner-floor crossing"
+    z_hits = np.sort(locations[:, 2])
+    floor_thickness = z_hits[1] - z_hits[0]
+    assert floor_thickness == pytest.approx(3.0, abs=1e-6), (
+        f"measured floor thickness {floor_thickness:.4f} mm, expected exactly 3.0 mm"
+    )
+
+
+def _toy_shell(n_o: int, n_i: int) -> tuple[trimesh.Trimesh, np.ndarray]:
+    """Minimal two-ring shell exercising _bridge_rings's general (mismatched
+    ring size) path directly -- the same shape build_shell uses (tube + tube
+    + rim bridge + two independent fans), scaled down and parametrised by an
+    arbitrary (n_o, n_i) pair instead of the matched n_theta build_shell
+    always uses today. See test_bridge_rings_handles_mismatched_ring_sizes.
+    """
+    r_out = np.full((n_o, 2), 10.0)
+    z_out = np.array([0.0, 5.0])
+    r_in = np.full((n_i, 2), 6.0)
+    z_in = np.array([2.0, 5.0])
+
+    v_out, f_out = revolve_grid(r_out, z_out)
+    v_in, f_in = revolve_grid(r_in, z_in, flip=True)
+    off_in = len(v_out)
+
+    verts = [v_out, v_in]
+    faces = [f_out, f_in + off_in]
+
+    top_out = np.arange(n_o) * 2 + 1
+    top_in = off_in + np.arange(n_i) * 2 + 1
+    bridge = _bridge_rings(top_out, top_in)
+    faces.append(bridge)
+
+    bot_out = np.arange(n_o) * 2
+    bot_in = off_in + np.arange(n_i) * 2
+    apex_outer = off_in + len(v_in)
+    apex_inner = apex_outer + 1
+    verts.append(np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 2.0]]))
+    faces.append(_fan(bot_out, apex_outer))
+    faces.append(_fan(bot_in, apex_inner, flip=True))
+
+    mesh = trimesh.Trimesh(np.concatenate(verts), np.concatenate(faces), process=False)
+    return mesh, bridge
+
+
+@pytest.mark.parametrize("n_o, n_i", [(13, 4), (100, 3)])
+def test_bridge_rings_handles_mismatched_ring_sizes(n_o, n_i):
+    """_bridge_rings's general merge-walk path is otherwise dead code by
+    coverage: _inner_radius sets n_in_t = cfg.n_theta today, so every real
+    VaseConfig only ever exercises the degenerate equal-size case. This test
+    is what protects the triangle-budget lever documented in
+    task-4-report.md ("Triangle budget lever for Task 5/7") -- reverting the
+    inner surface to a coarser n_theta stays safe only as long as this path
+    is known to still be correct, which nothing else here checks.
+    """
+    m, bridge = _toy_shell(n_o, n_i)
+    assert len(bridge) == n_o + n_i, "bridge must use every ring edge exactly once"
+    assert m.is_watertight
+    assert m.is_winding_consistent
+    assert m.euler_number == 2, f"expected genus 0, got euler {m.euler_number}"
 
 
 def test_real_surface_respects_the_overhang_limit():
