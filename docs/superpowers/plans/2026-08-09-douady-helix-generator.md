@@ -58,7 +58,7 @@
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `VaseConfig` frozen dataclass with fields `c, zeta_min, nu_ref, max_iter, escape_r, periods, band_lo, band_hi, height, wall, relief_peak, relief_peak_z, pierce_threshold, n_theta, n_z, invert_scale`; properties `alpha, mu, ln_mu, arg_mu, period, k, twist_rate_rad_per_mm`. Module constant `DOUADY_HELIX: VaseConfig`.
+- Produces: `VaseConfig` frozen dataclass with fields `c, zeta_min, nu_ref, max_iter, escape_r, periods, band_lo, band_hi, height, wall, relief_peak, relief_peak_z, pierce_lo, pierce_hi, hole_row_pitch, hole_col_pitch, hole_open_cut, hole_size_min, hole_size_max, n_theta, n_z, invert_scale`; properties `alpha, mu, ln_mu, arg_mu, period, k, twist_rate_rad_per_mm`. Module constant `DOUADY_HELIX: VaseConfig`.
 
 - [ ] **Step 1: Read the repo's module conventions**
 
@@ -185,7 +185,17 @@ class VaseConfig:
     relief_peak_z: float = 130.0
 
     # --- piercing (spec 3.3) ---
-    pierce_threshold: float = 0.62
+    # --- pierced lattice (spec 3.3, rewritten) ---
+    # Thresholding cannot give discrete holes: K_c is connected, so every
+    # super-level set is one blob. A lattice fixes topology; the field sizes
+    # each site. Values measured in docs/superpowers/specs/seed_lattice.py.
+    pierce_lo: float = 150.0
+    pierce_hi: float = 225.0
+    hole_row_pitch: float = 12.0
+    hole_col_pitch: float = 14.0
+    hole_open_cut: float = 0.35
+    hole_size_min: float = 3.0
+    hole_size_max: float = 8.0
     min_ligament: float = 2.0
     max_hole_span: float = 12.0
     arch_apex_deg: float = 45.0
@@ -1075,11 +1085,17 @@ git commit -m "feat(fractalvase): closed manifold shell from the (theta,z) grid"
 - Create: `tests/test_fractalvase_holes.py`
 
 **Interfaces:**
-- Consumes: `VaseConfig`, `normalised_field`, `build_shell`.
+- Consumes: `VaseConfig`, `normalised_field`, `radius_at`, `relief_amplitude`, `build_shell`.
 - Produces:
-  - `hole_regions(field: np.ndarray, cfg: VaseConfig, z: np.ndarray) -> list[dict]` — each `{"theta": float, "z": float, "span_theta": float, "span_z": float}`
-  - `arch_prism(theta, z_c, span_t, span_z, r_out, cfg) -> trimesh.Trimesh`
+  - `hole_sites(cfg: VaseConfig) -> list[dict]` — each `{"theta": float, "z": float, "size": float}`, one entry per OPEN lattice site
+  - `arch_prism(theta, z_c, size, r_out, cfg) -> trimesh.Trimesh`
   - `pierce(shell: trimesh.Trimesh, cfg: VaseConfig) -> tuple[trimesh.Trimesh, int]` — returns the pierced mesh and the hole count
+
+- [ ] **Step 0: Update `VaseConfig` for the rewritten piercing rule**
+
+Task 1 shipped a `pierce_threshold: float = 0.62` field for the threshold rule that measurement showed cannot work (spec §3.3). Remove it — a dead field naming an abandoned approach is worse than no field — and add the seven lattice fields shown in this task's config block: `pierce_lo`, `pierce_hi`, `hole_row_pitch`, `hole_col_pitch`, `hole_open_cut`, `hole_size_min`, `hole_size_max`.
+
+This edits a file from a completed task, which is deliberate and scoped: it is additive apart from the one removal, and `pierce_threshold` has no remaining consumers. Run the full suite afterwards to confirm nothing referenced it.
 
 - [ ] **Step 1: Spike the boolean engine before writing any arch code**
 
@@ -1107,8 +1123,8 @@ import numpy as np
 import pytest
 import trimesh
 
-from fractalvase.config import VaseConfig
-from fractalvase.holes import arch_prism, hole_regions, pierce
+from fractalvase.config import DOUADY_HELIX, VaseConfig
+from fractalvase.holes import arch_prism, hole_sites, pierce
 
 SMALL = VaseConfig(n_theta=96, n_z=80)
 
@@ -1121,22 +1137,48 @@ def test_boolean_engine_is_available():
     assert c.volume == pytest.approx(840.0, abs=1.0)
 
 
-def test_regions_respect_the_max_span():
-    z = np.linspace(150.0, 225.0, 60)
-    field = np.zeros((96, 60))
-    field[10:80, 5:55] = 1.0  # one huge blob, must be split or rejected
-    for reg in hole_regions(field, SMALL, z):
-        assert reg["span_z"] <= SMALL.max_hole_span + 1e-6
+def test_lattice_produces_discrete_holes_not_one_blob():
+    """The whole reason for the seeded lattice. A threshold rule gave ONE
+    region 75.38 mm x 87.24 mm; this must give many small ones."""
+    sites = hole_sites(DOUADY_HELIX)
+    assert len(sites) > 20, f"only {len(sites)} holes: lattice is not opening"
+    assert len(sites) < 500, f"{len(sites)} holes: boolean will be the bottleneck"
 
 
-def test_no_regions_below_threshold():
-    z = np.linspace(150.0, 225.0, 60)
-    field = np.full((96, 60), SMALL.pierce_threshold - 0.05)
-    assert hole_regions(field, SMALL, z) == []
+def test_hole_count_and_sizes_match_the_measured_reference():
+    """Pinned to seed_lattice.py's independently measured figures."""
+    sites = hole_sites(DOUADY_HELIX)
+    sizes = np.array([s["size"] for s in sites])
+    assert len(sites) == 43
+    assert sizes.min() == pytest.approx(3.09, abs=0.05)
+    assert sizes.max() == pytest.approx(8.00, abs=0.05)
+    assert len(np.unique([s["z"] for s in sites])) == 6  # rows
+
+
+def test_every_hole_is_inside_the_span_bounds():
+    for s in hole_sites(DOUADY_HELIX):
+        assert DOUADY_HELIX.min_ligament <= s["size"] <= DOUADY_HELIX.max_hole_span
+
+
+def test_ligament_between_holes_clears_the_floor():
+    """Measured 4.62 mm at the shipped pitch. Below min_ligament the lattice
+    snaps in hand, so this is a structural assertion, not a cosmetic one."""
+    cfg = DOUADY_HELIX
+    sites = hole_sites(cfg)
+    z = np.array([s["z"] for s in sites])
+    t = np.array([s["theta"] for s in sites])
+    size = np.array([s["size"] for s in sites])
+    r = radius_at(z) + relief_amplitude(z, cfg)
+    pts = np.stack([r * np.cos(t), r * np.sin(t), z], axis=1)
+    d = np.linalg.norm(pts[:, None, :] - pts[None, :, :], axis=2)
+    np.fill_diagonal(d, np.inf)
+    gap = (d - size[:, None] / 2 - size[None, :] / 2).min()
+    assert gap >= cfg.min_ligament, f"ligament {gap:.2f} mm below floor"
+    assert gap == pytest.approx(4.62, abs=0.15)
 
 
 def test_arch_prism_is_a_valid_solid():
-    p = arch_prism(0.0, 185.0, 0.15, 8.0, 58.0, SMALL)
+    p = arch_prism(0.0, 185.0, 8.0, 58.0, SMALL)
     assert p.is_watertight
     assert p.is_volume
     assert p.volume > 0
@@ -1144,7 +1186,7 @@ def test_arch_prism_is_a_valid_solid():
 
 def test_arch_apex_points_up():
     """A pointed crown is what makes the hole self-supporting."""
-    p = arch_prism(0.0, 185.0, 0.15, 8.0, 58.0, SMALL)
+    p = arch_prism(0.0, 185.0, 8.0, 58.0, SMALL)
     v = p.vertices
     top = v[:, 2].max()
     near_top = v[np.abs(v[:, 2] - top) < 0.05]
@@ -1203,56 +1245,58 @@ from fractalvase.julia import normalised_field
 from fractalvase.profile import radius_at
 
 
-def hole_regions(field: np.ndarray, cfg: VaseConfig, z: np.ndarray) -> list[dict]:
-    """Threshold the field and reduce each connected blob to one hole.
+def hole_sites(cfg: VaseConfig) -> list[dict]:
+    """Seeded lattice: the lattice fixes topology, the field decides size.
 
-    Wraps in theta so a blob straddling the seam is one region, not two.
-    Blobs wider than max_hole_span are clipped to it rather than dropped:
-    the lattice should stay open where the field says it is open.
+    Thresholding CANNOT be used here. nu_hat is 1 on the interior of K_c and
+    high near its boundary, and K_c is connected by construction (that is why
+    the rabbit was chosen), so every super-level set is one connected blob.
+    Measured: nu_hat > 0.62 selects a single region 75.38 mm tall by 87.24 mm
+    of arc, which would cut the vase apart. Twelve threshold variants all give
+    1-2 giant regions and zero usable holes. See docs/superpowers/specs/
+    pierce_rule.py.
+
+    Instead: rows pitched in z, each row staggered half a column against its
+    neighbour (hex packing), column count derived from the LOCAL circumference
+    so spacing is uniform in millimetres on the surface rather than in angle.
+    Each site samples the field; below the cut it stays closed, above it the
+    site opens to an arch sized by how far above the cut the field sits.
+
+    Measured at the shipped parameters: 43 holes over 6 rows, sizes 3.09 to
+    8.00 mm, minimum ligament 4.62 mm against the 2.0 mm floor. See
+    docs/superpowers/specs/seed_lattice.py.
     """
-    mask = field > cfg.pierce_threshold
-    if not mask.any():
-        return []
+    full = normalised_field(cfg, cfg.n_theta, cfg.n_z)
+    zf = np.linspace(cfg.band_lo, cfg.band_hi, cfg.n_z)
 
-    labels, n = ndimage.label(mask)
-    # stitch labels across the theta seam
-    for j in range(mask.shape[1]):
-        a, b = labels[0, j], labels[-1, j]
-        if a and b and a != b:
-            labels[labels == b] = a
+    def field_at(theta: np.ndarray, z: np.ndarray) -> np.ndarray:
+        ti = np.round(theta / (2 * np.pi) * cfg.n_theta).astype(int) % cfg.n_theta
+        zi = np.clip(np.searchsorted(zf, z), 0, cfg.n_z - 1)
+        return full[ti, zi]
 
-    dz = float(z[1] - z[0]) if z.size > 1 else 1.0
-    dtheta = 2 * np.pi / field.shape[0]
-
-    regions: list[dict] = []
-    for lab in np.unique(labels):
-        if lab == 0:
-            continue
-        ti, zi = np.nonzero(labels == lab)
-        span_z = min((np.ptp(zi) + 1) * dz, cfg.max_hole_span)
-        span_t = (np.ptp(ti) + 1) * dtheta
-        # reject slivers that would leave sub-ligament walls
-        if span_z < cfg.min_ligament or span_t * radius_at(
-            np.array([z[int(zi.mean())]])
-        )[0] < cfg.min_ligament:
-            continue
-        regions.append(
-            {
-                "theta": float(ti.mean() * dtheta),
-                "z": float(z[int(round(zi.mean()))]),
-                "span_theta": float(min(span_t, cfg.max_hole_span / max(radius_at(
-                    np.array([z[int(zi.mean())]]))[0], 1e-6))),
-                "span_z": float(span_z),
-            }
+    rows = np.arange(
+        cfg.pierce_lo + cfg.hole_row_pitch / 2, cfg.pierce_hi, cfg.hole_row_pitch
+    )
+    sites: list[dict] = []
+    for i, z in enumerate(rows):
+        r = float(radius_at(np.array([z]))[0]) + float(
+            relief_amplitude(np.array([z]), cfg)[0]
         )
-    return regions
+        n = max(int(round(2 * np.pi * r / cfg.hole_col_pitch)), 3)
+        theta = np.linspace(0, 2 * np.pi, n, endpoint=False) + (i % 2) * (np.pi / n)
+        f = field_at(theta, np.full(n, z))
+        keep = f >= cfg.hole_open_cut
+        frac = (f[keep] - cfg.hole_open_cut) / max(1e-9, 1.0 - cfg.hole_open_cut)
+        size = cfg.hole_size_min + frac * (cfg.hole_size_max - cfg.hole_size_min)
+        for t, s in zip(theta[keep], size, strict=True):
+            sites.append({"theta": float(t), "z": float(z), "size": float(s)})
+    return sites
 
 
 def arch_prism(
     theta: float,
     z_c: float,
-    span_theta: float,
-    span_z: float,
+    size: float,
     r_out: float,
     cfg: VaseConfig,
 ) -> trimesh.Trimesh:
@@ -1260,9 +1304,13 @@ def arch_prism(
 
     Built in a local frame with +Z along the print direction corrected for
     the helical lean, then placed on the surface at (theta, z_c).
+
+    ``size`` is the hole's width and height in MILLIMETRES on the surface,
+    supplied by ``hole_sites`` from the field. It is the same in both axes so
+    the arch stays proportioned as it scales.
     """
-    half_w = max(span_theta * r_out / 2.0, cfg.min_ligament / 2.0)
-    half_h = max(span_z / 2.0, cfg.min_ligament / 2.0)
+    half_w = max(size / 2.0, cfg.min_ligament / 2.0)
+    half_h = max(size / 2.0, cfg.min_ligament / 2.0)
     apex = half_w / np.tan(np.radians(cfg.arch_apex_deg))
 
     # 2D arch outline: flat bottom, straight sides, pointed crown
@@ -1305,25 +1353,22 @@ def arch_prism(
 
 def pierce(shell: trimesh.Trimesh, cfg: VaseConfig) -> tuple[trimesh.Trimesh, int]:
     """Cut the lattice band. Returns (mesh, hole_count)."""
-    z_band = np.linspace(150.0, 225.0, max(cfg.n_z // 4, 40))
-    field = normalised_field(cfg, cfg.n_theta, z_band.size)
-    regions = hole_regions(field, cfg, z_band)
-    if not regions:
+    sites = hole_sites(cfg)
+    if not sites:
         return shell, 0
 
     cutters = [
         arch_prism(
-            r["theta"],
-            r["z"],
-            r["span_theta"],
-            r["span_z"],
-            float(radius_at(np.array([r["z"]]))[0]) + cfg.relief_peak,
+            s["theta"],
+            s["z"],
+            s["size"],
+            float(radius_at(np.array([s["z"]]))[0]) + cfg.relief_peak,
             cfg,
         )
-        for r in regions
+        for s in sites
     ]
     result = trimesh.boolean.difference([shell, *cutters], engine="manifold")
-    return result, len(regions)
+    return result, len(sites)
 ```
 
 - [ ] **Step 5: Run the tests**
@@ -1331,7 +1376,7 @@ def pierce(shell: trimesh.Trimesh, cfg: VaseConfig) -> tuple[trimesh.Trimesh, in
 Run: `python -m pytest tests/test_fractalvase_holes.py -v`
 Expected: 7 passed.
 
-If regions come out in the thousands and the boolean takes minutes, raise `cfg.pierce_threshold` toward 0.75 until the count is in the low hundreds, and record the value in the commit message. Hole count is an aesthetic parameter, not a correctness one.
+Hole count is fixed by the lattice pitch, not discovered from a threshold, so it should land on 43 exactly. If it does not, `hole_sites` disagrees with `seed_lattice.py` and the discrepancy is a bug to find, not a number to accept. If the boolean over 43 cutters is slow, report the timing rather than reducing the count.
 
 - [ ] **Step 6: Lint and commit**
 
@@ -1670,4 +1715,4 @@ git commit -m "feat(fractalvase): end-to-end build, CLI, and docs sync"
 
 **Type consistency.** `VaseConfig` field and property names are used identically across Tasks 2–7. `normalised_field(cfg, n_theta, n_z, supersample)` is called with that signature in Tasks 4 and 5. `pierce` returns `(mesh, count)` in Task 5 and is unpacked that way in Task 7. `validate(mesh, cfg, n_holes)` matches between Tasks 6 and 7.
 
-**Known soft spots, deliberately left to measurement rather than guessed:** post-boolean triangle count (Task 7 Step 4), hole count sensitivity to `pierce_threshold` (Task 5 Step 5), and `nu_ref` spread (Task 2 Step 5). Each has a stated adjustment procedure and a rule against widening the assertion instead.
+**Known soft spots, deliberately left to measurement rather than guessed:** post-boolean triangle count (Task 7 Step 4), post-boolean hole-count and boolean runtime (Task 5 Step 5), and `nu_ref` spread (Task 2 Step 5). Each has a stated adjustment procedure and a rule against widening the assertion instead.

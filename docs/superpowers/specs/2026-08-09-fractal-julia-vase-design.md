@@ -197,13 +197,46 @@ Note the peak sits at z = 130, *below* the widest point. At the widest point (18
 
 ### 3.3 Piercing
 
-Punch through where **ν̂ > 0.62**.
+> **Rewritten 2026-08-09 after measuring the level sets.** The original rule
+> was "punch through where ν̂ > 0.62". That cannot work, and not for want of a
+> better threshold. ν̂ = 1 on the interior of K_c and high near its boundary,
+> and **K_c is connected by construction** — precisely why the Douady rabbit
+> was chosen over the Cantor-dust values in §2.1. Every super-level set of a
+> connected smooth field is therefore connected, and the low-pass in §4 makes
+> it smoother still. Measured over the band: ν̂ > 0.62 selects **one** region,
+> 75.38 mm tall × 87.24 mm of arc — a single opening that would cut the vase
+> apart. Twelve variants tested (three high thresholds, five low, four
+> mid-bands); all give 1–2 giant regions and **zero** inside the ligament and
+> span bounds. Evidence: `pierce_rule.py`.
+>
+> Thresholding is the wrong instrument. A lattice fixes the topology; the
+> field decides what happens at each site.
+
+**Seeded lattice.** Candidate sites lie on a hexagonally-staggered grid over the band — rows pitched in z, each row offset half a column from its neighbour, with the column count derived from the *local* circumference so spacing is uniform in millimetres on the surface rather than in angle.
+
+Each site samples ν̂. Below the cut it stays closed; above it, the site opens to an arch whose size scales with how far above the cut the field sits:
+
+```
+size = size_min + (ν̂ − cut)/(1 − cut) · (size_max − size_min)
+```
+
+Placement and scale are both genuinely fractal-derived — the field decides which sites open and how wide — while the lattice guarantees discrete holes with a ligament floor that a level set cannot provide.
+
+| Parameter | Value | Measured result |
+|---|---|---|
+| Row pitch (z) | **12.0 mm** | 6 rows over the 75 mm band |
+| Column pitch (arc) | **14.0 mm** | staggered, hex packing |
+| Open cut | **0.35** | **43 holes** open of the candidate sites |
+| Size range | **3.0 → 8.0 mm** | realised 3.09 → 8.00 mm, a 2.6× spread so the field's variation reads |
+| **Minimum ligament, measured** | — | **4.62 mm** against the 2.0 mm floor |
+
+Alternatives measured, for the record: 10 × 12 mm pitch at the same cut gives 55 holes but only **2.25 mm** of ligament — 0.25 mm of margin, too little on a part that must also survive printing. 14 × 16 mm gives 20 holes and 6.31 mm. Evidence: `seed_lattice.py`.
 
 | Rule | Value | Reason |
 |---|---|---|
 | Hole shape | **pointed arch (gothic), apex ≥ 45°** | A round hole's crown is an unsupported bridge. A pointed arch is self-supporting — this is what buys R7 despite the piercing. |
 | **Arch apex measured against the local surface tangent, not global Z** | correction = local lean, up to 22.63° | The helix leans features off vertical. An arch built to global Z degrades toward a bridge on the leaning face. |
-| Min ligament between holes | **2.0 mm** (5 lines) | Below this the lattice snaps in hand. |
+| Min ligament between holes | **2.0 mm** (5 lines) — realised 4.62 mm | Below this the lattice snaps in hand. Now guaranteed by the lattice pitch rather than hoped for from a level set. |
 | Max hole span | **12 mm** | Well inside the 30–40 mm bridging limit even if an arch degrades. |
 | Edge fillet | 1.2 mm | Prevents knife-edges slicing to zero width. |
 | Min ridge (anywhere) | 1.0 mm wide × 0.8–1.5 mm proud | Below 2.5 × nozzle a feature vanishes or becomes a gap. |
