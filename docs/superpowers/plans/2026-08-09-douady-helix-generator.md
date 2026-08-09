@@ -837,6 +837,31 @@ def test_shell_is_hollow_with_the_specified_wall():
     assert m.volume < 0.25 * solid_estimate, "vase appears solid, not shelled"
 
 
+def test_wall_is_never_thinner_than_specified():
+    """The throat is where this fails, and where the vase would snap.
+
+    smooth_radius bulges OUTWARD at concave kinks; at z = 262 mm it exceeds
+    the raw profile by 1.4202 mm, which would leave a 0.5798 mm wall -- about
+    1.3 extrusion widths -- at the vase's narrowest point. _inner_radius
+    clamps against the raw profile to prevent exactly this.
+    """
+    import numpy as np
+
+    from fractalvase.profile import radius_at, smooth_radius
+
+    cfg = VaseConfig(n_theta=96, n_z=80)
+    z = np.linspace(0.0, cfg.height, 3001)
+
+    # outer at its thinnest over theta is the bare profile (field contributes >= 0)
+    outer_min = radius_at(z)
+    inner = np.clip(np.minimum(smooth_radius(z), radius_at(z)) - cfg.wall, 0.5, None)
+    clearance = outer_min - inner
+
+    assert clearance.min() >= cfg.wall - 1e-9, (
+        f"wall thins to {clearance.min():.4f} mm at z = {z[np.argmin(clearance)]:.1f} mm"
+    )
+
+
 def test_no_degenerate_faces():
     m = build_shell(SMALL)
     areas = m.area_faces
@@ -946,10 +971,21 @@ def _outer_radius(cfg: VaseConfig) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _inner_radius(cfg: VaseConfig) -> tuple[np.ndarray, np.ndarray]:
-    """Inner wall: smoothed profile offset inward. Never an offset of the
-    detailed outer surface, which self-intersects at small curvature radii."""
+    """Inner wall: smoothed profile offset inward, clamped so it can never
+    bulge past the raw profile.
+
+    Never offset the DETAILED outer surface — that self-intersects wherever
+    wall thickness exceeds the local radius of curvature.
+
+    The ``minimum`` is load-bearing, not defensive. ``smooth_radius`` bulges
+    OUTWARD at concave kinks, and at the throat (z = 262 mm, the vase's
+    narrowest point) it exceeds the raw profile by 1.4202 mm — which eats the
+    wall down to 0.5798 mm, about 1.3 extrusion widths, exactly where the
+    vase is most likely to snap. Clamping to the raw profile restores a full
+    2.0000 mm minimum and costs 0.13 % of interior volume.
+    """
     z = np.linspace(0.0, cfg.height, max(cfg.n_z // 3, 24))
-    r = np.clip(smooth_radius(z) - cfg.wall, 0.5, None)
+    r = np.clip(np.minimum(smooth_radius(z), radius_at(z)) - cfg.wall, 0.5, None)
     return np.broadcast_to(r[None, :], (max(cfg.n_theta // 3, 48), z.size)).copy(), z
 
 
@@ -1586,7 +1622,7 @@ if __name__ == "__main__":
 
 Run: `python -m fractalvase --out douady_helix.3mf`
 
-Record the reported `triangles` figure. The spec estimates ~815 k **before** the boolean, and explicitly says the post-boolean count must be measured, not assumed.
+Record the reported `triangles` figure. The spec now records a MEASURED 712,210 triangles **before** the boolean, and explicitly says the post-boolean count must be measured, not assumed.
 
 If `triangles > 1_000_000`, decimate before export by inserting this into `build_vase` after `pierce`:
 

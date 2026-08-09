@@ -251,9 +251,14 @@ Structured `(θ, z)` grid, triangles emitted directly. Manifold by construction.
 | | Nθ | Nz | Triangles |
 |---|---|---|---|
 | Outer surface | 640 | 500 | 638 720 |
-| Inner surface (smoothed profile, reversed winding) | 256 | 150 | ~76 000 |
-| Hole boundary stitching | — | — | ~100 000 |
-| **Total** | | | **~815 000** |
+| Inner surface (smoothed profile, reversed winding) | 213 | 166 | 70 290 |
+| Rim ring + base annulus + centre fan | — | — | 3 200 |
+| **Shell total (measured, pre-boolean)** | | | **712 210** |
+| Hole boolean (C1-B) | — | — | measure, do not assume |
+
+**Measured, not estimated** — `predict_shell.py` builds the real radius field and counts faces. Binary STL at 712 210 triangles would be 35.6 MB; 3MF ≈ 9 MB. Task 7 measures the post-boolean total and decimates if it crosses 1 M.
+
+Same run, on the production config: max diameter **123.904 mm** against the 135 plate, height 300.0 mm, max overhang on the real surface **43.71°** against the 45° limit, minimum wall **2.0000 mm** after the `_inner_radius` clamp described in §4 step 4.
 
 Sampling checks: arc step 0.5694 mm at r = 58 (at or below nozzle width, so nothing printable is lost); chord sagitta **0.000699 mm** (faceting invisible); **83.3 z-steps per fractal period** against a ≥50 minimum — coarse z-interpolation is the documented cause of horizontal banding in this class of model.
 
@@ -262,7 +267,9 @@ Sampling checks: arc step 0.5694 mm at r = 58 (at or below nozzle width, so noth
 1. Evaluate ν̂ on the (θ, z) grid via the log-polar map.
 2. Band-limit **before** geometry: 4× rotated-grid supersample, Gaussian low-pass σ = 0.5 mm, gradient clamp. A fractal has unbounded detail — no sample rate is sufficient, so the field must be filtered, not merely sampled finely.
 3. Outer vertices `[r cosθ, r sinθ, z]`; `θ = linspace(0, 2π, Nθ, endpoint=False)` with **no duplicate seam vertex** — wrap with `np.roll`.
-4. Inner surface from the **smoothed profile offset inward by 2.0 mm** — never an offset of the detailed outer surface, which self-intersects wherever wall thickness exceeds local curvature radius.
+4. Inner surface from the **smoothed profile offset inward by 2.0 mm**, clamped so it can never bulge past the raw profile: `inner = min(smooth_radius(z), radius_at(z)) − wall`. Never an offset of the detailed outer surface, which self-intersects wherever wall thickness exceeds local curvature radius.
+
+   The clamp is load-bearing. `smooth_radius` bulges *outward* at concave kinks, and at the throat (z = 262 mm, the vase's narrowest point) it exceeds the raw profile by **1.4202 mm** — leaving a **0.5798 mm** wall, roughly 1.3 extrusion widths, precisely where the vase is most likely to snap. Clamping restores the full **2.0000 mm** minimum at a cost of 0.13 % of interior volume. Measured in `wall_fix.py`.
 5. Rim: quad strip joining outer and inner top rings. Base: triangle fan to a centre vertex at z = 0. The shell is now closed and manifold.
 6. **Holes by boolean subtraction (decision C1-B).** Build one cutter solid per hole — a pointed-arch prism, apex oriented from the *local surface normal* (decision C4-A), swept through the wall — union the cutters, then `trimesh.boolean.difference([shell, cutters])`. The kernel guarantees the result rather than relying on hand-rolled stitching.
 7. Validate (§5). Export 3MF.
@@ -355,10 +362,10 @@ The original analysis of each is retained below.
 - Combined overhang worst case 39.82° < 45° limit, on a pessimistic composite of profile taper + relief gradient + helical lean
 - 83.3 z-steps per fractal period > 50 minimum
 - Chord sagitta 0.000699 mm — faceting invisible
-- ~815 k triangles < 1 M slicer comfort threshold; ~16 MB 3MF
+- 712,210 triangles measured pre-boolean, under the 1 M slicer comfort threshold; ~9 MB 3MF
 - |μ|/e within 0.34 %
 
-**Superseded by C1-B:** "no new Python dependencies" was true of the stitching approach and is no longer true. `manifold3d` must be installed. Boolean subtraction will also raise the triangle count above the ~815 k estimate — to be measured, not assumed, and decimated if it crosses 1 M.
+**Superseded by C1-B:** "no new Python dependencies" was true of the stitching approach and is no longer true. `manifold3d` must be installed. Boolean subtraction will also raise the triangle count above the measured 712,210 — to be measured, not assumed, and decimated if it crosses 1 M.
 
 ### Minor / accepted
 
