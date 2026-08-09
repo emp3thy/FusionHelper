@@ -185,9 +185,29 @@ def test_normalised_field_output_seam_is_continuous():
     _lowpass_sigma_cells), and below roughly 1 cell of sigma a wrap-vs-
     non-wrap difference is too small to show up in this comparison at all
     -- checked empirically at 64/128/256/640 before picking this one.
+
+    That resolution-dependence means the test can go quiet with no
+    failure if a future change lowers n_theta: below the floor it just
+    stops discriminating rather than raising an error. Guard against that
+    directly by asserting sigma-in-cells clears a floor known to work.
+    Measured sweep at n_theta = 256/320/384/450/512/576/640 (sigma
+    0.351/0.439/0.527/0.617/0.702/0.790/0.878 cells): the wrap/nearest
+    seam-ratio split against the 1.2 threshold below first starts
+    separating cleanly between 384 (0.527 cells, not separated) and 450
+    (0.617 cells, separated). 0.6 sits just above that measured
+    crossover, so it is a floor that would actually have caught this
+    test losing its teeth, not an arbitrary round number.
     """
     cfg = CFG
     n_theta, n_z = cfg.n_theta, cfg.n_z
+    sigma_theta_cells, _ = julia._lowpass_sigma_cells(cfg, n_theta, n_z)
+    assert sigma_theta_cells > 0.6, (
+        f"sigma is only {sigma_theta_cells:.3f} cells at n_theta={n_theta} -- "
+        "below the measured ~0.6-cell discrimination floor, wrap vs nearest "
+        "would be indistinguishable and this test would pass without "
+        "actually checking anything"
+    )
+
     f = normalised_field(cfg, n_theta, n_z, supersample=2)
 
     seam_diff = np.abs(f[0] - f[-1])
@@ -227,6 +247,17 @@ def test_physical_lowpass_sigma_at_relief_peak_is_close_to_nominal():
     r_at_relief_peak = (belly_diam_lo + frac * (belly_diam_hi - belly_diam_lo)) / 2
 
     physical_sigma = julia._lowpass_sigma_mm_at_radius(cfg, r_at_relief_peak)
+    # r_at_relief_peak (~53mm) < lowpass_ref_radius_mm (58mm), so the
+    # physical sigma there MUST be strictly smaller than nominal -- this
+    # kills an inverted ref/r formula on its own (inversion would make it
+    # larger). See test_lowpass_sigma_mm_at_radius_formula_is_not_inverted
+    # for why a magnitude-only check like the one below cannot, by itself,
+    # tell the correct formula from an inverted one this close to 1.0.
+    assert physical_sigma < cfg.lowpass_sigma_mm, (
+        f"physical sigma ({physical_sigma:.4f}mm) at a radius below the "
+        f"reference must be smaller than nominal ({cfg.lowpass_sigma_mm}mm), "
+        "not larger -- check for an inverted r/ref formula"
+    )
     relative_error = abs(physical_sigma / cfg.lowpass_sigma_mm - 1.0)
     # measured ~8.5% at today's profile; 15% leaves headroom without being
     # so loose it stops catching a real regression
@@ -235,6 +266,64 @@ def test_physical_lowpass_sigma_at_relief_peak_is_close_to_nominal():
         f"{physical_sigma:.4f}mm vs nominal {cfg.lowpass_sigma_mm}mm "
         f"({relative_error:.1%} off, radius {r_at_relief_peak:.2f}mm)"
     )
+
+
+def test_lowpass_sigma_mm_at_radius_formula_is_not_inverted():
+    """_physical_sigma = lowpass_sigma_mm * r / ref: near the reference
+    radius (58mm), r/ref and its reciprocal ref/r are close enough to 1.0
+    that a generous design-tolerance check can't distinguish them -- at
+    r_at_relief_peak (~53.09mm) the correct ratio is 0.9153 (8.5% low) and
+    the inverted ratio is 1.0924 (9.2% high), both inside the 15% band the
+    test above uses for a different purpose (verifying the design's
+    self-mitigation, not the formula's correctness). Pin the formula
+    itself at radii where the two diverge sharply enough that no shared
+    threshold could let both through.
+    """
+    cfg = CFG
+
+    # r=40mm is a spec 3.1 band anchor (Ø=80mm at z=40, no interpolation
+    # needed): r/ref = 0.690 vs ref/r = 1.450 -- unambiguous either way
+    sigma_at_40 = julia._lowpass_sigma_mm_at_radius(cfg, 40.0)
+    expected_at_40 = cfg.lowpass_sigma_mm * 40.0 / cfg.lowpass_ref_radius_mm
+    assert sigma_at_40 == pytest.approx(expected_at_40, rel=1e-9)
+    assert sigma_at_40 < cfg.lowpass_sigma_mm, "r < ref must give a smaller physical sigma"
+
+    # no radius on this vase actually exceeds lowpass_ref_radius_mm (58mm
+    # is defined as the maximum), but the FORMULA must still get the
+    # direction right there -- an inverted ref/r formula would (wrongly)
+    # shrink instead of grow past the reference
+    sigma_above_ref = julia._lowpass_sigma_mm_at_radius(cfg, 100.0)
+    expected_above_ref = cfg.lowpass_sigma_mm * 100.0 / cfg.lowpass_ref_radius_mm
+    assert sigma_above_ref == pytest.approx(expected_above_ref, rel=1e-9)
+    assert sigma_above_ref > cfg.lowpass_sigma_mm, "r > ref must give a larger physical sigma"
+
+
+def test_lowpass_sigma_cells_matches_lowpass_sigma_mm_at_radius():
+    """_lowpass_sigma_cells is what normalised_field actually calls;
+    _lowpass_sigma_mm_at_radius is what the guard tests above call. They
+    are documented as two views of the same physics, but nothing pinned
+    them together -- if someone edited one formula and not the other,
+    every test above would keep passing while normalised_field silently
+    used a different sigma than the guards believe it does.
+
+    Convert _lowpass_sigma_cells's actual returned cell count back to
+    millimetres at a radius, using the actual arc length per cell AT THAT
+    RADIUS (not at the reference radius), and compare against
+    _lowpass_sigma_mm_at_radius for the same radius. Checked at two
+    different n_theta to confirm the result really is independent of grid
+    resolution (the cell count and the arc length per cell both scale
+    with n_theta and should cancel), not just assumed.
+    """
+    cfg = CFG
+    r = 40.0
+
+    for n_theta, n_z in [(128, 100), (640, 500)]:
+        sigma_theta_cells, _ = julia._lowpass_sigma_cells(cfg, n_theta, n_z)
+        arc_length_per_cell_at_r = (2 * np.pi * r) / n_theta
+        sigma_mm_from_cells = sigma_theta_cells * arc_length_per_cell_at_r
+        assert sigma_mm_from_cells == pytest.approx(
+            julia._lowpass_sigma_mm_at_radius(cfg, r), rel=1e-9
+        ), f"_lowpass_sigma_cells and _lowpass_sigma_mm_at_radius disagree at n_theta={n_theta}"
 
 
 def test_lowpass_reduces_gradient_without_flattening_the_field():
