@@ -168,7 +168,7 @@ Widest point at z = 185 mm = 0.617 H ≈ H/φ. Foot Ø is 0.233 H for tipping st
 
 | z (mm) | Band | Ø (mm) | Relief A(z) | Wall |
 |---|---|---|---|---|
-| 0–40 | foot, solid | 70 → 80 | 0 | 2.0 mm, 5 bottom layers |
+| 0–40 | foot, solid | 70 → 80 | 0 | 2.0 mm wall, **3.0 mm floor** |
 | 40–150 | belly, solid | 80 → 112 | 0 → **7.00** (peak at 130) → 6.44 | 2.0 mm |
 | **150–225** | **pierced lattice** | 112 → **116** at 185 → 96 | 6.44 → 0.32 | 2.0 mm |
 | 225–240 | shoulder, closes | 96 → 78 | 0.32 → 0 | 2.0 mm |
@@ -306,12 +306,12 @@ Structured `(θ, z)` grid, triangles emitted directly. Manifold by construction.
 | | Nθ | Nz | Triangles |
 |---|---|---|---|
 | Outer surface | 640 | 500 | 638 720 |
-| Inner surface (smoothed profile, reversed winding) | 213 | 166 | 70 290 |
+| Inner surface (smoothed profile, reversed winding, **Nθ must match outer**) | 640 | 166 | 211 200 |
 | Rim ring + base annulus + centre fan | — | — | 3 200 |
-| **Shell total (measured, pre-boolean)** | | | **712 210** |
+| **Shell total (measured, pre-boolean)** | | | **~853 120** |
 | Hole boolean (C1-B) | — | — | measure, do not assume |
 
-**Measured, not estimated** — `predict_shell.py` builds the real radius field and counts faces. Binary STL at 712 210 triangles would be 35.6 MB; 3MF ≈ 9 MB. Task 7 measures the post-boolean total and decimates if it crosses 1 M.
+**Measured, not estimated** — `predict_shell.py` builds the real radius field and counts faces. Binary STL at ~853 120 triangles would be ~42.7 MB; 3MF ≈ 11 MB. Task 7 measures the post-boolean total and decimates if it crosses 1 M.
 
 Same run, on the production config: max diameter **123.904 mm** against the 135 plate, height 300.0 mm, max overhang on the real surface **43.71°** against the 45° limit, minimum wall **2.0000 mm** after the `_inner_radius` clamp described in §4 step 4.
 
@@ -325,6 +325,13 @@ Sampling checks: arc step 0.5694 mm at r = 58 (at or below nozzle width, so noth
 4. Inner surface from the **smoothed profile offset inward by 2.0 mm**, clamped so it can never bulge past the raw profile: `inner = min(smooth_radius(z), radius_at(z)) − wall`. Never an offset of the detailed outer surface, which self-intersects wherever wall thickness exceeds local curvature radius.
 
    The clamp is load-bearing. `smooth_radius` bulges *outward* at concave kinks, and at the throat (z = 262 mm, the vase's narrowest point) it exceeds the raw profile by **1.4202 mm** — leaving a **0.5798 mm** wall, roughly 1.3 extrusion widths, precisely where the vase is most likely to snap. Clamping restores the full **2.0000 mm** minimum at a cost of 0.13 % of interior volume. Measured in `wall_fix.py`.
+
+   The inner surface **starts at z = `base_thickness` = 3.0 mm**, not z = 0, and carries the **same Nθ as the outer surface**. Both were found by building the shell:
+
+   - Running the inner surface to z = 0 gives a **0.00 mm floor** — the base becomes a zero-thickness membrane and the cavity is open at the bottom. The spec originally specified a wall thickness and never a base thickness; 3.0 mm is the correction.
+   - Giving the inner surface a coarser Nθ than the outer forces a ring resampling (`round(i·N_in/N_out)`), which for 96 → 48 produces **48 consecutive duplicate indices**, hence degenerate triangles in both the rim strip and the base annulus. Those get stripped and the mesh is left open — measured as 144 broken faces and `euler_number` 1 instead of 2. Matching Nθ removes the resampling entirely.
+
+   Matching Nθ raises the inner surface from 70 290 to **211 200** triangles and the shell total to **~853 120**, still inside the 1 M slicer threshold. The inner surface may still be coarse in **z**; only θ has to match.
 5. Rim: quad strip joining outer and inner top rings. Base: triangle fan to a centre vertex at z = 0. The shell is now closed and manifold.
 6. **Holes by boolean subtraction (decision C1-B).** Build one cutter solid per hole — a pointed-arch prism, apex oriented from the *local surface normal* (decision C4-A), swept through the wall — union the cutters, then `trimesh.boolean.difference([shell, cutters])`. The kernel guarantees the result rather than relying on hand-rolled stitching.
 7. Validate (§5). Export 3MF.
@@ -417,10 +424,10 @@ The original analysis of each is retained below.
 - Combined overhang worst case 39.82° < 45° limit, on a pessimistic composite of profile taper + relief gradient + helical lean
 - 83.3 z-steps per fractal period > 50 minimum
 - Chord sagitta 0.000699 mm — faceting invisible
-- 712,210 triangles measured pre-boolean, under the 1 M slicer comfort threshold; ~9 MB 3MF
+- ~853,120 triangles measured pre-boolean, under the 1 M slicer comfort threshold; ~11 MB 3MF
 - |μ|/e within 0.34 %
 
-**Superseded by C1-B:** "no new Python dependencies" was true of the stitching approach and is no longer true. `manifold3d` must be installed. Boolean subtraction will also raise the triangle count above the measured 712,210 — to be measured, not assumed, and decimated if it crosses 1 M.
+**Superseded by C1-B:** "no new Python dependencies" was true of the stitching approach and is no longer true. `manifold3d` must be installed. Boolean subtraction will also raise the triangle count above the measured ~853,120 — to be measured, not assumed, and decimated if it crosses 1 M.
 
 ### Minor / accepted
 
