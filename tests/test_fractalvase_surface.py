@@ -3,7 +3,7 @@ import pytest
 import trimesh
 
 from fractalvase.config import VaseConfig
-from fractalvase.surface import build_shell, revolve_grid
+from fractalvase.surface import _assemble, _inner_radius, build_shell, revolve_grid
 
 # small grid: these tests check topology, not detail
 SMALL = VaseConfig(n_theta=96, n_z=80)
@@ -39,6 +39,23 @@ def test_shell_is_genus_zero_before_piercing():
     assert m.euler_number == 2, f"expected genus 0, got euler {m.euler_number}"
 
 
+def test_shell_winding_is_correct_before_repair():
+    """build_shell calls trimesh.repair.fix_winding then fix_normals
+    unconditionally. On a single connected component those calls silently
+    normalise ANY winding error into a valid, correctly-signed mesh -- so
+    checking build_shell's return value proves the repair worked, not that
+    the construction itself got winding right. Check the raw assembly
+    directly, with process=False, the same technique the brief's Step 1
+    spike used for revolve_grid alone.
+    """
+    v, f = _assemble(SMALL)
+    m = trimesh.Trimesh(v, f, process=False)
+    assert m.is_winding_consistent, "raw construction has inconsistent winding"
+    assert m.is_watertight, "raw construction is not watertight before repair"
+    assert m.is_volume, "raw construction is not a valid solid before repair"
+    assert m.volume > 0, "raw construction is inside-out before repair"
+
+
 def test_shell_fits_the_build_envelope():
     m = build_shell(SMALL)
     x, y, z = m.extents
@@ -65,21 +82,27 @@ def test_wall_is_never_thinner_than_specified():
     the raw profile by 1.4202 mm, which would leave a 0.5798 mm wall -- about
     1.3 extrusion widths -- at the vase's narrowest point. _inner_radius
     clamps against the raw profile to prevent exactly this.
-    """
-    import numpy as np
 
-    from fractalvase.profile import radius_at, smooth_radius
+    Calls the real _inner_radius rather than recomputing its formula inline:
+    an inline copy of the clamp formula would still pass this test even if
+    the actual _inner_radius's clamp were removed, since the two would then
+    disagree and only the (correct) copy would be checked -- the failure
+    mode this test previously had. Mutation-verified (see task-4-report.md):
+    removing the clamp from the real _inner_radius makes this test fail.
+    """
+    from fractalvase.profile import radius_at
 
     cfg = VaseConfig(n_theta=96, n_z=80)
-    z = np.linspace(0.0, cfg.height, 3001)
+    r_in, z_in = _inner_radius(cfg)
 
     # outer at its thinnest over theta is the bare profile (field contributes >= 0)
-    outer_min = radius_at(z)
-    inner = np.clip(np.minimum(smooth_radius(z), radius_at(z)) - cfg.wall, 0.5, None)
-    clearance = outer_min - inner
+    outer_min = radius_at(z_in)
+    # inner is uniform across theta today (see _inner_radius); max() is the
+    # conservative (thinnest-wall) reading if that ever changes
+    clearance = outer_min - r_in.max(axis=0)
 
     assert clearance.min() >= cfg.wall - 1e-9, (
-        f"wall thins to {clearance.min():.4f} mm at z = {z[np.argmin(clearance)]:.1f} mm"
+        f"wall thins to {clearance.min():.4f} mm at z = {z_in[np.argmin(clearance)]:.1f} mm"
     )
 
 

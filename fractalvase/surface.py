@@ -182,6 +182,34 @@ def build_shell(cfg: VaseConfig) -> trimesh.Trimesh:
     bridge-only construction above could never do. Verified by
     ``test_shell_is_genus_zero_before_piercing`` and by direct V - E + F
     computation equalling 2 for both the SMALL test config and production.
+
+    ``build_shell`` itself calls ``trimesh.repair.fix_winding`` and
+    ``fix_normals`` unconditionally after assembly. Those calls make a
+    single-connected-component mesh's *output* correct regardless of
+    winding mistakes made here, which means tests against ``build_shell``'s
+    return value cannot tell a correct assembly from a construction bug
+    silently papered over by repair -- see ``_assemble`` and
+    ``test_shell_winding_is_correct_before_repair``, which check the raw,
+    unrepaired faces directly.
+    """
+    verts, faces = _assemble(cfg)
+    mesh = trimesh.Trimesh(verts, faces, process=True)
+    mesh.merge_vertices()
+    mesh.update_faces(mesh.nondegenerate_faces(height=1e-8))
+    mesh.remove_unreferenced_vertices()
+    trimesh.repair.fix_winding(mesh)
+    trimesh.repair.fix_normals(mesh)
+    return mesh
+
+
+def _assemble(cfg: VaseConfig) -> tuple[np.ndarray, np.ndarray]:
+    """Raw vertices and faces for the closed shell, before any trimesh
+    repair. Construction correctness -- winding included -- must hold here;
+    ``build_shell`` additionally runs ``fix_winding``/``fix_normals``, which
+    would mask a winding mistake made in this function on a single
+    connected component. Exposed separately so tests can check the pre-repair
+    state directly, the same technique the brief's Step 1 spike used for
+    ``revolve_grid`` alone.
     """
     r_out, z_out = _outer_radius(cfg)
     r_in, z_in = _inner_radius(cfg)
@@ -217,10 +245,4 @@ def build_shell(cfg: VaseConfig) -> trimesh.Trimesh:
     faces.append(_fan(bot_out, apex_outer))
     faces.append(_fan(bot_in, apex_inner, flip=True))
 
-    mesh = trimesh.Trimesh(np.concatenate(verts), np.concatenate(faces), process=True)
-    mesh.merge_vertices()
-    mesh.update_faces(mesh.nondegenerate_faces(height=1e-8))
-    mesh.remove_unreferenced_vertices()
-    trimesh.repair.fix_winding(mesh)
-    trimesh.repair.fix_normals(mesh)
-    return mesh
+    return np.concatenate(verts), np.concatenate(faces)
