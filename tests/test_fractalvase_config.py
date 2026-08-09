@@ -66,6 +66,44 @@ def test_envelope_is_respected_by_construction():
     assert cfg.band_lo < cfg.band_hi <= cfg.height
 
 
+def test_default_config_constructs_fine():
+    VaseConfig()  # must not raise
+
+
+def test_escape_r_at_or_below_one_is_rejected():
+    """smooth_escape's renormalisation needs log(mag) > 0, i.e. escape_r > 1.
+    escape_r == 1 divides log(log(mag)) by log(0) = -inf; below 1 it is nan."""
+    with pytest.raises(ValueError, match="escape_r"):
+        VaseConfig(escape_r=0.5)
+    with pytest.raises(ValueError, match="escape_r"):
+        VaseConfig(escape_r=1.0)
+
+
+def test_escape_r_at_e_is_accepted():
+    """The boundary is 1, not e: log(log(e)) == log(1) == 0, perfectly finite."""
+    VaseConfig(escape_r=math.e)  # must not raise
+
+
+def test_band_lo_must_be_below_band_hi():
+    with pytest.raises(ValueError, match="band_lo"):
+        VaseConfig(band_lo=200.0, band_hi=100.0)
+
+
+def test_periods_must_be_at_least_one():
+    with pytest.raises(ValueError, match="periods"):
+        VaseConfig(periods=0)
+
+
+def test_zeta_min_must_be_positive():
+    with pytest.raises(ValueError, match="zeta_min"):
+        VaseConfig(zeta_min=0.0)
+
+
+def test_wall_must_be_positive():
+    with pytest.raises(ValueError, match="wall"):
+        VaseConfig(wall=0.0)
+
+
 def test_derived_quantities_recompute_from_a_different_config():
     """Guards the "computed, not stored" contract: swapping c/periods must move
     every derived quantity, and each one must still satisfy its own defining

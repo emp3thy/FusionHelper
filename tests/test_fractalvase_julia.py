@@ -48,7 +48,14 @@ def test_grid_has_real_interior_and_real_exterior():
 
 
 def test_seam_closes_exactly():
-    """theta = 0 and theta = 2pi must give the identical value, not merely close."""
+    """theta = 0 and theta = 2pi must give the identical value, not merely close.
+
+    exp(2*pi*i) == 1 to float precision no matter how the mapping is coded,
+    so this only proves the complex exponential is periodic -- it does not
+    prove koenigs_grid's own theta axis avoids emitting both endpoints as
+    separate columns. See test_koenigs_grid_theta_axis_has_no_duplicate_seam
+    for the test that actually exercises koenigs_grid.
+    """
     cfg = CFG
     h = 120.0
     u = np.log(cfg.zeta_min) + cfg.k * (h - cfg.band_lo)
@@ -57,6 +64,29 @@ def test_seam_closes_exactly():
     z = np.array([cfg.alpha + np.exp(u + 1j * v0), cfg.alpha + np.exp(u + 1j * v1)])
     nu, _ = smooth_escape(z, cfg)
     assert nu[0] == pytest.approx(nu[1], abs=1e-9)
+
+
+def test_koenigs_grid_theta_axis_has_no_duplicate_seam():
+    """koenigs_grid must build theta via linspace(..., endpoint=False). Using
+    endpoint=True would emit theta=0 and theta=2pi as two separate rows -- the
+    exact duplicate-seam bug this test file's docstring warns about -- and
+    nothing else in this suite exercises koenigs_grid's own theta axis to
+    catch it (test_seam_closes_exactly checks exp()'s periodicity, not this)."""
+    cfg = CFG
+    n_theta, n_z = 64, 5
+    zc = koenigs_grid(cfg, n_theta, n_z)
+    # at h = band_lo the twist term vanishes (h - band_lo == 0), so
+    # angle(zc[:, 0] - alpha) recovers theta directly
+    theta = np.mod(np.angle(zc[:, 0] - cfg.alpha), 2 * np.pi)
+
+    distinct = len(np.unique(np.round(theta, 9)))
+    assert distinct == n_theta, f"only {distinct}/{n_theta} distinct theta columns: seam duplicated"
+
+    uniform_step = 2 * np.pi / n_theta
+    ordered = np.sort(theta)
+    assert np.allclose(np.diff(ordered), uniform_step, rtol=1e-9), "theta steps are not uniform"
+    wrap_step = (2 * np.pi - ordered[-1]) + ordered[0]
+    assert wrap_step == pytest.approx(uniform_step, rel=1e-9), "wrap-around step is not uniform"
 
 
 def test_pattern_reproduces_itself_after_one_period():

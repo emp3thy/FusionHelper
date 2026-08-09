@@ -50,6 +50,26 @@ class VaseConfig:
     lowpass_sigma_mm: float = 0.5
     lowpass_ref_radius_mm: float = 58.0
 
+    def __post_init__(self) -> None:
+        """Validate the invariants the field/geometry code actually depends on.
+
+        escape_r > 1 specifically: smooth_escape's renormalisation divides by
+        log(mag), which needs log(mag) > 0, i.e. mag > 1. At escape_r == 1
+        that is log(1) == 0 -- division by zero, -inf. Below 1 it is negative
+        -- log of a negative number, nan. escape_r == e (2.718...) is fine;
+        log(log(e)) == log(1) == 0, a perfectly finite renormalised count.
+        """
+        if self.escape_r <= 1.0:
+            raise ValueError(f"escape_r must be > 1.0 (got {self.escape_r})")
+        if not self.band_lo < self.band_hi:
+            raise ValueError(f"band_lo must be < band_hi (got {self.band_lo}, {self.band_hi})")
+        if self.periods < 1:
+            raise ValueError(f"periods must be >= 1 (got {self.periods})")
+        if self.zeta_min <= 0.0:
+            raise ValueError(f"zeta_min must be > 0 (got {self.zeta_min})")
+        if self.wall <= 0.0:
+            raise ValueError(f"wall must be > 0 (got {self.wall})")
+
     @property
     def alpha(self) -> complex:
         """Repelling fixed point of z^2 + c."""

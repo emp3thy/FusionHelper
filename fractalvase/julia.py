@@ -64,7 +64,14 @@ def koenigs_grid(cfg: VaseConfig, n_theta: int, n_z: int) -> np.ndarray:
 
 
 def _raw_field(cfg: VaseConfig, zc: np.ndarray) -> np.ndarray:
-    """nu clamped at nu_ref and normalised to [0, 1]; interior is 1.0."""
+    """nu normalised by nu_ref and clamped to [0, 1]; interior is 1.0.
+
+    The clip is two-sided: nu legitimately goes negative for deep-exterior
+    points (points that escape on iteration 1 can have nu as low as
+    ``1 - log(log(escape_r))/log(2)``, e.g. -2.788 at z=1000+0j against this
+    config), and the lower clip saturates those to 0 -- the correct
+    geometric outcome, not an edge case to special-case around.
+    """
     nu, interior = smooth_escape(zc, cfg)
     field = np.clip(nu / cfg.nu_ref, 0.0, 1.0)
     field[interior] = 1.0
