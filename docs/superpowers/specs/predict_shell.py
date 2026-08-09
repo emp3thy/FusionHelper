@@ -43,7 +43,12 @@ for name, cfg in (("SMALL (test cfg)", VaseConfig(n_theta=96, n_z=80)),
     ang = np.degrees(np.arctan(np.abs(drdz)))
 
     # wall sanity: does the inner surface stay inside the outer everywhere?
-    r_in = np.clip(smooth_radius(z) - cfg.wall, 0.5, None)
+    # Two variants on purpose. The naive one is the ORIGINAL SPEC BUG, kept so
+    # this script keeps demonstrating why the clamp exists; the clamped one is
+    # what Task 4's _inner_radius actually builds.
+    r_in_naive = np.clip(smooth_radius(z) - cfg.wall, 0.5, None)
+    r_in = np.clip(np.minimum(smooth_radius(z), radius_at(z)) - cfg.wall, 0.5, None)
+    clearance_naive = r.min(axis=0) - r_in_naive
     clearance = r.min(axis=0) - r_in
 
     print(f"--- {name}: n_theta={nt}, n_z={nz} ---")
@@ -53,7 +58,10 @@ for name, cfg in (("SMALL (test cfg)", VaseConfig(n_theta=96, n_z=80)),
     print(f"  max diameter {dia:.3f} mm   (plate 135, limit 135)")
     print(f"  height {z.max():.1f} mm")
     print(f"  max overhang {ang.max():.2f} deg   over45 {100*(ang>45).mean():.4f}%")
-    print(f"  min wall clearance (outer_min - inner) {clearance.min():+.3f} mm")
+    print(f"  min wall, naive smooth_radius-wall  {clearance_naive.min():+.4f} mm "
+          f"at z={z[np.argmin(clearance_naive)]:.0f}  <- the bug")
+    print(f"  min wall, clamped (what Task 4 builds) {clearance.min():+.4f} mm "
+          f"(nominal {cfg.wall})")
     if clearance.min() <= 0:
         bad = z[clearance <= 0]
         print(f"    !! inner surface meets/exceeds outer at z in "
