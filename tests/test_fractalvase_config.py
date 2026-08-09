@@ -77,6 +77,13 @@ def test_derived_quantities_recompute_from_a_different_config():
     # alpha must satisfy alpha^2 + c = alpha for the NEW c
     assert abs(cfg.alpha**2 + cfg.c - cfg.alpha) < 1e-12
     assert cfg.mu == pytest.approx(2 * cfg.alpha)
+    # ln_mu/arg_mu recomputed independently from mu via math/cmath directly, not
+    # via cfg.ln_mu/cfg.arg_mu again -- comparing a property against itself (or
+    # against another property that reads it internally, e.g. k vs ln_mu/period)
+    # would stay equal even if the getter were hardcoded, since both sides read
+    # the same stale value.
+    assert cfg.ln_mu == pytest.approx(math.log(abs(cfg.mu)))
+    assert cfg.arg_mu == pytest.approx(math.atan2(cfg.mu.imag, cfg.mu.real))
     assert cfg.period == pytest.approx(cfg.band / cfg.periods)
     assert cfg.k == pytest.approx(cfg.ln_mu / cfg.period)
     assert cfg.twist_rate_rad_per_mm == pytest.approx(cfg.arg_mu / cfg.period)
