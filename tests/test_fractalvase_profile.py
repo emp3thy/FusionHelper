@@ -74,30 +74,38 @@ def test_relief_derivative_vanishes_at_both_band_ends():
         assert abs(d) < 1e-4, f"relief slope at z={edge} is {d}, not ~0"
 
 
-def test_relief_rise_and_fall_pieces_agree_in_value_and_slope_at_the_peak():
+def test_relief_is_continuous_in_value_and_slope_at_the_peak():
     """relief_amplitude only ever evaluates the rise formula at z ==
-    relief_peak_z (rise uses z <= pk, fall uses z > pk). Confirm the two
-    closed forms -- not just the branched function -- agree at that join,
-    both in value and in derivative, so the branch itself introduces no
-    kink."""
-
-    def rise_only(z):
-        z = np.asarray(z, dtype=float)
-        lo, pk = CFG.band_lo, CFG.relief_peak_z
-        return CFG.relief_peak * (1 - np.cos(np.pi * (z - lo) / (pk - lo))) / 2
-
-    def fall_only(z):
-        z = np.asarray(z, dtype=float)
-        pk, hi = CFG.relief_peak_z, CFG.band_hi
-        return CFG.relief_peak * (1 + np.cos(np.pi * (z - pk) / (hi - pk))) / 2
-
+    relief_peak_z (rise: z <= pk, fall: z > pk). Exercise the SHIPPED
+    function on both sides of that join -- every value below comes from a
+    call to relief_amplitude itself, not a local restatement of the
+    raised-cosine algebra. (A prior version of this test defined rise_only
+    and fall_only closures and compared them to each other; that never
+    called relief_amplitude at all, so it verified an identity that holds
+    for any coefficients -- cos(pi)=-1, cos(0)=1 -- regardless of what the
+    shipped fall branch actually does. Confirmed a hand-mutated fall
+    branch with a real slope discontinuity still passed it.)
+    """
     pk = CFG.relief_peak_z
-    assert rise_only(np.array([pk]))[0] == pytest.approx(fall_only(np.array([pk]))[0], abs=1e-9)
+    h = 1e-4
 
-    h = 1e-5
-    d_rise = (rise_only(np.array([pk + h]))[0] - rise_only(np.array([pk - h]))[0]) / (2 * h)
-    d_fall = (fall_only(np.array([pk + h]))[0] - fall_only(np.array([pk - h]))[0]) / (2 * h)
-    assert d_rise == pytest.approx(d_fall, abs=1e-6)
+    peak_val = relief_amplitude(np.array([pk]), CFG)[0]
+    # value continuity: the fall branch's own limit as z -> pk+ must land
+    # on the value the rise branch produces at pk itself
+    assert relief_amplitude(np.array([pk + h]), CFG)[0] == pytest.approx(peak_val, abs=1e-6)
+
+    # one-sided slopes: each estimate uses two points strictly on one side
+    # of the join, so the left estimate exercises only the rise branch and
+    # the right estimate only the fall branch
+    left_slope = (
+        relief_amplitude(np.array([pk - h]), CFG)[0]
+        - relief_amplitude(np.array([pk - 2 * h]), CFG)[0]
+    ) / h
+    right_slope = (
+        relief_amplitude(np.array([pk + 2 * h]), CFG)[0]
+        - relief_amplitude(np.array([pk + h]), CFG)[0]
+    ) / h
+    assert left_slope == pytest.approx(right_slope, abs=1e-3)
 
 
 def test_smoothing_does_not_move_the_widest_point_much():
