@@ -87,6 +87,31 @@ class VaseConfig:
                 f"base_thickness must be > 0 and < height (got {self.base_thickness}, "
                 f"height {self.height})"
             )
+        if not self.pierce_lo < self.pierce_hi:
+            raise ValueError(
+                f"pierce_lo must be < pierce_hi (got {self.pierce_lo}, {self.pierce_hi})"
+            )
+        if self.hole_row_pitch <= 0.0:
+            raise ValueError(f"hole_row_pitch must be > 0 (got {self.hole_row_pitch})")
+        if self.hole_col_pitch <= 0.0:
+            raise ValueError(f"hole_col_pitch must be > 0 (got {self.hole_col_pitch})")
+        if not self.hole_size_min < self.hole_size_max:
+            raise ValueError(
+                f"hole_size_min must be < hole_size_max "
+                f"(got {self.hole_size_min}, {self.hole_size_max})"
+            )
+        if self.min_ligament <= 0.0:
+            raise ValueError(f"min_ligament must be > 0 (got {self.min_ligament})")
+        if not self.max_hole_span > self.min_ligament:
+            raise ValueError(
+                f"max_hole_span must be > min_ligament "
+                f"(got {self.max_hole_span}, {self.min_ligament})"
+            )
+        if not 0.0 < self.arch_apex_deg < 90.0:
+            raise ValueError(
+                f"arch_apex_deg must be in (0, 90) -- apex = half_w/tan(deg) is "
+                f"undefined at 0 and degenerate (flat) at 90 (got {self.arch_apex_deg})"
+            )
 
     @property
     def alpha(self) -> complex:

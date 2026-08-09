@@ -1,10 +1,19 @@
 """Pierced lattice, cut by boolean subtraction (decision C1-B).
 
 Holes are pointed arches, not round: a round hole's crown is an unsupported
-bridge, while a gothic arch is self-supporting. Each cutter is oriented from
-the LOCAL surface normal, not global Z, because the helix leans features by
-up to 22.63 degrees and a globally-oriented arch degrades into a bridge on
-the leaning face (decision C4-A).
+bridge, while a gothic arch is self-supporting. Each cutter's crown is built
+against GLOBAL Z, not the local surface normal -- decision C4-A tried the
+opposite (leaning the crown to follow the helix, on the theory that a
+globally-oriented arch degrades toward a bridge on the leaning face) and
+review measurement showed that reasoning backwards: FDM layers are
+horizontal in global Z regardless of how the wall leans, so a hole's crown
+is self-supporting or not relative to the BUILD direction, not the local
+surface. Leaning the crown to follow the surface is what breaks the
+symmetry the 45-degree apex was built to guarantee -- it pushes one roof
+face toward horizontal (needs support) while the other goes needlessly
+steep, for either sign of the correction, at every lean angle greater than
+zero. See ``arch_prism`` and ``docs/superpowers/specs`` for the measured
+angles. C4-A is superseded; do not reinstate the lean correction.
 """
 
 from __future__ import annotations
@@ -95,8 +104,21 @@ def arch_prism(
 ) -> trimesh.Trimesh:
     """A pointed-arch prism, swept radially through the wall.
 
-    Built in a local frame with +Z along the print direction corrected for
-    the helical lean, then placed on the surface at (theta, z_c).
+    Built in a local frame with +Z along the GLOBAL print direction, then
+    placed on the surface at (theta, z_c). The crown is deliberately NOT
+    corrected for the helix's local lean (former decision C4-A, superseded
+    -- see the module docstring): print layers are horizontal in global Z
+    regardless of how the surface leans, so self-support is a global-Z
+    property, and leaning the crown to track the surface only breaks the
+    apex's built-in 45-degree symmetry. Measured on the real shell: with the
+    lean correction, the two roof faces split to roughly 45 +/- lean degrees
+    from vertical (about 22 and 67 degrees at production sites, lean being
+    ~20-23 degrees near the belly) -- one side comfortably clears the limit,
+    the other blows through it by more than 20 degrees, for every real site
+    tested and for either sign of the correction. Without it, both roof
+    faces sit at exactly ``arch_apex_deg`` from vertical by construction
+    (see the outline below: rise and run are both ``half_w``), independent
+    of theta or z.
 
     ``size`` is the hole's width and height in MILLIMETRES on the surface,
     supplied by ``hole_sites`` from the field. It is the same in both axes so
@@ -157,16 +179,10 @@ def arch_prism(
     prism.apply_transform(permute)
     prism.apply_translation([-depth / 2.0, 0.0, 0.0])
 
-    # correct the crown for the local helical lean (decision C4-A); rotating
-    # about the axis that now holds the punch depth (X) leans height into
-    # width without disturbing how far the cutter reaches radially
-    lean = np.arctan(r_out * abs(cfg.twist_rate_rad_per_mm))
-    prism.apply_transform(
-        trimesh.transformations.rotation_matrix(
-            -np.sign(cfg.twist_rate_rad_per_mm) * lean, [1, 0, 0]
-        )
-    )
-
+    # No lean correction here -- see module docstring (former decision
+    # C4-A, superseded). The crown stays aligned to global Z: local Z is
+    # already the height/apex axis after the permutation above, so the
+    # remaining steps just place it on the surface.
     prism.apply_translation([0.0, 0.0, z_c])
     prism.apply_transform(
         trimesh.transformations.rotation_matrix(theta, [0, 0, 1], [0, 0, 0])
