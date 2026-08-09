@@ -5,15 +5,23 @@ bridge, while a gothic arch is self-supporting. Each cutter's crown is built
 against GLOBAL Z, not the local surface normal -- decision C4-A tried the
 opposite (leaning the crown to follow the helix, on the theory that a
 globally-oriented arch degrades toward a bridge on the leaning face) and
-review measurement showed that reasoning backwards: FDM layers are
-horizontal in global Z regardless of how the wall leans, so a hole's crown
-is self-supporting or not relative to the BUILD direction, not the local
-surface. Leaning the crown to follow the surface is what breaks the
-symmetry the 45-degree apex was built to guarantee -- it pushes one roof
-face toward horizontal (needs support) while the other goes needlessly
-steep, for either sign of the correction, at every lean angle greater than
-zero. See ``arch_prism`` and ``docs/superpowers/specs`` for the measured
-angles. C4-A is superseded; do not reinstate the lean correction.
+is now known to be wrong, for a reason more basic than any one measurement:
+there is no lean to correct for. ``surface.revolve_grid`` places every
+vertex at ``(r*cos(theta), r*sin(theta), z)`` with ``theta`` from a plain
+``linspace`` that never depends on ``z`` -- the shell is a plain surface of
+revolution around the Z axis, with zero shear. ``twist_rate_rad_per_mm``
+only appears in ``julia._map_to_plane``, where it steers which point of the
+complex plane gets SAMPLED at a given (theta, z) -- it rotates which piece
+of the fractal pattern is drawn there, not where any vertex of the printed
+solid actually sits. Because the geometry itself never leans, global
+vertical is the only physically correct reference frame for an overhang
+check, and correcting a hole's crown for the pattern's rotation was
+correcting for something that isn't there. It also actively broke the
+apex's built-in left/right symmetry -- one roof face pushed toward
+horizontal (needs support), the other went needlessly steep, at every
+non-zero lean angle and for either sign of the correction. See
+``arch_prism`` for the measured angles. C4-A is superseded; do not
+reinstate the lean correction.
 """
 
 from __future__ import annotations
@@ -87,9 +95,29 @@ def hole_sites(cfg: VaseConfig) -> list[dict]:
     Each site samples the field; below the cut it stays closed, above it the
     site opens to an arch sized by how far above the cut the field sits.
 
+    The column count's circumference estimate (``radius_at(z) +
+    relief_amplitude(z, cfg)``) uses the UNCOMPRESSED relief envelope, not
+    the tanh-compressed true local radius ``pierce()`` actually places
+    cutters at (see ``_local_outer_radius``) -- "uniform in millimetres on
+    the surface" is therefore approximate, not exact. This is intentional:
+    the estimate only sets how many columns a row gets, not where any
+    cutter ends up, and the measured 4.62 mm ligament against the 2.0 mm
+    floor has enough margin that the approximation costs nothing in
+    practice. Tightening it to the exact local radius was considered and
+    rejected as not worth the complexity.
+
     Measured at the shipped parameters: 43 holes over 6 rows, sizes 3.09 to
     8.00 mm, minimum ligament 4.62 mm against the 2.0 mm floor. See
     docs/superpowers/specs/seed_lattice.py.
+
+    All 43 holes fall inside a single ~103 degree arc of theta, not spread
+    around the vase -- the field's high region (where nu_hat clears
+    ``hole_open_cut``) sits in one sector at this ``c``, so the lattice
+    ornaments one face rather than circling the vase. This was measured,
+    raised, and reviewed with the user, who chose to KEEP it: a deliberate
+    windowed face rather than an all-around pattern. Do not "fix" this by
+    spreading the lattice or loosening the cut to open more of the
+    circumference -- it is accepted behaviour, not a defect.
     """
     sites, _, _ = _hole_sites_and_field(cfg)
     return sites

@@ -95,6 +95,12 @@ class VaseConfig:
             raise ValueError(f"hole_row_pitch must be > 0 (got {self.hole_row_pitch})")
         if self.hole_col_pitch <= 0.0:
             raise ValueError(f"hole_col_pitch must be > 0 (got {self.hole_col_pitch})")
+        if not 0.0 <= self.hole_open_cut <= 1.0:
+            raise ValueError(
+                f"hole_open_cut must be in [0, 1] -- the field it's compared "
+                f"against is clipped to that range, so anything outside it opens "
+                f"either every site or none of them (got {self.hole_open_cut})"
+            )
         if not self.hole_size_min < self.hole_size_max:
             raise ValueError(
                 f"hole_size_min must be < hole_size_max "

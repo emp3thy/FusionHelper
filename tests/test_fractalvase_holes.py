@@ -105,6 +105,19 @@ def test_ligament_between_holes_clears_the_floor():
 
 
 def test_arch_prism_is_a_valid_solid():
+    """Checks basic mesh validity ONLY (watertight, closed, positive
+    volume) -- NOT orientation. A solid stays watertight/valid under any
+    rotation, so this test cannot and does not catch axis-swap bugs (e.g.
+    width landing on the radial axis instead of depth): a fully
+    orientation-swapped rebuild passes this test unchanged, at the same
+    volume. Orientation is covered separately by
+    ``test_arch_apex_points_up`` (crown shape) and
+    ``test_arch_roof_faces_stay_within_the_self_support_limit`` (roof
+    angle); the wall-span orientation itself is covered by
+    ``test_pierce_produces_a_valid_solid_with_the_expected_genus``'s
+    ``euler_number`` check, since a mis-oriented cutter fails to span the
+    wall and shows up as a missing hole there.
+    """
     p = arch_prism(0.0, 185.0, 8.0, 58.0, SMALL)
     assert p.is_watertight
     assert p.is_volume
@@ -235,3 +248,15 @@ def test_arch_apex_deg_must_be_a_genuine_point_angle():
         VaseConfig(arch_apex_deg=0.0)
     with pytest.raises(ValueError, match="arch_apex_deg"):
         VaseConfig(arch_apex_deg=90.0)
+
+
+def test_hole_open_cut_must_be_a_valid_fraction():
+    """Demonstrated: VaseConfig(hole_open_cut=1.5) constructed silently and
+    then produced 0 holes with no error, because the field it's compared
+    against is clipped to [0, 1] -- nothing can ever satisfy f >= 1.5."""
+    with pytest.raises(ValueError, match="hole_open_cut"):
+        VaseConfig(hole_open_cut=1.5)
+    with pytest.raises(ValueError, match="hole_open_cut"):
+        VaseConfig(hole_open_cut=-0.1)
+    VaseConfig(hole_open_cut=0.0)  # must not raise
+    VaseConfig(hole_open_cut=1.0)  # must not raise
