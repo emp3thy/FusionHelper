@@ -148,13 +148,36 @@ def _supersampled_field(cfg: VaseConfig, n_theta: int, n_z: int, supersample: in
 def _lowpass_sigma_cells(cfg: VaseConfig, n_theta: int, n_z: int) -> tuple[float, float]:
     """Gaussian low-pass sigma (spec 4 step 2), converted from mm to grid cells.
 
-    Circumferential cell width shrinks toward the axis and grows toward the
-    rim; using the maximum radius (``lowpass_ref_radius_mm``) keeps the
-    filter from being under-applied anywhere on the surface.
+    theta cell width is fixed once, from circumference at the maximum
+    radius (``lowpass_ref_radius_mm``); that one cell count is then applied
+    uniformly at every radius the theta axis samples. The physical width
+    actually achieved therefore scales with radius: exact
+    (``lowpass_sigma_mm``) at the reference radius, and proportionally
+    *smaller* everywhere else on the surface -- this is under-applied
+    almost everywhere, not "never under-applied". Using the minimum radius
+    instead would make that guarantee true but over-smooth by up to ~1.45x
+    at the belly, where the design's main relief actually lives; using the
+    maximum radius is the better trade because the shortfall is largest
+    exactly where relief is zero (the foot and neck quiet zones) and
+    smallest where relief peaks (~8.5% at ``relief_peak_z``, measured
+    against spec 3.1's profile table -- see
+    ``test_physical_lowpass_sigma_at_relief_peak_is_close_to_nominal``).
     """
     dtheta_mm = (2 * np.pi * cfg.lowpass_ref_radius_mm) / n_theta
     dh_mm = (cfg.band_hi - cfg.band_lo) / max(n_z - 1, 1)
     return cfg.lowpass_sigma_mm / dtheta_mm, cfg.lowpass_sigma_mm / dh_mm
+
+
+def _lowpass_sigma_mm_at_radius(cfg: VaseConfig, r_mm: float) -> float:
+    """Physical low-pass width (mm) actually achieved at a given radius.
+
+    ``_lowpass_sigma_cells`` fixes a cell count from ``lowpass_sigma_mm``
+    evaluated at ``lowpass_ref_radius_mm``; independent of grid resolution
+    (the cell count and the arc length per cell both scale with n_theta and
+    cancel), the achieved physical width at radius ``r_mm`` is
+    ``lowpass_sigma_mm * r_mm / lowpass_ref_radius_mm``.
+    """
+    return cfg.lowpass_sigma_mm * r_mm / cfg.lowpass_ref_radius_mm
 
 
 def normalised_field(

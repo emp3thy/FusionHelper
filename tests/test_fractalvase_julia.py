@@ -170,6 +170,73 @@ def test_supersample_evaluates_s_squared_distinct_points(monkeypatch):
             assert not np.array_equal(seen[i], seen[j]), "supersample reused a sample grid"
 
 
+def test_normalised_field_output_seam_is_continuous():
+    """The seam is the exact defect the log-polar mapping exists to
+    eliminate, and the Gaussian low-pass (spec 4 step 2) runs after
+    everything else -- if its theta-axis mode ever stopped being periodic
+    (currently mode="wrap"), it could reintroduce a seam that neither
+    koenigs_grid's nor smooth_escape's own seam tests would catch, since
+    both of those run pre-low-pass. If theta wraps correctly, the
+    wrap-around pair (column 0, column -1) is just another adjacent pair
+    and should not stand out against nearby ordinary adjacent pairs.
+
+    Uses cfg.n_theta/n_z (the shipped resolution), not a smaller test
+    grid: the low-pass sigma expressed in cells scales with n_theta (see
+    _lowpass_sigma_cells), and below roughly 1 cell of sigma a wrap-vs-
+    non-wrap difference is too small to show up in this comparison at all
+    -- checked empirically at 64/128/256/640 before picking this one.
+    """
+    cfg = CFG
+    n_theta, n_z = cfg.n_theta, cfg.n_z
+    f = normalised_field(cfg, n_theta, n_z, supersample=2)
+
+    seam_diff = np.abs(f[0] - f[-1])
+    nearby = []
+    for i in range(3):
+        nearby.append(np.abs(f[i] - f[i + 1]))
+        nearby.append(np.abs(f[-1 - i] - f[-2 - i]))
+    nearby_diff = np.concatenate(nearby)
+
+    assert seam_diff.max() <= 1.2 * nearby_diff.max(), (
+        f"seam is an outlier against its own neighbourhood: seam max diff "
+        f"{seam_diff.max():.6f} vs nearby max diff {nearby_diff.max():.6f}"
+    )
+
+
+def test_physical_lowpass_sigma_at_relief_peak_is_close_to_nominal():
+    """_lowpass_sigma_cells fixes a cell count from lowpass_sigma_mm at the
+    MAXIMUM radius (lowpass_ref_radius_mm); the physical width achieved at
+    any other radius is smaller (see its docstring). That is only an
+    acceptable trade because the shortfall is worst where relief is zero
+    and small where relief peaks. This guards the favourable case: if a
+    future profile.py changed the belly's diameters enough to move the
+    radius at relief_peak_z much below the ~53 mm it is today, the physical
+    sigma there would drift further from nominal than the design assumed,
+    and this should fail loudly rather than silently degrade the print.
+
+    profile.py doesn't exist yet (Task 3), so the radius at relief_peak_z
+    is derived here from spec 3.1's belly-band table directly (Ø 80mm at
+    z=40 rising linearly to Ø 112mm at z=150 -- relief_peak_z=130 falls
+    inside that band). When profile.py exists, this should import its real
+    radius function instead of re-deriving the interpolation.
+    """
+    cfg = CFG
+    belly_z_lo, belly_diam_lo = 40.0, 80.0
+    belly_z_hi, belly_diam_hi = 150.0, 112.0
+    frac = (cfg.relief_peak_z - belly_z_lo) / (belly_z_hi - belly_z_lo)
+    r_at_relief_peak = (belly_diam_lo + frac * (belly_diam_hi - belly_diam_lo)) / 2
+
+    physical_sigma = julia._lowpass_sigma_mm_at_radius(cfg, r_at_relief_peak)
+    relative_error = abs(physical_sigma / cfg.lowpass_sigma_mm - 1.0)
+    # measured ~8.5% at today's profile; 15% leaves headroom without being
+    # so loose it stops catching a real regression
+    assert relative_error <= 0.15, (
+        f"physical sigma at relief_peak_z drifted too far from nominal: "
+        f"{physical_sigma:.4f}mm vs nominal {cfg.lowpass_sigma_mm}mm "
+        f"({relative_error:.1%} off, radius {r_at_relief_peak:.2f}mm)"
+    )
+
+
 def test_lowpass_reduces_gradient_without_flattening_the_field():
     """Spec 4 step 2's Gaussian low-pass is a real overhang mitigation, not
     decoration: the field's z-gradient (a proxy for surface overhang before
