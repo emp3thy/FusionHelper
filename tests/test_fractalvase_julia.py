@@ -190,13 +190,18 @@ def test_normalised_field_output_seam_is_continuous():
     failure if a future change lowers n_theta: below the floor it just
     stops discriminating rather than raising an error. Guard against that
     directly by asserting sigma-in-cells clears a floor known to work.
-    Measured sweep at n_theta = 256/320/384/450/512/576/640 (sigma
-    0.351/0.439/0.527/0.617/0.702/0.790/0.878 cells): the wrap/nearest
-    seam-ratio split against the 1.2 threshold below first starts
-    separating cleanly between 384 (0.527 cells, not separated) and 450
-    (0.617 cells, separated). 0.6 sits just above that measured
-    crossover, so it is a floor that would actually have caught this
-    test losing its teeth, not an arbitrary round number.
+
+    An initial sweep at n_theta = 256/320/384/450/512/576/640 (sigma
+    0.351/0.439/0.527/0.617/0.702/0.790/0.878 cells) only bracketed the
+    crossover to the interval (0.527, 0.617) -- nothing in between was
+    measured, so a floor picked inside that gap (0.6 was picked first)
+    would rest on an unmeasured assumption, not evidence. Bisected the
+    gap: n_theta=410 (0.5625 cells) is the highest confirmed-FAILING
+    value (nearest-mode ratio 1.198, still <= the 1.2 threshold);
+    n_theta=415 (0.5694 cells) is the lowest confirmed-PASSING value
+    (ratio 1.207). The true crossover lies in (0.5625, 0.5694). The
+    floor below, 0.6, sits above 0.5694 with real margin -- inside the
+    confirmed-separating region this time, not the unmeasured gap.
     """
     cfg = CFG
     n_theta, n_z = cfg.n_theta, cfg.n_z
