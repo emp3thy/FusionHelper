@@ -1,12 +1,24 @@
 """The mapping was wrong once already (see spec 2.3). These tests pin it."""
 import numpy as np
 import pytest
+from scipy.ndimage import binary_erosion
 
 import fractalvase.julia as julia
 from fractalvase.config import DOUADY_HELIX
 from fractalvase.julia import koenigs_grid, normalised_field, smooth_escape
 
 CFG = DOUADY_HELIX
+
+
+def _erode_wrapping_theta(mask: np.ndarray, iterations: int) -> np.ndarray:
+    """Erode a boolean (theta, h) mask, treating theta (axis 0) as periodic
+    and h (axis 1) as a hard boundary. binary_erosion has no periodic-mode
+    argument, so theta is padded by wrapping before eroding and the padding
+    is sliced back off afterward; h is left unpadded so border_value=0
+    correctly treats cells beyond band_lo/band_hi as exterior."""
+    padded = np.pad(mask, ((iterations, iterations), (0, 0)), mode="wrap")
+    eroded = binary_erosion(padded, iterations=iterations, border_value=0)
+    return eroded[iterations:-iterations, :]
 
 
 def test_smooth_escape_interior_is_flagged():
@@ -115,16 +127,27 @@ def test_normalised_field_is_bounded_and_uses_the_full_range():
 
 
 def test_normalised_field_interior_is_maximal():
-    """Interior is solid, so it must drive maximum radius."""
-    zc = koenigs_grid(CFG, 128, 100)
+    """Interior is solid, so it must drive maximum radius.
+
+    The Gaussian low-pass (spec 4 step 2) legitimately blurs interior cells
+    that border the exterior below 1.0 -- that is the low-pass working as
+    intended, not a regression, so f[interior].min() == 1.0 no longer holds.
+    But f[interior].max() == 1.0 is too weak: it would still pass if the
+    low-pass were far too aggressive and flattened almost the entire
+    interior, since a single surviving 1.0 cell is enough. Erode the
+    interior mask instead: a cell several cells deep, away from any
+    boundary, is surrounded entirely by other 1.0 cells, so a local
+    averaging filter cannot move it -- that is what actually has to drive
+    the maximum radius, and every one of those cells must be exactly 1.0.
+    """
+    n_theta, n_z = 128, 100
+    zc = koenigs_grid(CFG, n_theta, n_z)
     _, interior = smooth_escape(zc, CFG)
-    f = normalised_field(CFG, 128, 100, supersample=1)
-    # The Gaussian low-pass (spec 4 step 2) legitimately blurs interior cells
-    # that border the exterior below 1.0 -- that is the low-pass working as
-    # intended, not a regression. A cell deep inside the interior blob, away
-    # from any boundary, is surrounded entirely by other 1.0 cells and stays
-    # exactly 1.0, which is what actually has to drive the maximum radius.
-    assert f[interior].max() == pytest.approx(1.0)
+    f = normalised_field(CFG, n_theta, n_z, supersample=1)
+
+    deep_interior = _erode_wrapping_theta(interior, iterations=3)
+    assert deep_interior.sum() > 0, "erosion removed the entire interior; test proves nothing"
+    assert f[deep_interior].min() == pytest.approx(1.0)
 
 
 def test_supersample_evaluates_s_squared_distinct_points(monkeypatch):

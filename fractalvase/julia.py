@@ -47,20 +47,44 @@ def smooth_escape(z0: np.ndarray, cfg: VaseConfig) -> tuple[np.ndarray, np.ndarr
     return nu, alive
 
 
-def koenigs_grid(cfg: VaseConfig, n_theta: int, n_z: int) -> np.ndarray:
-    """Map the vase's (theta, h) onto the complex plane around alpha.
+def _base_grid(cfg: VaseConfig, n_theta: int, n_z: int) -> tuple[np.ndarray, np.ndarray]:
+    """The (theta, h) sample grid before any supersample offset is applied.
 
-    Rising one period advances u by exactly ln|mu| and v by exactly arg mu,
-    which is the Koenigs map itself -- so the pattern reproduces, rotated.
+    theta uses endpoint=False: the axis is periodic (2*pi is the same angle
+    as 0), so including both endpoints would sample that angle twice,
+    doubling the seam column. This is the ONLY place that builds the base
+    theta axis -- koenigs_grid and _supersampled_field both go through it,
+    so a regression here (e.g. to endpoint=True) cannot hide behind an
+    unguarded second copy.
     """
     theta = np.linspace(0.0, 2 * np.pi, n_theta, endpoint=False)
     h = np.linspace(cfg.band_lo, cfg.band_hi, n_z)
-    t_grid, h_grid = np.meshgrid(theta, h, indexing="ij")
+    return np.meshgrid(theta, h, indexing="ij")
 
-    dh = h_grid - cfg.band_lo
+
+def _map_to_plane(cfg: VaseConfig, theta: np.ndarray, h: np.ndarray) -> np.ndarray:
+    """(theta, h) -> the complex plane, Koenigs-centred on alpha.
+
+    Rising one period advances u by exactly ln|mu| and v by exactly arg mu,
+    which is the Koenigs map itself -- so the pattern reproduces, rotated.
+    This is the ONLY place ``alpha + exp(...)`` may appear in this module;
+    an origin-centred variant here (spec 2.3) puts every sample far outside
+    K_c and the field goes flat.
+    """
+    dh = h - cfg.band_lo
     u = np.log(cfg.zeta_min) + cfg.k * dh
-    v = t_grid + cfg.twist_rate_rad_per_mm * dh
+    v = theta + cfg.twist_rate_rad_per_mm * dh
     return cfg.alpha + np.exp(u + 1j * v)
+
+
+def koenigs_grid(cfg: VaseConfig, n_theta: int, n_z: int) -> np.ndarray:
+    """Map the vase's (theta, h) onto the complex plane around alpha.
+
+    The offset-zero case of the sampling ``_supersampled_field`` performs:
+    both go through ``_base_grid`` and ``_map_to_plane``.
+    """
+    t_grid, h_grid = _base_grid(cfg, n_theta, n_z)
+    return _map_to_plane(cfg, t_grid, h_grid)
 
 
 def _raw_field(cfg: VaseConfig, zc: np.ndarray) -> np.ndarray:
@@ -110,19 +134,13 @@ def _supersampled_field(cfg: VaseConfig, n_theta: int, n_z: int, supersample: in
     offsets = _supersample_offsets(supersample)
     dtheta = (2 * np.pi) / n_theta
     dh = (cfg.band_hi - cfg.band_lo) / max(n_z - 1, 1)
-
-    theta = np.linspace(0.0, 2 * np.pi, n_theta, endpoint=False)
-    h = np.linspace(cfg.band_lo, cfg.band_hi, n_z)
-    t_grid, h_grid = np.meshgrid(theta, h, indexing="ij")
+    t_grid, h_grid = _base_grid(cfg, n_theta, n_z)
 
     acc = np.zeros((n_theta, n_z), dtype=np.float64)
     for ot, oh in offsets:
         tt = t_grid + ot * dtheta
         hh = np.clip(h_grid + oh * dh, cfg.band_lo, cfg.band_hi)
-        d = hh - cfg.band_lo
-        u = np.log(cfg.zeta_min) + cfg.k * d
-        v = tt + cfg.twist_rate_rad_per_mm * d
-        acc += _raw_field(cfg, cfg.alpha + np.exp(u + 1j * v))
+        acc += _raw_field(cfg, _map_to_plane(cfg, tt, hh))
 
     return acc / len(offsets)
 
