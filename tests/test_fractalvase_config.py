@@ -104,6 +104,18 @@ def test_wall_must_be_positive():
         VaseConfig(wall=0.0)
 
 
+def test_base_thickness_must_be_positive():
+    with pytest.raises(ValueError, match="base_thickness"):
+        VaseConfig(base_thickness=0.0)
+
+
+def test_base_thickness_must_be_below_height():
+    with pytest.raises(ValueError, match="base_thickness"):
+        VaseConfig(base_thickness=300.0)
+    with pytest.raises(ValueError, match="base_thickness"):
+        VaseConfig(base_thickness=301.0)
+
+
 def test_derived_quantities_recompute_from_a_different_config():
     """Guards the "computed, not stored" contract: swapping c/periods must move
     every derived quantity, and each one must still satisfy its own defining

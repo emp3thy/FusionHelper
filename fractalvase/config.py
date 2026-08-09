@@ -75,8 +75,11 @@ class VaseConfig:
             raise ValueError(f"zeta_min must be > 0 (got {self.zeta_min})")
         if self.wall <= 0.0:
             raise ValueError(f"wall must be > 0 (got {self.wall})")
-        if self.base_thickness <= 0.0:
-            raise ValueError(f"base_thickness must be > 0 (got {self.base_thickness})")
+        if not 0.0 < self.base_thickness < self.height:
+            raise ValueError(
+                f"base_thickness must be > 0 and < height (got {self.base_thickness}, "
+                f"height {self.height})"
+            )
 
     @property
     def alpha(self) -> complex:
