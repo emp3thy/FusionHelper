@@ -56,7 +56,10 @@ printed rev B — is also genuinely saved in the cloud.
 | `orrery-mk3-double-mesh.f3d` | 13 | rev 1 — mid-band retention, 8.43 mm³ interference |
 | `orrery-mk3-double-mesh-rev2.f3d` | 13 | end-flange retention, interference PASS (2026-08-06) |
 | `orrery-mk3-rev3-component-decor.f3d` | 13 | rev 2 + raised top decor, component `orrery_mk3_90` — **PRINTED; gears fell out, see 2b** |
-| `orrery-mk3-rev4-square-retention.f3d` | 13 | **current** — lip-and-groove square retention |
+| `orrery-mk3-rev4-square-retention.f3d` | 13 | square end shoulders — **PRINTED; also came apart** |
+| `orrery-mk5-vway-mechanism.f3d` | 13 | mid-height 45° V-way — **PRINTED; HELD**, but would not spin flat |
+| `orrery-mk6-square-groove.f3d` | 13 | square mid-groove, mechanism only |
+| `orrery-mk6-square-groove-decor.f3d` | 13 | **current, print this** — rev 6 + full scrollwork |
 
 Five earlier designs (Pentaroule, Comet, both print-in-place variants, Vernier,
 Governor) were lost by closing their documents unsaved before archives were
@@ -82,6 +85,37 @@ plus gyroscopic wobble was enough.
 **Rev 4 replaces it with lip-and-groove and square shoulders** — see section 4.
 The lesson is now in `skills/print-in-place-design/SKILL.md` as PRINT-PROVEN:
 *ramps are for entry, never for holding.*
+
+## 2c. Rev 5 and rev 6 — retention SOLVED, spin ceiling found (2026-08-11)
+
+Rev 4's square end-shoulders came apart too. Both end schemes shared a root
+cause: an end feature restrains the planet on one side only, so it only has
+to lose contact once. The user proposed the fix — a mid-height 45° V-way,
+the Supernova primitive, applied at the mesh. **Rev 5 held.** Printed and
+confirmed in the hand: held horizontally it no longer comes apart.
+
+Why it works where shoulders did not: the planet is gripped from *both*
+sides at once, so the camming force has nowhere to push. The arithmetic
+that matters is **radial slack < engagement** — 0.25 mm against 0.65 mm.
+
+Rev 5 then would not spin held flat, and the flank angle was why. Held
+flat the whole 36.6 g hangs on the retention faces, and a 45° flank wedges
+it radially into both meshes. Measured 0.09 s coast flat vs 3.2 s
+vertical. **Rev 6** flattens the flanks to a square-shouldered channel:
+the contact normal goes vertical, the wedge disappears, and retention
+actually improves (blocking 0.198 → 0.281 mm³).
+
+A phase sweep during rev 5 caught a defect nothing else would have: the
+groove is ten tooth-tip notches, so engagement breathes as the teeth turn,
+and at 0.9 mm depth the sun's worst phase held only 0.205 mm — less than
+the planet's own slack. Groove deepened to 1.5 mm; worst phase 0.805 mm.
+
+**The spin ceiling is real and is not a defect.** Friction torque is
+`µ·W·r`; the parts sit at 27–37 mm, a real spinner's race at ~4 mm. Every
+fix available bought 5×, to ~0.45 s flat. **This is an edge-on spinner:**
+~3 s vertical, and please ship it with silicone lubricant.
+
+A central bearing was designed and abandoned — see section 4c.
 
 ## 3. The one piece of empirical data
 
@@ -142,6 +176,26 @@ Free to float, blocked beyond it, symmetric in both directions and on both
 stages. Overhang sweep: **14 faces**, exactly the designed shoulders (four
 0.7 mm gear-lip ledges at z1.5, ten 1.0 mm planet-flange ledges at z13.3) —
 down from 100 in rev 3. Archive: `orrery-mk3-rev4-square-retention.f3d`.
+
+## 4c. Central bearing — designed, then ruled out (2026-08-11)
+
+Do not re-attempt without reading this. A central bearing is not hard
+here, it is **geometrically excluded**:
+
+- the flywheel is annular, so it needs spokes from rim to axis;
+- every part must reach the build plate (unanchored first layers droop
+  and tack — the rule this whole programme rests on);
+- at plate level the annulus is packed solid from r0 to r45 by sun, inner
+  planets, ring, outer planets and housing. Spokes cannot cross it.
+
+Above the gear band the spokes cantilever ~30 mm inward to a hub nothing
+supports (or need a 60 mm rim-to-rim bridge). Below it, a spider occupies
+plate level right across the annulus and lifts the ring and all ten
+planets off the plate. The escape — drop the sun and inner planets to free
+the inner annulus — is printable but reaches only ~0.65 s, barely past
+rev 6's 0.45 s, for half the gear train.
+
+**Count what wants to occupy z0 at the axis before designing any hub.**
 
 ## 4b. Rev 2/3 retention — historical (RESOLVED 2026-08-06)
 

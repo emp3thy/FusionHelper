@@ -15,35 +15,59 @@ Free, the sun is still captive: it is trapped by the inner planets,
 which are trapped by the ring, which is trapped by the outer planets.
 Nothing needs a post, a carrier or an axle.
 
-Retention (rev 4) is LIP-AND-GROOVE with SQUARE shoulders, at the ends.
+Retention (rev 6) is a MID-HEIGHT SQUARE-SHOULDERED GROOVE: rev 5's
+V-way, which held perfectly in the hand, with the flanks flattened.
 
-Rev 3 printed well and meshed well but the gears fell out when the
-spinner was held horizontally and spun. Cause: every retention face was
-a 45 deg ramp, and a 45 deg face does not block - it CAMS, converting
-axial load one-for-one into radial load. The thin 0.6 mm flange rode up
-its own ramp inside 0.75 mm of axial float and popped free; once one
-planet left, its stage unloaded and the rest followed. The commercial
-reference retains with a square lip and groove, which is what rev 4
-copies:
+END retention was tried twice and failed twice in the hand. Rev 3 used
+45 deg ramps, which cam: a 45 deg face converts axial load one-for-one
+into radial load, so the flange was driven out of its own capture.
+Rev 4 replaced them with square shoulders, camming ratio zero - and the
+assembly still came apart, because a square shoulder at the END of a
+part only has to lose contact ONCE, and nothing stops the planet
+drifting radially far enough to clear it. Both failures share a root
+cause: an end feature restrains the planet on one side only.
 
-  - each planet carries a full-circle end flange at tip + 1.0 mm, over
-    z 0-1.2 (on the plate) and z 13.3-14.5, both faces SQUARE;
-  - each mating gear carries a full-circle LIP that overlaps that flange
-    by 0.5 mm radially, over z 1.5-2.5 and z 12.0-13.0, with a groove
-    behind it at flange + 0.2 mm. The lip lies inside its gear's ROOT
-    circle, so the tooth-space cut never touches it: every lip is an
-    uninterrupted, stiff annulus;
-  - the blocking faces are horizontal, so the camming ratio is zero: to
-    escape, the flange must now deflect the full 0.5 mm engagement.
+The V-way removes that. Each planet carries one full-circle V-groove
+around its tip at mid-height; each mating gear carries a matching
+V-ridge that fills its own tooth spaces out into that groove. So each
+planet is gripped from BOTH sides at once - sun and ring for the inner
+stage, ring and housing for the outer. The flanks are 45 deg and they
+do cam, but now the camming has nowhere to go: to ride out of the sun's
+ridge the planet must move radially outward, which drives it harder
+onto the ring's ridge. The sun, ring and housing are each held by five
+planets in a full circular pattern, so their radial forces cancel by
+symmetry. Nothing in the train can escape without every other part
+moving with it.
 
-Axial float is 0.3 mm per end (was 0.75 mm). The lip/flange pair
-retains BOTH parts mutually - the same shoulder that stops a planet
-rising stops the sun (or ring, or housing) falling.
+This is the same reason the Supernova journal works: the column is
+trapped in its bore, so its 45 deg diamond ridge cannot cam out.
 
-Every body is full height, z0 to z14.5. There are no caps. The only
-downward-facing faces are two short annular ledges per interface, 0.7
-and 1.0 mm wide - the same feature the reference ships and the same one
-rev 3 printed cleanly 100 times.
+  - planet groove: a 3.0 mm tall channel, 1.5 mm deep into the tip,
+    centred on z 7.25, with HORIZONTAL top and bottom faces;
+  - gear ridge: 2.5 mm tall, apex 0.25 mm radially clear of the groove
+    floor, base sunk 0.15 mm past that gear's own ROOT so the revolve
+    joins solid and the ridge fills the tooth spaces;
+  - axial float 0.25 mm each way; radial running clearance 0.25 mm.
+
+Rev 5 shipped 45 deg flanks and DID hold - held horizontally it no
+longer came apart. But it would not spin in that orientation, and the
+reason was the flank angle. Held flat, the whole 36.6 g of ring +
+planets + sun hangs on these faces, and a 45 deg face converts that
+weight into a radial wedge: 0.51 N of contact load to carry 0.36 N of
+weight, squeezing each planet into both of its meshes at once. Measured
+coast-down was 0.09 s flat against 3.2 s vertical. Flattening the
+flanks makes the contact normal vertical, so the wedge disappears and
+the contact load is just the weight.
+
+Worth being honest about the ceiling: this buys roughly 5x, not 30x.
+The load still rides on sliding plastic at 27-37 mm radius, where a
+normal spinner uses a ball race at ~4 mm. Flat spin lands near half a
+second; the design remains, by its geometry, an edge-on spinner.
+
+Deleting the end features pays a second dividend: every body is now a
+plain full-height gear with teeth from z0 to z14.5, so the mesh face
+width goes from 4.5 mm to about 12.7 mm, and the only overhangs left
+in the whole model are the 45 deg V flanks themselves.
 
 Mesh (rev 2): 25 deg pressure angle, backlash 0.20 mm, tips shortened
 (sun 10.95, ring-int 19.25, ring-ext 28.40, housing 36.70). At 20 deg
@@ -77,6 +101,7 @@ Idempotent: each stage skips when its output already exists, so a re-run
 after a timed-out MCP request is a clean no-op.
 """
 import math
+import time
 
 import adsk.core
 import adsk.fusion
@@ -87,18 +112,31 @@ FH_ATTEMPT = 1
 FH_OPTS = {"liveness": False}
 INTERFERENCE_ALLOWED = []
 
+# The decor is cosmetic but costs ~90% of the build (24 sketches joined
+# onto bodies whose tooth spaces the V-ridges have already subdivided).
+# Set False to validate the MECHANISM in seconds: same gears, same
+# V-way, no scrollwork. Always rebuild with it True before exporting.
+BUILD_DECOR = True
+
 PANG = math.radians(25)
 BACKLASH = 0.020
 H = 1.45                       # full stack; every body spans z0..H
-FL_H, FL_R = 0.12, 0.10        # planet end flange: height, radial protrusion
-AX_G = 0.03                    # axial float per end (0.3 mm)
-RAD_G = 0.02                   # radial clearance, flange to groove (0.2 mm)
-ENG = 0.05                     # square-shoulder engagement (0.5 mm)
-LIP_H = 0.10                   # mating-gear lip height
-ZL0 = FL_H + AX_G              # 1.5 mm  lip underside = groove ceiling
-ZL1 = ZL0 + LIP_H              # 2.5 mm  lip top, entry ramp starts
-ZB0, ZB1 = 0.50, H - 0.50      # full-profile tip band, z 5.0..9.5 mm
-ZH0, ZH1 = H - ZL1, H - ZL0    # 12.0, 13.0 mm  top lip
+ZM = H / 2.0                   # V-way mid-height, z 7.25 mm
+GRV_H = 0.15                   # groove half-height: a 3.0 mm tall channel
+AX_F = 0.025                   # axial float each way (0.25 mm)
+GRV_D = 0.15                   # groove depth into the planet tip (1.5 mm)
+#   Sized by a rotational-phase sweep, not by eye. The groove is ten
+#   tooth-tip notches, so engagement breathes as the teeth turn: it is
+#   deepest with a tooth facing the gear and shallowest with a space
+#   facing it. At 0.9 mm the worst phase left the SUN only 0.205 mm of
+#   engagement - less than the planet's own radial slack, so a planet
+#   could shrug the sun's ridge off at that phase, and the sun is held
+#   by nothing else. 1.5 mm puts the worst phase at 0.805 mm. Floor
+#   lands at planet r 4.5 mm, still 0.75 mm clear of the 3.75 root.
+GRV_OC = 0.03                  # overcut past the tip so the cut is clean
+VCLR = 0.025                   # radial clearance -> 0.177 mm normal at 45 deg
+#                                PRINT-PROVEN (Supernova 72 rev B journal)
+RIDGE_FOOT = 0.015             # ridge base sunk past the gear's own root
 
 SUN = dict(N=20, rp=1.00, tip=1.095, root=0.875, internal=False)
 PLI = dict(N=10, rp=0.50, tip=0.60, root=0.375, internal=False)
@@ -111,16 +149,43 @@ HOUSE_OUT = 4.50
 N_PL = 5
 
 
-def _grv(station, inboard):
-    """(groove, lip) radii for a gear meshing with planets at `station`.
+def groove_rz():
+    """The planet's mid-height groove, as a revolve-CUT profile (r, z).
 
-    inboard=True when the gear sits at smaller radius than the planets
-    (sun, ring-external face); False when it wraps them (ring-internal
-    face, housing). The groove clears the planet flange by RAD_G; the
-    lip overlaps it by ENG, which is the square-shoulder engagement."""
-    fr = PLI["tip"] + FL_R
+    RECTANGULAR, not a V. The 45 deg V retained perfectly but would not
+    let the toy spin held flat: with the axis vertical the whole 36.6 g
+    of ring + planets + sun hangs on these flanks, and a 45 deg flank
+    turns that weight into a radial wedge - 0.51 N of contact load to
+    carry 0.36 N of weight, squeezing the planet into both of its meshes
+    at the same time. Measured coast-down was 0.09 s flat against 3.2 s
+    vertical. Horizontal faces make the contact normal vertical, so the
+    wedge disappears and the load is just the weight."""
+    rb = PLI["tip"] - GRV_D
+    ro = PLI["tip"] + GRV_OC
+    return [(ro, ZM - GRV_H), (rb, ZM - GRV_H),
+            (rb, ZM + GRV_H), (ro, ZM + GRV_H)]
+
+
+def ridge_rz(g, station, inboard):
+    """The mating gear's ridge, as a revolve-JOIN profile in (r, z).
+
+    Also rectangular, so both bearing faces are horizontal. Its apex
+    sits VCLR radially clear of the groove floor; the base is sunk
+    RIDGE_FOOT past the gear's own ROOT, which does two things: the
+    revolve lands on solid material, and the ridge fills the gear's
+    tooth spaces out to the apex, which is what the planet's grooved
+    teeth actually run against.
+
+    The ridge's underside is now a horizontal overhang - but it is only
+    unsupported ACROSS a tooth space (~1.7 mm) and is anchored at both
+    ends by the teeth it grows from, so it bridges rather than
+    cantilevers. Returns (profile, apex_radius)."""
     s = 1.0 if inboard else -1.0
-    return (station - s * (fr + RAD_G), station - s * (fr - ENG))
+    apex = station - s * (PLI["tip"] - GRV_D + VCLR)
+    base = g["root"] - s * RIDGE_FOOT
+    hr = GRV_H - AX_F
+    return ([(base, ZM - hr), (apex, ZM - hr),
+             (apex, ZM + hr), (base, ZM + hr)], apex)
 
 
 # ---- engraved-scrollwork generator (pure math, cm) --------------------
@@ -463,6 +528,20 @@ def run(_context: str):
                                                        v0 - body.volume))
         pf.name = name + "_pattern"
 
+    def find_feature(name):
+        # Two traps, both measured: a feature whose participants live
+        # inside a component lands in THAT component's collection, not
+        # root's; and revolves and extrudes are separate collections, so
+        # a guard that only searches one silently re-runs its stage.
+        for holder in [root] + [root.allOccurrences.item(i).component
+                                for i in range(root.allOccurrences.count)]:
+            for coll in (holder.features.extrudeFeatures,
+                         holder.features.revolveFeatures):
+                f = coll.itemByName(name)
+                if f is not None:
+                    return f
+        return None
+
     def gear(name, rz, cuts):
         b = find_body(name)
         if b is not None:
@@ -474,50 +553,63 @@ def run(_context: str):
             cut_teeth(b, g, cname, ph)
         return b
 
-    # Each face runs: groove -> SQUARE shoulder -> lip -> entry ramp ->
-    # tip band -> mirrored back. Both lips sit inside their own gear's
-    # root circle, so the tooth-space cut leaves them whole.
-    (rgs, rls) = _grv(ST_IN, True)      # sun, inboard of inner planets
-    (rgi, rli) = _grv(ST_IN, False)     # ring internal, wrapping them
-    (rge, rle) = _grv(ST_OUT, True)     # ring external, inboard of outer
-    (rgh, rlh) = _grv(ST_OUT, False)    # housing, wrapping outer planets
-    for nm, rg, rl, g in (("sun", rgs, rls, SUN), ("ring_int", rgi, rli, RGI),
-                          ("ring_ext", rge, rle, RGE),
-                          ("housing", rgh, rlh, HSG)):
-        ramp = math.degrees(math.atan2(ZB0 - ZL1, abs(g["tip"] - rl)))
-        print("FH %s groove %.3f lip %.3f tip %.3f ramp %.1f deg"
-              % (nm, rg * 10, rl * 10, g["tip"] * 10, ramp))
-        if ramp < 45.0:
-            raise RuntimeError("%s entry ramp %.1f deg < 45" % (nm, ramp))
+    def add_ridge(body, g, station, inboard, name):
+        """Revolve-join the V-ridge. Must run AFTER the teeth are cut:
+        the ridge's job is to fill the tooth spaces at mid-height, out
+        to where the planet's grooved teeth run."""
+        if find_feature(name + "_revolve") is not None:
+            print("FH skip %s (exists)" % name)
+            return
+        stale = root.sketches.itemByName(name)
+        if stale is not None:      # sketch committed, revolve did not
+            stale.deleteMe()
+        prof, apex = ridge_rz(g, station, inboard)
+        lo, hi = sorted((g["tip"], g["root"]))
+        if not lo < apex < hi:
+            raise RuntimeError("%s apex %.3f outside tip/root %.3f..%.3f"
+                               % (name, apex, lo, hi))
+        sk = root.sketches.add(root.xZConstructionPlane)
+        sk.name = name
+        _poly_rz(sk, pt, prof)
+        _fix(sk)
+        if sk.profiles.count != 1:
+            raise RuntimeError("%s profiles %d" % (name, sk.profiles.count))
+        v0 = body.volume
+        rin = rev.createInput(sk.profiles.item(0), root.zConstructionAxis,
+                              ctx.ops.JoinFeatureOperation)
+        rin.setAngleExtent(False, cbs("360 deg"))
+        rin.participantBodies = [body]
+        rev.add(rin).name = name + "_revolve"
+        dv = body.volume - v0
+        if dv < 0.004:
+            raise RuntimeError("%s added %.4f cm3" % (name, dv))
+        print("FH %s ridge apex %.2f mm (root %.2f, tip %.2f) +%.3f cm3"
+              % (name, apex * 10, g["root"] * 10, g["tip"] * 10, dv))
 
+    # Bodies are plain full-height gears now - the V-way carries all the
+    # retention, so there are no end recesses and the teeth run z0..H.
     # ---- sun: free idler ---------------------------------------------
     sun = gear("o3_sun", [
-        (0.0, 0.0), (rgs, 0.0), (rgs, ZL0), (rls, ZL0), (rls, ZL1),
-        (SUN["tip"], ZB0), (SUN["tip"], ZB1), (rls, ZH0), (rls, ZH1),
-        (rgs, ZH1), (rgs, H), (0.0, H)],
+        (0.0, 0.0), (SUN["tip"], 0.0), (SUN["tip"], H), (0.0, H)],
         [(SUN, "sun_tooth", 0.0)])
     print("FH sun %.3f cm3" % sun.volume)
 
     # ---- ring: teeth on both faces -----------------------------------
     ring = gear("o3_ring", [
-        (rgi, 0.0), (rge, 0.0),
-        (rge, ZL0), (rle, ZL0), (rle, ZL1),
-        (RGE["tip"], ZB0), (RGE["tip"], ZB1),
-        (rle, ZH0), (rle, ZH1), (rge, ZH1), (rge, H),
-        (rgi, H), (rgi, ZH1), (rli, ZH1), (rli, ZH0),
-        (RGI["tip"], ZB1), (RGI["tip"], ZB0),
-        (rli, ZL1), (rli, ZL0), (rgi, ZL0)],
+        (RGI["tip"], 0.0), (RGE["tip"], 0.0),
+        (RGE["tip"], H), (RGI["tip"], H)],
         [(RGI, "ring_int", 0.0), (RGE, "ring_ext", 0.0)])
     print("FH ring %.3f cm3" % ring.volume)
 
     # ---- housing: the part you hold ----------------------------------
     house = gear("o3_housing", [
-        (rgh, 0.0), (HOUSE_OUT, 0.0), (HOUSE_OUT, H), (rgh, H),
-        (rgh, ZH1), (rlh, ZH1), (rlh, ZH0),
-        (HSG["tip"], ZB1), (HSG["tip"], ZB0),
-        (rlh, ZL1), (rlh, ZL0), (rgh, ZL0)],
+        (HSG["tip"], 0.0), (HOUSE_OUT, 0.0),
+        (HOUSE_OUT, H), (HSG["tip"], H)],
         [(HSG, "house_tooth", 0.0)])
     print("FH housing %.3f cm3" % house.volume)
+
+    # NOTE: the four add_ridge() calls deliberately run LAST, after all
+    # the decor - see the call site below group_component's definition.
 
     # ---- planets: built at origin, then translated out ---------------
     def planet(g, station, name):
@@ -540,35 +632,35 @@ def run(_context: str):
         body.name = name + "_1"
         cut_teeth(body, g, name + "_tooth", phase=math.pi / g["N"])
 
-        # Both flanges are SQUARE both ends. Rev 3 chamfered the top
-        # flange's underside 45 deg to make it self-supporting; that
-        # chamfer was the camming face the planets escaped over. The
-        # square underside is a 1.0 mm annular ledge - an overhang, and
-        # deliberately so: the reference part ships the same feature.
-        fr = g["tip"] + FL_R
-        for fname, prof in (
-                (name + "_flange_lo", [(0.30, 0.0), (fr, 0.0),
-                                       (fr, FL_H), (0.30, FL_H)]),
-                (name + "_flange_hi", [(0.30, H - FL_H), (fr, H - FL_H),
-                                       (fr, H), (0.30, H)])):
-            adsk.doEvents()
-            skb = root.sketches.add(root.xZConstructionPlane)
-            skb.name = fname
-            _poly_rz(skb, pt, prof)
-            _fix(skb)
-            if skb.profiles.count != 1:
-                raise RuntimeError("%s profiles %d"
-                                   % (fname, skb.profiles.count))
-            vb = body.volume
-            bin_ = rev.createInput(skb.profiles.item(0),
-                                   root.zConstructionAxis,
-                                   ctx.ops.JoinFeatureOperation)
-            bin_.setAngleExtent(False, cbs("360 deg"))
-            bin_.participantBodies = [body]
-            rev.add(bin_).name = fname + "_revolve"
-            if body.volume - vb < 0.002:
-                raise RuntimeError("%s added %.4f" % (fname,
-                                                      body.volume - vb))
+        # One V-groove serves both mates: the inboard gear's ridge and
+        # the outboard gear's ridge enter the same groove from opposite
+        # sides, which is exactly what makes the planet inescapable.
+        # Cut AFTER the teeth so it notches the tooth tips.
+        adsk.doEvents()
+        gname = name + "_vway"
+        skb = root.sketches.add(root.xZConstructionPlane)
+        skb.name = gname
+        _poly_rz(skb, pt, groove_rz())
+        _fix(skb)
+        if skb.profiles.count != 1:
+            raise RuntimeError("%s profiles %d" % (gname,
+                                                   skb.profiles.count))
+        vb = body.volume
+        cin = rev.createInput(skb.profiles.item(0),
+                              root.zConstructionAxis,
+                              ctx.ops.CutFeatureOperation)
+        cin.setAngleExtent(False, cbs("360 deg"))
+        cin.participantBodies = [body]
+        rev.add(cin).name = gname + "_revolve"
+        # ~4.7 mm3 measured: at 25 deg PA a 10T tooth is nearly pointed
+        # at the tip, so the groove is ten tip notches, not a channel.
+        # That is fine - the notches bear on the mating gear's ridge,
+        # which IS a continuous annulus, and the load is a 1.5 g planet.
+        dv = vb - body.volume
+        if dv < 0.003:
+            raise RuntimeError("%s removed %.4f cm3" % (gname, dv))
+        print("FH %s groove floor %.2f mm -%.3f cm3"
+              % (name, (g["tip"] - GRV_D) * 10, dv))
 
         mv = adsk.core.ObjectCollection.create()
         mv.add(body)
@@ -626,21 +718,6 @@ def run(_context: str):
             f.deleteMe()
         raise RuntimeError("%s joined nothing" % kind)
 
-    def find_extrude(name):
-        # a join whose participants live inside a component lands in
-        # THAT component's feature collection, not root's - a root-only
-        # itemByName then misses it and the stage re-joins zero volume
-        f = root.features.extrudeFeatures.itemByName(name)
-        if f is not None:
-            return f
-        occs = root.allOccurrences
-        for i in range(occs.count):
-            f = occs.item(i).component.features.extrudeFeatures \
-                .itemByName(name)
-            if f is not None:
-                return f
-        return None
-
     def decor(sk_name, polys, participants, min_vol):
         # guard on the JOIN, not the sketch: a dead client can commit
         # the sketch and die before the join, and a sketch-based guard
@@ -648,9 +725,10 @@ def run(_context: str):
         # "_join" suffix - sketches and features share one name
         # namespace, and an extrude named like its sketch is silently
         # auto-suffixed to "name (1)", which a guard then misses.
-        if find_extrude(sk_name + "_join") is not None:
+        if find_feature(sk_name + "_join") is not None:
             print("FH skip %s (exists)" % sk_name)
             return
+        t_start = time.time()
         counts = [len(p) for p in polys]
         total = sum(counts)
         sk = root.sketches.itemByName(sk_name)
@@ -701,23 +779,28 @@ def run(_context: str):
         if profs.count == 0:
             raise RuntimeError("%s: no stroke profiles found" % sk_name)
         join_up(profs, participants, sk_name, min_vol)
-        print("FH %s: %d stroke profiles joined, %d enclosed dropped"
-              % (sk_name, profs.count, dropped))
+        print("FH %s: %d strokes, %d dropped, %.1f s"
+              % (sk_name, profs.count, dropped, time.time() - t_start))
 
-    decor("o3_dec_sun", dec_sun_polys(), [sun], 0.02)
+    if not BUILD_DECOR:
+        print("FH decor SKIPPED (BUILD_DECOR False) - mechanism only")
+
+    if BUILD_DECOR:
+        decor("o3_dec_sun", dec_sun_polys(), [sun], 0.02)
 
     # one sketch per band unit: Fusion's sketch solve is superlinear and
     # a 2680-line one-sketch band measured 70+ minutes; ~180-line unit
     # sketches solve in seconds
-    for k in range(8):
+    for k in range(8 if BUILD_DECOR else 0):
         adsk.doEvents()
-        # vscale 0.60: rev 4's lip-and-groove moved the ring's top face
-        # in to 22.2..25.3 mm, so the band narrows to keep 0.5 mm clear
+        # vscale 0.60 keeps the band 0.5 mm clear of the ring's top
+        # face, which in rev 5 is the solid web between the two ROOT
+        # circles (22.2..25.3 mm) - the teeth now run full height
         decor("o3_dec_ring_%d" % k,
               dec_band(dec_ring_unit(), 2.375, 2 * math.pi * k / 8, 0.60),
               [ring], 0.003)
 
-    for k in range(10):
+    for k in range(10 if BUILD_DECOR else 0):
         adsk.doEvents()
         decor("o3_dec_house_%d" % k,
               dec_band(dec_housing_unit(), 4.215,
@@ -730,7 +813,8 @@ def run(_context: str):
     # one small sketch per planet so every 2-minute client window
     # completes whole stages; participants stay the full planet set
     # because pattern body names do not map predictably to angles
-    for sname, stv in (("in", ST_IN), ("out", ST_OUT)):
+    for sname, stv in ((("in", ST_IN), ("out", ST_OUT))
+                       if BUILD_DECOR else ()):
         for k in range(N_PL):
             adsk.doEvents()
             decor("o3_dec_pl_%s_%d" % (sname, k),
@@ -764,6 +848,19 @@ def run(_context: str):
             occ.isLightBulbOn = True
         print("FH grouped %d bodies into %s vol=%.3f cm3"
               % (len(after), cname, v2))
+
+    # Ridges LAST. Each one fills its gear's tooth spaces at mid-height,
+    # which multiplies that body's face count (75 pockets on the housing
+    # alone). Joining 24 decor sketches onto bodies in that state is what
+    # made rev 5 grind for 45 min at 17 GB. The ridge is a plain revolve
+    # and does not care how decorated the body already is, so doing it
+    # after the decor costs nothing and keeps every decor boolean cheap.
+    # Order is otherwise irrelevant: the ridge sits at mid-height, the
+    # decor at z14.5, and neither touches the other.
+    add_ridge(sun, SUN, ST_IN, True, "o3_ridge_sun")
+    add_ridge(ring, RGI, ST_IN, False, "o3_ridge_ring_int")
+    add_ridge(ring, RGE, ST_OUT, True, "o3_ridge_ring_ext")
+    add_ridge(house, HSG, ST_OUT, False, "o3_ridge_house")
 
     group_component("orrery_mk3_90")
 

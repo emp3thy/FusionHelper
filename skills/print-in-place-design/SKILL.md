@@ -34,6 +34,66 @@ Corollary worth knowing: a part slides outward when `ω²r > µg` — **mass can
 You cannot fix a sluggish centrifugal mechanism by making the mass heavier. Only
 friction and rest-radius are levers.
 
+## Retention: trap the part, don't shoulder it
+
+**PRINT-PROVEN.** Two end-retention schemes failed in the hand before this
+one held. What made the difference was not a better shoulder — it was
+removing the part's freedom to walk away from the shoulder at all.
+
+> **Retain a part between two OPPOSING features, not against one.** A
+> mid-height groove on the planet, with a matching ridge entering it from
+> the gear on each side, cannot be escaped: riding out of the inboard
+> ridge drives the part harder onto the outboard one.
+
+The escape test is arithmetic, and it is the check both failed revisions
+skipped: **radial slack must be smaller than engagement depth.** Measured
+here: 0.25 mm of slack against 0.65 mm of engagement, so escape is
+geometrically impossible. Verify it in the model by translating the part
+radially *and* axially together — a part shoved fully sideways and then
+lifted 2 mm should jam harder, not come free.
+
+Two corollaries that cost a print each:
+
+- **Engagement breathes with rotation** when the groove is cut into tooth
+  tips, because it is *n* notches, not a channel. Sweep a whole tooth
+  pitch and take the worst phase. At 0.9 mm depth the worst phase left the
+  sun only 0.205 mm — less than the planet's own slack, so at that phase a
+  planet could shrug the sun off, and the sun is held by nothing else.
+  1.5 mm depth put the worst phase at 0.805 mm.
+- **The retention flank angle is also a SPIN decision.** See below.
+
+## Held flat, the retention becomes a thrust bearing
+
+Held edge-on, each part's weight rides its gear mesh, which rolls. Held
+flat, the whole rotating mass hangs on the retention faces, which slide —
+at whatever radius they happen to sit. Measured on this train: **0.09 s
+coast flat against 3.2 s vertical.**
+
+- A 45° flank turns that weight into a radial wedge: 0.51 N of contact
+  load to carry 0.36 N of weight, squeezing each part into both its
+  meshes. **Horizontal faces make the contact normal vertical**, killing
+  the wedge — and they retain *better*, because a rectangular ridge holds
+  full radius over its whole height instead of only at an apex (blocking
+  volume went 0.198 → 0.281 mm³).
+- The horizontal faces are overhangs, but a ridge that grows from a gear's
+  tooth spaces is anchored at both ends by the teeth, so it **bridges**
+  (≈1.7 mm) rather than cantilevers.
+- **None of this escapes the lever arm.** Friction torque is `µ·W·r`, and
+  `r` is set by where the parts are. A normal spinner carries the same
+  load on a race at ~4 mm; an annular train carries it at 27–37 mm. Every
+  geometry fix available bought 5×, to ~0.45 s. Decide early whether the
+  design is an edge-on spinner, because that is what it will be.
+
+## A central bearing may be geometrically excluded
+
+Before promising one: the flywheel needs spokes from its rim to the axis,
+and every part must reach the build plate. In a concentric train that
+fills the annulus, there is nowhere for those spokes to go — plate level
+is packed solid, spokes above the gear band cantilever ~30 mm inward to an
+unsupported hub, and a bottom spider occupies plate level right across the
+annulus and lifts every other part off the plate. **Count what wants to
+occupy z0 at the axis before designing any hub.**
+
 ## Retention: a 45° face does not retain, it cams
 
 **PRINT-PROVEN, the expensive way.** Orrery mk3 rev 3 printed cleanly, meshed

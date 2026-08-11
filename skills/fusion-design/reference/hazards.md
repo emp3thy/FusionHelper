@@ -117,3 +117,21 @@ that hold fine for a dozen feature sketches.
   a centroid test fails outright, because a C-shaped strip's centroid lies in
   its own eye. Design the strokes pairwise-disjoint with open curls, and the
   sketch yields exactly one profile per polygon. See `print-in-place-design`.
+
+## Feature ORDER decides boolean cost (measured 2026-08-11)
+
+A slow boolean is often not the boolean's fault - it is what earlier
+features did to the participant body's face count.
+
+- Joining 24 decor sketches onto gear bodies AFTER a revolved ridge had
+  subdivided every tooth space (75 pockets on the housing alone) ran for
+  45+ minutes at 17 GB and never finished. Moving the four ridge joins to
+  run LAST, after all the decor, made the identical build finish in ~60 s
+  at 2.5 GB.
+- The ridge is a plain revolve and does not care how decorated the body
+  already is; the decor cares enormously about how subdivided the body is.
+  Where two features do not interact geometrically, order them cheapest-
+  participant-first.
+- Diagnostic: when a feature is unexpectedly slow, do not optimise that
+  feature. Ask what the participant body looked like when it ran, and
+  whether an earlier feature can be deferred past it.
