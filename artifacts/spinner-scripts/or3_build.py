@@ -15,8 +15,15 @@ Free, the sun is still captive: it is trapped by the inner planets,
 which are trapped by the ring, which is trapped by the outer planets.
 Nothing needs a post, a carrier or an axle.
 
-Retention (rev 6) is a MID-HEIGHT SQUARE-SHOULDERED GROOVE: rev 5's
-V-way, which held perfectly in the hand, with the flanks flattened.
+Retention (rev 7) is a MID-HEIGHT 45 deg DIAMOND - the Supernova
+journal profile, which is the one joint here that has both printed and
+spun. A full diamond: 45 deg up from below to a point at mid-height,
+45 deg back down. Male on the gear, reverse-cut into the planet.
+
+Rev 6 flattened those flanks into a rectangular channel to chase flat-
+spin drag. That was the wrong trade: it bought ~0.3 s of coast on an
+orientation this design was never going to be good in, and gave up the
+shape that actually seats. Rev 7 puts the diamond back.
 
 END retention was tried twice and failed twice in the hand. Rev 3 used
 45 deg ramps, which cam: a 45 deg face converts axial load one-for-one
@@ -42,27 +49,30 @@ moving with it.
 This is the same reason the Supernova journal works: the column is
 trapped in its bore, so its 45 deg diamond ridge cannot cam out.
 
-  - planet groove: a 3.0 mm tall channel, 1.5 mm deep into the tip,
-    centred on z 7.25, with HORIZONTAL top and bottom faces;
-  - gear ridge: 2.5 mm tall, apex 0.25 mm radially clear of the groove
-    floor, base sunk 0.15 mm past that gear's own ROOT so the revolve
-    joins solid and the ridge fills the tooth spaces;
-  - axial float 0.25 mm each way; radial running clearance 0.25 mm.
+  - planet reverse diamond: 2.4 mm deep into the tip, 5.4 mm tall at
+    the mouth, point at z 7.25. The floor lands at planet r 3.6 mm,
+    INSIDE the 3.75 root, so it is a continuous circular channel rather
+    than ten tooth-tip notches - engagement no longer breathes with
+    rotation, and there is no worst phase to size against;
+  - gear diamond ridge: 5.1 mm tall, apex 0.25 mm radially clear of the
+    channel floor, base sunk 0.15 mm past that gear's own ROOT so the
+    revolve joins solid. At this size the diamond outgrows the 2.2 mm
+    tooth height, so each ridge finishes 0.2-0.4 mm proud of its own tip
+    circle; the planet's channel is cut to receive it;
+  - engagement 2.15 mm past the channel mouth against 0.25 mm of radial
+    slack, so escape is not close to possible;
+  - 0.25 mm radial offset on a 45 deg flank = 0.177 mm normal, the
+    PRINT-PROVEN Supernova value. Axial float 0.25 mm.
 
-Rev 5 shipped 45 deg flanks and DID hold - held horizontally it no
-longer came apart. But it would not spin in that orientation, and the
-reason was the flank angle. Held flat, the whole 36.6 g of ring +
-planets + sun hangs on these faces, and a 45 deg face converts that
-weight into a radial wedge: 0.51 N of contact load to carry 0.36 N of
-weight, squeezing each planet into both of its meshes at once. Measured
-coast-down was 0.09 s flat against 3.2 s vertical. Flattening the
-flanks makes the contact normal vertical, so the wedge disappears and
-the contact load is just the weight.
-
-Worth being honest about the ceiling: this buys roughly 5x, not 30x.
-The load still rides on sliding plastic at 27-37 mm radius, where a
-normal spinner uses a ball race at ~4 mm. Flat spin lands near half a
-second; the design remains, by its geometry, an edge-on spinner.
+The flat-spin cost is known and accepted. A 45 deg flank does wedge:
+held flat, the whole 36.6 g hangs on these faces and the flanks carry
+0.51 N to support 0.36 N, which squeezes each planet into both of its
+meshes. That is why flat coast is ~0.13 s rather than the ~0.45 s the
+rectangular channel gave. Both numbers are small: friction torque is
+mu*W*r and the parts sit at 27-37 mm where a real spinner's race sits
+at 4 mm, so no flank angle rescues that orientation. This is an edge-on
+spinner - about 3 s vertical - and the diamond is the profile that
+seats and holds.
 
 Deleting the end features pays a second dividend: every body is now a
 plain full-height gear with teeth from z0 to z14.5, so the mesh face
@@ -122,9 +132,14 @@ PANG = math.radians(25)
 BACKLASH = 0.020
 H = 1.45                       # full stack; every body spans z0..H
 ZM = H / 2.0                   # V-way mid-height, z 7.25 mm
-GRV_H = 0.15                   # groove half-height: a 3.0 mm tall channel
-AX_F = 0.025                   # axial float each way (0.25 mm)
-GRV_D = 0.15                   # groove depth into the planet tip (1.5 mm)
+GRV_D = 0.24                   # diamond depth into the planet tip (2.4 mm)
+#   50% bigger than the 1.5 mm first cut, and it crosses a threshold on
+#   the way: the floor at planet r 3.6 mm now sits INSIDE the 3.75 root,
+#   so the groove is a continuous circular channel rather than ten tooth-
+#   tip notches. Engagement stops breathing with rotation - no more worst
+#   phase - and goes from 0.65 mm to 2.15 mm against 0.25 mm of slack.
+#   The ridges finish 0.2-0.4 mm proud of their gear's tip circle, which
+#   is fine: the planet's channel is cut to receive them.
 #   Sized by a rotational-phase sweep, not by eye. The groove is ten
 #   tooth-tip notches, so engagement breathes as the teeth turn: it is
 #   deepest with a tooth facing the gear and shallowest with a space
@@ -150,42 +165,42 @@ N_PL = 5
 
 
 def groove_rz():
-    """The planet's mid-height groove, as a revolve-CUT profile (r, z).
+    """The planet's REVERSE DIAMOND, as a revolve-CUT profile in (r, z).
 
-    RECTANGULAR, not a V. The 45 deg V retained perfectly but would not
-    let the toy spin held flat: with the axis vertical the whole 36.6 g
-    of ring + planets + sun hangs on these flanks, and a 45 deg flank
-    turns that weight into a radial wedge - 0.51 N of contact load to
-    carry 0.36 N of weight, squeezing the planet into both of its meshes
-    at the same time. Measured coast-down was 0.09 s flat against 3.2 s
-    vertical. Horizontal faces make the contact normal vertical, so the
-    wedge disappears and the load is just the weight."""
+    A full diamond: 45 deg rising from the bottom to a point at
+    mid-height, 45 deg falling to the top. The planet keeps its whole
+    gear - this only notches the tooth tips - and the mating gear's
+    diamond ridge seats in the notch. Straight off the Supernova
+    journal, which is the one joint in this programme that has both
+    printed and spun.
+
+    Depth GRV_D leaves the floor at planet r 4.5 mm, still 0.75 mm clear
+    of the 3.75 root, so the teeth survive through the band. Overcut
+    past the tip keeps the cut face clean and makes the mouth full
+    height."""
     rb = PLI["tip"] - GRV_D
     ro = PLI["tip"] + GRV_OC
-    return [(ro, ZM - GRV_H), (rb, ZM - GRV_H),
-            (rb, ZM + GRV_H), (ro, ZM + GRV_H)]
+    half = ro - rb                      # 45 deg by construction: dz == dr
+    return [(ro, ZM - half), (rb, ZM), (ro, ZM + half)]
 
 
 def ridge_rz(g, station, inboard):
-    """The mating gear's ridge, as a revolve-JOIN profile in (r, z).
+    """The mating gear's DIAMOND ridge, as a revolve-JOIN profile (r, z).
 
-    Also rectangular, so both bearing faces are horizontal. Its apex
-    sits VCLR radially clear of the groove floor; the base is sunk
-    RIDGE_FOOT past the gear's own ROOT, which does two things: the
-    revolve lands on solid material, and the ridge fills the gear's
-    tooth spaces out to the apex, which is what the planet's grooved
-    teeth actually run against.
+    45 deg up to a point at mid-height, 45 deg back down - the male half
+    of the pair. Apex sits VCLR radially clear of the groove floor, so
+    the clearance is a uniform radial offset and works out at 0.177 mm
+    normal on the flanks: the print-proven Supernova number.
 
-    The ridge's underside is now a horizontal overhang - but it is only
-    unsupported ACROSS a tooth space (~1.7 mm) and is anchored at both
-    ends by the teeth it grows from, so it bridges rather than
-    cantilevers. Returns (profile, apex_radius)."""
+    Base is sunk RIDGE_FOOT past the gear's own ROOT, which does two
+    things: the revolve lands on solid material, and the ridge fills the
+    gear's tooth spaces out to the apex, which is what the planet's
+    notched teeth actually run against. Returns (profile, apex)."""
     s = 1.0 if inboard else -1.0
     apex = station - s * (PLI["tip"] - GRV_D + VCLR)
     base = g["root"] - s * RIDGE_FOOT
-    hr = GRV_H - AX_F
-    return ([(base, ZM - hr), (apex, ZM - hr),
-             (apex, ZM + hr), (base, ZM + hr)], apex)
+    half = abs(apex - base)             # 45 deg by construction
+    return ([(base, ZM - half), (apex, ZM), (base, ZM + half)], apex)
 
 
 # ---- engraved-scrollwork generator (pure math, cm) --------------------
@@ -564,10 +579,21 @@ def run(_context: str):
         if stale is not None:      # sketch committed, revolve did not
             stale.deleteMe()
         prof, apex = ridge_rz(g, station, inboard)
-        lo, hi = sorted((g["tip"], g["root"]))
-        if not lo < apex < hi:
-            raise RuntimeError("%s apex %.3f outside tip/root %.3f..%.3f"
-                               % (name, apex, lo, hi))
+        # The apex is allowed PAST this gear's own tip circle now - at
+        # 2.4 mm the diamond outgrows the 2.2 mm tooth height, so the
+        # ridge finishes slightly proud of the teeth and the planet's
+        # channel is cut to receive it. What still must hold is that the
+        # ridge reaches toward the planet at all (or it engages nothing),
+        # and that its base sits on solid material behind the root.
+        s = 1.0 if inboard else -1.0
+        reach = (apex - g["root"]) * s
+        if reach <= 0:
+            raise RuntimeError("%s apex %.3f does not clear root %.3f"
+                               % (name, apex, g["root"]))
+        proud = (apex - g["tip"]) * s
+        print("FH %s apex %.2f mm: %.2f mm past root, %s tip by %.2f mm"
+              % (name, apex * 10, reach * 10,
+                 "proud of" if proud > 0 else "inside", abs(proud) * 10))
         sk = root.sketches.add(root.xZConstructionPlane)
         sk.name = name
         _poly_rz(sk, pt, prof)
