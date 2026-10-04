@@ -1,0 +1,411 @@
+<title>Quiet Nine</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one left-aligned column, 64ch measure, hairline tables, no cards.
+   The page should be as quiet as the rack: grey-green neutrals, one accent. */
+:root {
+  --bg: #f3f3f0;
+  --fg: #1e2220;
+  --mute: #646a66;
+  --line: #d2d5d0;
+  --soft: #e7e8e3;
+  --accent: #3c6b55;
+  --shelf: #dedbd2;
+  --inner: #cfd1cb;
+  --deep: #b9bcb5;
+  --rack: #ededea;
+  --glass: #35594a;
+  --glass2: #5f8a74;
+  --font-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #181a19; --fg: #dcdcd6; --mute: #9aa09b; --line: #333734;
+    --soft: #222523; --accent: #7fb59a; --shelf: #26292a; --inner: #2e3230;
+    --deep: #1f2321; --rack: #3a3e3b; --glass: #3f6a55; --glass2: #6e9c84;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #181a19; --fg: #dcdcd6; --mute: #9aa09b; --line: #333734;
+  --soft: #222523; --accent: #7fb59a; --shelf: #26292a; --inner: #2e3230;
+  --deep: #1f2321; --rack: #3a3e3b; --glass: #3f6a55; --glass2: #6e9c84;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body);
+  font-size: 16px; line-height: 1.55; padding-inline: 16px; padding-block: 40px 80px; margin: 0; }
+main { max-width: 880px; margin-inline: auto; }
+h1 { font-size: 2.1rem; font-weight: 500; letter-spacing: -0.01em; margin: 0 0 .35rem; text-wrap: balance; }
+h2 { font-size: 1.15rem; font-weight: 600; margin: 3rem 0 .8rem; text-wrap: balance; }
+h3 { font-size: 1rem; font-weight: 600; margin: 1.6rem 0 .5rem; }
+p { max-width: 64ch; margin: 0 0 .9rem; }
+.lede { font-size: 1.15rem; color: var(--mute); max-width: 60ch; margin-bottom: 2rem; }
+.eyebrow { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin-bottom: 1.2rem; }
+.eyebrow span { color: var(--accent); }
+figure { margin: 1.2rem 0 1.8rem; }
+.fig { overflow-x: auto; max-width: 100%; }
+.fig svg { display: block; width: 100%; height: auto; max-width: 100%; }
+figcaption { font-size: .86rem; color: var(--mute); max-width: 70ch; margin-top: .5rem; }
+.tbl { overflow-x: auto; max-width: 100%; margin: .8rem 0 1.4rem; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: .45rem .7rem .45rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 500; color: var(--mute); font-family: var(--font-mono); font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; }
+td.n, th.n { text-align: right; padding-right: 1rem; }
+td code, p code, li code { font-family: var(--font-mono); font-size: .85em; background: var(--soft); padding: .05em .3em; border-radius: 2px; }
+.fit { color: var(--accent); font-weight: 500; }
+.no { color: var(--mute); }
+ol, ul { max-width: 64ch; padding-left: 1.3rem; }
+li { margin-bottom: .35rem; }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem 2rem; margin: 1.5rem 0 2.5rem; padding-block: 1rem; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.kv div { min-width: 0; }
+.kv b { display: block; font-family: var(--font-mono); font-size: 1.25rem; font-weight: 500; }
+.kv small { color: var(--mute); font-size: .8rem; }
+.note { border-left: 2px solid var(--accent); padding-left: 1rem; color: var(--mute); font-size: .92rem; max-width: 64ch; }
+svg text { font-family: var(--font-mono); font-size: 7px; fill: var(--fg); }
+svg text.m { fill: var(--mute); }
+svg text.a { fill: var(--accent); }
+.foot { margin-top: 4rem; font-size: .82rem; color: var(--mute); font-family: var(--font-mono); }
+</style>
+
+<main>
+<div class="eyebrow">Wine rack <span>/ unobtrusive</span> · 335 × 335 opening · H2D single nozzle</div>
+<h1>Quiet Nine</h1>
+<p class="lede">A nine-bottle insert that sits at the back of the cube and lets the bottles do the showing. Matte grey, 164 mm deep, no frame, no fasteners, nothing to look at.</p>
+
+<figure>
+<div class="fig">
+<svg viewBox="0 0 420 400" role="img" aria-label="Front elevation: the 335 mm opening with the 3 by 3 lattice inset 1.25 mm per side and nine bottles of mixed real diameters sitting on the bore floors">
+  <rect x="2" y="2" width="416" height="396" fill="var(--shelf)"/>
+  <rect x="42" y="32" width="335" height="335" fill="var(--inner)"/>
+  <rect x="43.25" y="33.25" width="332.5" height="332.5" fill="var(--rack)" stroke="var(--line)" stroke-width="0.5"/>
+  <g stroke="var(--line)" stroke-width="0.6">
+    <!-- row 1 -->
+    <g transform="translate(98.667,87.417)">
+      <rect x="-55.417" y="-55.417" width="110.833" height="110.833" fill="var(--rack)"/>
+      <circle r="52" fill="var(--inner)"/><circle r="47" fill="var(--deep)"/>
+      <circle cy="9" r="38" fill="var(--glass)" stroke="none"/><circle cy="9" r="14.5" fill="var(--glass2)" stroke="none"/>
+    </g>
+    <g transform="translate(209.5,87.417)">
+      <rect x="-55.417" y="-55.417" width="110.833" height="110.833" fill="var(--rack)"/>
+      <circle r="52" fill="var(--inner)"/><circle r="47" fill="var(--deep)"/>
+      <circle cy="3.5" r="43.5" fill="var(--glass)" stroke="none"/><circle cy="3.5" r="14.5" fill="var(--glass2)" stroke="none"/>
+    </g>
+    <g transform="translate(320.333,87.417)">
+      <rect x="-55.417" y="-55.417" width="110.833" height="110.833" fill="var(--rack)"/>
+      <circle r="52" fill="var(--inner)"/><circle r="47" fill="var(--deep)"/>
+      <circle cy="2.5" r="44.5" fill="var(--glass)" stroke="none"/><circle cy="2.5" r="14.5" fill="var(--glass2)" stroke="none"/>
+    </g>
+    <!-- row 2 -->
+    <g transform="translate(98.667,198.25)">
+      <rect x="-55.417" y="-55.417" width="110.833" height="110.833" fill="var(--rack)"/>
+      <circle r="52" fill="var(--inner)"/><circle r="47" fill="var(--deep)"/>
+      <circle cy="9" r="38" fill="var(--glass)" stroke="none"/><circle cy="9" r="14.5" fill="var(--glass2)" stroke="none"/>
+    </g>
+    <g transform="translate(209.5,198.25)">
+      <rect x="-55.417" y="-55.417" width="110.833" height="110.833" fill="var(--rack)"/>
+      <circle r="52" fill="var(--inner)"/><circle r="47" fill="var(--deep)"/>
+      <circle cy="6.5" r="40.5" fill="var(--glass)" stroke="none"/><circle cy="6.5" r="14.5" fill="var(--glass2)" stroke="none"/>
+    </g>
+    <g transform="translate(320.333,198.25)">
+      <rect x="-55.417" y="-55.417" width="110.833" height="110.833" fill="var(--rack)"/>
+      <circle r="52" fill="var(--inner)"/><circle r="47" fill="var(--deep)"/>
+      <circle cy="8" r="39" fill="var(--glass)" stroke="none"/><circle cy="8" r="14.5" fill="var(--glass2)" stroke="none"/>
+    </g>
+    <!-- row 3 -->
+    <g transform="translate(98.667,309.083)">
+      <rect x="-55.417" y="-55.417" width="110.833" height="110.833" fill="var(--rack)"/>
+      <circle r="52" fill="var(--inner)"/><circle r="47" fill="var(--deep)"/>
+      <circle cy="4.5" r="42.5" fill="var(--glass)" stroke="none"/><circle cy="4.5" r="14.5" fill="var(--glass2)" stroke="none"/>
+    </g>
+    <g transform="translate(209.5,309.083)">
+      <rect x="-55.417" y="-55.417" width="110.833" height="110.833" fill="var(--rack)"/>
+      <circle r="52" fill="var(--inner)"/><circle r="47" fill="var(--deep)"/>
+      <circle cy="1.5" r="45.5" fill="var(--glass)" stroke="none"/><circle cy="1.5" r="14.5" fill="var(--glass2)" stroke="none"/>
+    </g>
+    <g transform="translate(320.333,309.083)">
+      <rect x="-55.417" y="-55.417" width="110.833" height="110.833" fill="var(--rack)"/>
+      <circle r="52" fill="var(--inner)"/><circle r="47" fill="var(--deep)"/>
+      <circle cy="9" r="38" fill="var(--glass)" stroke="none"/><circle cy="9" r="14.5" fill="var(--glass2)" stroke="none"/>
+    </g>
+  </g>
+  <text x="42" y="382" class="m">opening 335</text>
+  <text x="377" y="382" class="m" text-anchor="end">rack 332.5 · pitch 110.83 · bore 94</text>
+  <text x="12" y="22" class="m">cube face</text>
+</svg>
+</div>
+<figcaption>Front elevation, 1 mm = 1 unit. Bottles drawn at real body diameters (76, 87, 89 / 76, 81, 78 / 85, 91, 76 mm) resting on the 94 mm bore floors; the lighter disc is the 29 mm neck you actually see from the front. Flare opens the face to 104 mm.</figcaption>
+</figure>
+
+<div class="kv">
+  <div><b>9</b><small>bottles, 3 × 3</small></div>
+  <div><b>94 mm</b><small>clear bore, 104 at the face</small></div>
+  <div><b>164 mm</b><small>deep, sits at the back</small></div>
+  <div><b>~1.35 kg</b><small>ASA, 150 g per bottle</small></div>
+  <div><b>~23 h</b><small>0.4 nozzle, 0.2 mm, 6 plates</small></div>
+</div>
+
+<h2>Concept</h2>
+<p>An unobtrusive rack has one job: hold the bottles level and get out of the way. The KALLAX-class cube is about 390 mm deep and a bottle is 300 to 330 mm long, so a rack does not need to reach the front of the cube at all. Quiet Nine is a short cradle, 164 mm deep, pushed to the back. From the front you see nine shoulders and necks; the lattice sits 150 mm behind them, in shadow, matte grey.</p>
+<p>The lattice is nine identical cells. Each cell is two thin rings, one at the back with a stop plate so a bottle cannot be pushed out of an open-backed cube, one near the front with a 45° flared entry, joined by four slim corner ribs. Every ring prints flat, hoop in the XY plane, so the bottle load is carried by continuous perimeters and the rows stack ring-on-ring straight down to the cube floor. There is no outer frame: the nine cells key into one slab, and the cube walls box it in.</p>
+<p>The front face is the thinnest wall the pitch allows. At 110.83 mm pitch and 94 mm bore the wall between bottles is 8.4 mm, and the 5 mm flare takes it down to a 3.4 mm land at the face, so the lattice reads as a line drawing rather than a grid of blocks.</p>
+
+<h2>Why these numbers</h2>
+<div class="tbl"><table>
+<tr><th>Choice</th><th>Value</th><th>Reason</th></tr>
+<tr><td>Envelope</td><td class="n">332.5</td><td>335 minus 1.25 per side. PETG/ASA shrink 0.7 to 1 mm over the width; the gap plus felt pads give a push fit, no screws.</td></tr>
+<tr><td>Grid, pitch</td><td class="n">3 × 3, 110.83</td><td>Envelope / 3. The brief's mixed-cellar grid (105 to 112). 4 × 4 would be Bordeaux-only; 2 × 2 wastes the cube.</td></tr>
+<tr><td>Clear bore</td><td class="n">94</td><td>Above the 92 floor; fits Burgundy to 93 and standard Champagne to 91. Wall stays at 8.4, inside the 12 limit.</td></tr>
+<tr><td>Flare</td><td class="n">5 × 45°</td><td>Face opening 104 guides a bottle in; exactly the overhang limit printed face-down, no supports.</td></tr>
+<tr><td>Ring depth</td><td class="n">12</td><td>6 walls × 0.42 fill the 8.4 wall almost solid; stress is below 1 % of yield, so this is a stiffness and print-adhesion choice.</td></tr>
+<tr><td>Front support</td><td class="n">149 to 161 from base</td><td>Ahead of the full-bottle CoG (130 to 145) and still under the cylindrical body of Bordeaux, Burgundy and Champagne shapes.</td></tr>
+<tr><td>Rear drop</td><td class="n">4</td><td>Rear bore floor 4 mm lower than the front. A bottle whose shoulder taper has started by the front ring still sits level or ~1.5° neck-up, never neck-down.</td></tr>
+<tr><td>Rack depth</td><td class="n">164</td><td>Two 82 mm halves. A 320 bottle ends 67 mm inside a 390 cube, 12 mm inside a 335 niche; a 357 flute protrudes 25 in the niche.</td></tr>
+</table></div>
+
+<h2>Views</h2>
+
+<figure>
+<div class="fig">
+<svg viewBox="0 0 460 215" role="img" aria-label="Side section through one cell inside the cube: rear stop plate and cradle ring, ribs, joint, front flared ring; a 320 mm bottle resting on the two ring floors with its centre of gravity between them">
+  <!-- cube ghost -->
+  <rect x="40" y="26" width="390" height="140" fill="none" stroke="var(--line)" stroke-dasharray="3 3" stroke-width="0.8"/>
+  <text x="430" y="22" class="m" text-anchor="end">cube depth ~390 (assumed, parametric)</text>
+  <line x1="30" y1="166" x2="440" y2="166" stroke="var(--fg)" stroke-width="1.2"/>
+  <text x="30" y="176" class="m">cube floor</text>
+  <!-- rear half -->
+  <g fill="var(--rack)" stroke="var(--fg)" stroke-width="0.6">
+    <rect x="40" y="40" width="3" height="24.4"/><rect x="40" y="134.4" width="3" height="16.4"/>
+    <rect x="43" y="40" width="9" height="12.4"/><rect x="43" y="146.4" width="9" height="4.4"/>
+    <rect x="52" y="40" width="70" height="12"/><rect x="52" y="138.8" width="70" height="12"/>
+    <!-- front half -->
+    <rect x="122" y="40" width="70" height="10"/><rect x="122" y="140.8" width="70" height="10"/>
+    <polygon points="192,40 204,40 204,43.4 199,48.4 192,48.4"/>
+    <polygon points="192,150.8 204,150.8 204,147.4 199,142.4 192,142.4"/>
+  </g>
+  <!-- hollow rear rib and peg, dashed -->
+  <g fill="none" stroke="var(--mute)" stroke-width="0.5" stroke-dasharray="2 1.5">
+    <rect x="52" y="42.4" width="70" height="7.2"/><rect x="112" y="42.65" width="10" height="6.7"/>
+    <rect x="52" y="141.2" width="70" height="7.2"/><rect x="112" y="141.45" width="10" height="6.7"/>
+  </g>
+  <line x1="122" y1="34" x2="122" y2="157" stroke="var(--accent)" stroke-width="0.6" stroke-dasharray="1 2"/>
+  <text x="122" y="32" class="a" text-anchor="middle">joint, z = 82</text>
+  <!-- bottle: 320 long, 76 dia, base at x=43, rotated 1.5 deg neck-up about the rear contact -->
+  <g transform="rotate(-1.5 43 146.4)">
+    <path d="M45,70.4 L243,70.4 Q258,72 263,93.9 L361,93.9 Q363,93.9 363,96 L363,120.8 Q363,122.9 361,122.9 L263,122.9 Q258,144.8 243,146.4 L45,146.4 Q43,146.4 43,144.4 L43,72.4 Q43,70.4 45,70.4 Z"
+      fill="var(--glass)" fill-opacity="0.55" stroke="var(--glass)" stroke-width="0.8"/>
+    <circle cx="178" cy="108.4" r="2.2" fill="var(--bg)" stroke="var(--fg)" stroke-width="0.8"/>
+    <line x1="178" y1="105.5" x2="178" y2="111.3" stroke="var(--fg)" stroke-width="0.8"/>
+    <line x1="175.1" y1="108.4" x2="180.9" y2="108.4" stroke="var(--fg)" stroke-width="0.8"/>
+    <text x="178" y="102" text-anchor="middle">CoG ~135</text>
+  </g>
+  <!-- support markers -->
+  <polygon points="47.5,152 44.5,158 50.5,158" fill="var(--accent)"/>
+  <polygon points="198,152 195,158 201,158" fill="var(--accent)"/>
+  <text x="47.5" y="166" class="a" text-anchor="middle" dy="-2">0–9</text>
+  <text x="198" y="166" class="a" text-anchor="middle" dy="-2">149–161</text>
+  <!-- labels -->
+  <text x="40" y="188" class="m">stop plate 3 · cradle ring 3–12 · hollow ribs 12–82 · solid ribs + pegs 82–152 · flared ring 152–164</text>
+  <text x="40" y="200" class="m">rear bore floor 4 mm below the front floor → ~1.5° neck-up; bottle base bears on the stop plate</text>
+  <text x="300" y="60" class="m">320 bottle ends 67 mm inside the face</text>
+  <text x="40" y="212" class="m">mm from the rack back; distances under the triangles are from the bottle base</text>
+</svg>
+</div>
+<figcaption>Side section through one cell (bottle axis horizontal). The two support points, the rear cradle floor and the front ring floor, straddle the full-bottle centre of gravity. The stop plate's 70 mm bore is smaller than any bottle base, so nothing can be pushed through an open-backed cube.</figcaption>
+</figure>
+
+<figure>
+<div class="fig">
+<svg viewBox="0 0 320 170" role="img" aria-label="Front view of one cell: 110.83 mm square with 1.5 mm corner chamfers, 94 mm bore, 104 mm flare, four corner ribs and four key sockets offset 30 mm from the side centres">
+  <g transform="translate(20,20)">
+    <polygon points="1.5,0 109.33,0 110.83,1.5 110.83,109.33 109.33,110.83 1.5,110.83 0,109.33 0,1.5" fill="var(--rack)" stroke="var(--fg)" stroke-width="0.6"/>
+    <circle cx="55.417" cy="55.417" r="52" fill="var(--inner)" stroke="var(--mute)" stroke-width="0.4" stroke-dasharray="2 1.5"/>
+    <circle cx="55.417" cy="55.417" r="47" fill="var(--deep)" stroke="var(--fg)" stroke-width="0.6"/>
+    <!-- rear ribs 12 sq (dashed, behind the ring) -->
+    <g fill="none" stroke="var(--mute)" stroke-width="0.5" stroke-dasharray="2 1.5">
+      <rect x="0" y="0" width="12" height="12"/><rect x="98.83" y="0" width="12" height="12"/>
+      <rect x="0" y="98.83" width="12" height="12"/><rect x="98.83" y="98.83" width="12" height="12"/>
+    </g>
+    <!-- key sockets: disc 8.4 at 5.5 in, neck 5.4 to the face -->
+    <g fill="var(--bg)" stroke="var(--accent)" stroke-width="0.6">
+      <rect x="105.33" y="82.72" width="6" height="5.4"/><circle cx="105.33" cy="85.42" r="4.2"/>
+      <rect x="-0.5" y="82.72" width="6" height="5.4"/><circle cx="5.5" cy="85.42" r="4.2"/>
+      <rect x="82.72" y="-0.5" width="5.4" height="6"/><circle cx="85.42" cy="5.5" r="4.2"/>
+      <rect x="82.72" y="105.33" width="5.4" height="6"/><circle cx="85.42" cy="105.33" r="4.2"/>
+    </g>
+    <!-- dims -->
+    <line x1="0" y1="-8" x2="110.83" y2="-8" stroke="var(--fg)" stroke-width="0.5"/>
+    <text x="55.4" y="-11" text-anchor="middle">pitch 110.83</text>
+    <line x1="8.4" y1="55.4" x2="102.4" y2="55.4" stroke="var(--fg)" stroke-width="0.5"/>
+    <text x="55.4" y="52" text-anchor="middle">bore 94</text>
+    <text x="55.4" y="66" text-anchor="middle" class="m">face 104</text>
+    <line x1="118" y1="55.4" x2="118" y2="85.4" stroke="var(--accent)" stroke-width="0.5"/>
+    <text x="121" y="72" class="a">30</text>
+  </g>
+  <g transform="translate(175,30)">
+    <text x="0" y="0">wall between bottles</text><text x="0" y="10" class="m">8.4 per ring, 16.8 cell to cell</text>
+    <text x="0" y="28">land at the face</text><text x="0" y="38" class="m">3.4 after the 5 mm flare</text>
+    <text x="0" y="56">rear rib</text><text x="0" y="66" class="m">12 sq, 2.4 wall, 7.2 sq bore = socket</text>
+    <text x="0" y="84">front rib</text><text x="0" y="94" class="m">10 sq solid, 6.7 sq peg × 10</text>
+    <text x="0" y="112">key socket</text><text x="0" y="122" class="m">8.4 disc + 5.4 neck, 10 deep, blind 2</text>
+    <text x="0" y="140">corners</text><text x="0" y="150" class="m">1.5 chamfer, reads as a V groove</text>
+  </g>
+</svg>
+</div>
+<figcaption>One cell from the front. Sockets sit at +30 mm from each side centre (right and left faces at +30 in y, top and bottom at +30 in x), so every cell is the same part and any neighbour's socket faces it.</figcaption>
+</figure>
+
+<figure>
+<div class="fig">
+<svg viewBox="0 0 460 190" role="img" aria-label="Exploded side view of one cell: rear half with hollow ribs, front half with pegs pulled 30 mm away, plus a plan detail of the bone key bridging two ring sockets">
+  <g fill="var(--rack)" stroke="var(--fg)" stroke-width="0.6">
+    <rect x="20" y="20" width="3" height="24.4"/><rect x="20" y="114.4" width="3" height="16.4"/>
+    <rect x="23" y="20" width="9" height="12.4"/><rect x="23" y="126.4" width="9" height="4.4"/>
+    <rect x="32" y="20" width="70" height="12"/><rect x="32" y="118.8" width="70" height="12"/>
+    <rect x="152" y="20" width="70" height="10"/><rect x="152" y="120.8" width="70" height="10"/>
+    <rect x="142" y="21.65" width="10" height="6.7"/><rect x="142" y="122.45" width="10" height="6.7"/>
+    <polygon points="222,20 234,20 234,23.4 229,28.4 222,28.4"/>
+    <polygon points="222,130.8 234,130.8 234,127.4 229,122.4 222,122.4"/>
+  </g>
+  <g fill="none" stroke="var(--mute)" stroke-width="0.5" stroke-dasharray="2 1.5">
+    <rect x="32" y="22.4" width="70" height="7.2"/><rect x="32" y="121.2" width="70" height="7.2"/>
+  </g>
+  <g stroke="var(--accent)" stroke-width="0.6" fill="none">
+    <line x1="104" y1="25" x2="140" y2="25"/><polygon points="106,23 102,25 106,27" fill="var(--accent)"/>
+    <line x1="104" y1="125.8" x2="140" y2="125.8"/><polygon points="106,123.8 102,125.8 106,127.8" fill="var(--accent)"/>
+  </g>
+  <text x="122" y="14" class="a" text-anchor="middle">4 pegs → 4 bores, 0.25 per side</text>
+  <text x="20" y="150" class="m">quiet_rear ×9  (rings on the bed, ribs up)</text>
+  <text x="142" y="150" class="m">quiet_front ×9  (flare on the bed, pegs up)</text>
+  <text x="20" y="162" class="m">keys drop into the ring tops before the halves meet; nothing is visible from the front</text>
+  <!-- bone key detail, plan view, 3x -->
+  <g transform="translate(290,30) scale(3)">
+    <rect x="-16" y="-8" width="16" height="30" fill="var(--rack)" stroke="var(--fg)" stroke-width="0.2"/>
+    <rect x="0" y="-8" width="16" height="30" fill="var(--rack)" stroke="var(--fg)" stroke-width="0.2"/>
+    <g fill="var(--bg)" stroke="var(--accent)" stroke-width="0.2">
+      <circle cx="-5.5" cy="7" r="4.2"/><circle cx="5.5" cy="7" r="4.2"/>
+      <rect x="-5.5" y="4.3" width="11" height="5.4"/>
+    </g>
+    <g fill="var(--accent)" fill-opacity="0.35" stroke="var(--accent)" stroke-width="0.2">
+      <circle cx="-5.5" cy="7" r="4"/><circle cx="5.5" cy="7" r="4"/>
+      <rect x="-5.5" y="4.5" width="11" height="5"/>
+    </g>
+    <line x1="0" y1="-8" x2="0" y2="22" stroke="var(--fg)" stroke-width="0.2" stroke-dasharray="0.6 0.6"/>
+  </g>
+  <text x="290" y="135" class="m">bone key, plan, 3×: discs 8 at ±5.5, neck 5, 9.7 tall</text>
+  <text x="290" y="147" class="m">socket: 8.4 / 5.4, open at the ring top, 2 mm floor</text>
+  <text x="290" y="159" class="m">key slides in along print Z: flanks are XY perimeters</text>
+  <text x="290" y="171" class="m">cell A · cell B faces touch; 12 keys per ring plane</text>
+</svg>
+</div>
+<figcaption>Exploded cell and the ring-to-ring key. Four square pegs locate the halves; twelve bone keys per ring plane turn nine cells into one slab. Every joint is keyed or conical in spirit: nothing rectangular is asked to resist pull-out on its own.</figcaption>
+</figure>
+
+<h2>Bottle compatibility</h2>
+<div class="tbl"><table>
+<tr><th>Bottle</th><th class="n">Body dia</th><th class="n">Length</th><th>Bore 94 / face 104</th><th>Notes</th></tr>
+<tr><td>Bordeaux</td><td class="n">74–85</td><td class="n">300–330</td><td class="fit">fits</td><td>9 mm of clearance on a typical 76; sits 9 mm below the bore centre.</td></tr>
+<tr><td>Burgundy / Rhône</td><td class="n">82–93</td><td class="n">293–330</td><td class="fit">fits</td><td>93 is tight (0.5 mm per side); the flare guides it in.</td></tr>
+<tr><td>Champagne, standard</td><td class="n">88–91</td><td class="n">279–300</td><td class="fit">fits</td><td>Shorter bottle: front ring at 155 is still under the body.</td></tr>
+<tr><td>Champagne, vintage / prestige</td><td class="n">96–101</td><td class="n">300</td><td class="no">no</td><td>Needs 112 pitch and 100 bore; set <code>slot_clear</code> 100 and accept 5.4 mm walls.</td></tr>
+<tr><td>Alsace flute</td><td class="n">75–79</td><td class="n">329–357</td><td class="fit">fits</td><td>Protrudes up to 25 mm in a 335-deep niche; inside a 390 cube.</td></tr>
+<tr><td>Bordeaux magnum</td><td class="n">92–100</td><td class="n">356–404</td><td class="no">tight / no</td><td>92–93 enters; CoG moves forward, so one per rack at most.</td></tr>
+<tr><td>Burgundy / Champagne magnum</td><td class="n">110–117</td><td class="n">367–385</td><td class="no">no</td><td>2 × 2 grid territory.</td></tr>
+</table></div>
+<p>Capacity 9 bottles. Design load 1.7 kg per Champagne, 15 kg total; the bottom row's rings carry 5.1 kg each through the full square perimeter, about 0.06 MPa. Creep is not the governing case here; the material choice is about finish and heat.</p>
+
+<h2>Modules and plate plan</h2>
+<p>Everything prints flat, ring face on the bed, no supports. Two halves per plate axis (221.7 mm plus brim) is the limit, so four halves per plate. Rates follow the brief: 0.4 nozzle at 0.2 mm, about 60 g/h real; a 0.6 nozzle at 0.3 mm takes the rack to about 14 h.</p>
+<div class="tbl"><table>
+<tr><th>Part</th><th class="n">Count</th><th>Size, mm</th><th>Orientation</th><th class="n">g each</th><th class="n">g total</th></tr>
+<tr><td><code>quiet_rear</code> rear half-cell</td><td class="n">9</td><td>110.8 × 110.8 × 82</td><td>stop plate on the bed, ribs up</td><td class="n">82</td><td class="n">738</td></tr>
+<tr><td><code>quiet_front</code> front half-cell</td><td class="n">9</td><td>110.8 × 110.8 × 92</td><td>flare on the bed, pegs up</td><td class="n">65</td><td class="n">585</td></tr>
+<tr><td><code>quiet_key</code> bone key</td><td class="n">24 + 3</td><td>19 × 8 × 9.7</td><td>flat, any</td><td class="n">1.2</td><td class="n">32</td></tr>
+<tr><td><code>quiet_coupon</code> + peg</td><td class="n">1 + 1</td><td>126 × 18 × 12</td><td>flat</td><td class="n">30</td><td class="n">30</td></tr>
+<tr><td>Total</td><td class="n">47</td><td></td><td></td><td></td><td class="n">1385</td></tr>
+</table></div>
+<div class="tbl"><table>
+<tr><th>Plate</th><th>Contents</th><th class="n">g</th><th class="n">h @ 0.4/0.2</th><th>Note</th></tr>
+<tr><td>0</td><td>coupon strip, coupon peg, 3 keys</td><td class="n">34</td><td class="n">0.7</td><td>print first; pick clearances</td></tr>
+<tr><td>1</td><td>4 × rear</td><td class="n">328</td><td class="n">5.5</td><td>2 × 2, 5 mm brim</td></tr>
+<tr><td>2</td><td>4 × rear</td><td class="n">328</td><td class="n">5.5</td><td></td></tr>
+<tr><td>3</td><td>1 × rear, 3 × front</td><td class="n">277</td><td class="n">4.6</td><td></td></tr>
+<tr><td>4</td><td>4 × front</td><td class="n">260</td><td class="n">4.3</td><td></td></tr>
+<tr><td>5</td><td>2 × front, 24 keys</td><td class="n">159</td><td class="n">2.8</td><td>keys fill the free quadrants</td></tr>
+<tr><td>Total</td><td>6 plates</td><td class="n">1386</td><td class="n">23.4</td><td>~14 h at 0.6/0.3</td></tr>
+</table></div>
+
+<h2>Joints and tolerances</h2>
+<div class="tbl"><table>
+<tr><th>Joint</th><th>Geometry</th><th class="n">Clearance / side</th><th>Why</th></tr>
+<tr><td>Half to half</td><td>6.7 sq peg, 10 long, 1 mm chamfer, into the 7.2 sq rib bore</td><td class="n">0.25</td><td>36 pegs engage at once; loose-side push fit absorbs 1 mm of shrink across the slab. Square bores print truer than round.</td></tr>
+<tr><td>Ring to ring</td><td>bone key: 8 discs at ±5.5, 5 neck, 9.7 tall; socket 8.4 / 5.4, 10 deep, 2 mm floor</td><td class="n">0.20</td><td>Sliding fit along print Z; flanks are XY perimeters. Disc shoulders take the pull-out, not a tab.</td></tr>
+<tr><td>Rack to cube</td><td>332.5 envelope, felt pads 2 mm</td><td class="n">1.25</td><td>Compressed felt gives friction; the slab cannot tip inside the cube.</td></tr>
+</table></div>
+<p>The coupon carries three key sockets at <code>dt_gap</code> −0.1 / 0 / +0.1 and three peg bores at <code>peg_gap</code> −0.1 / 0 / +0.1, with one key and one loose peg. Choose the pair that pushes home by thumb and holds its own weight upside down, then set the two parameters and print the halves.</p>
+
+<h2>Filament and settings</h2>
+<p>Primary: Bambu ASA in grey (or white to match a white cube, black for a dark one). Naturally matte, will not yellow by a window, HDT 100 °C, and the parts are small enough that chamber warping is a non-issue. Alternative with less fuss: Prusament PETG Matte or Bambu PETG HF in a dark colour, same settings minus the chamber.</p>
+<div class="tbl"><table>
+<tr><th>Setting</th><th>ASA (primary)</th><th>PETG matte (alternative)</th></tr>
+<tr><td>Nozzle / layer</td><td>0.4 hardened / 0.2 mm (0.6 / 0.3 for speed)</td><td>same</td></tr>
+<tr><td>Walls</td><td>6 (2.5 mm; rib walls and the 8.4 ring wall are mostly perimeter)</td><td>6</td></tr>
+<tr><td>Infill</td><td>30 % gyroid</td><td>30 % gyroid</td></tr>
+<tr><td>Top / bottom</td><td>5 / 5, ironing on the top faces of the keys only</td><td>5 / 5</td></tr>
+<tr><td>Temps</td><td>260 °C, bed 95–100 °C, chamber 55–60 °C preheated</td><td>250 °C, bed 70 °C, lid vented</td></tr>
+<tr><td>Plate</td><td>textured PEI + glue stick</td><td>textured PEI</td></tr>
+<tr><td>Brim</td><td>5 mm, 0 mm gap</td><td>5 mm</td></tr>
+<tr><td>Cooling</td><td>≤ 30 %</td><td>30–50 %</td></tr>
+<tr><td>Drying</td><td>80 °C / 8 h</td><td>65 °C / 8 h</td></tr>
+<tr><td>Elephant foot</td><td>0.15 mm; the face lands are 3.4 mm so keep it on</td><td>0.15 mm</td></tr>
+</table></div>
+<p class="note">Pads: eight 2 mm self-adhesive felt dots on the outer side faces at the ring positions (left and right columns), two on top. Felt, not rubber, so the slab can still be slid out.</p>
+
+<h2>Assembly and retention</h2>
+<ol>
+<li>Print plate 0. Pick the key socket and peg bore that push home by thumb; set <code>dt_gap</code> and <code>peg_gap</code>, re-run the script, slice the halves.</li>
+<li>Lay the nine rear halves stop-plate-down in a 3 × 3, faces touching. Drop a key into each facing socket pair from above (twelve keys). Press flush.</li>
+<li>Lay the nine front halves flare-down in a 3 × 3 the same way. Twelve more keys.</li>
+<li>Lift the front slab, turn it pegs-down, lower it onto the rear slab. Thirty-six pegs find their bores; press down evenly with a flat board. No glue needed; a drop of CA on each peg makes it permanent.</li>
+<li>Stick the felt pads. Slide the slab into the cube flare forward and push it to the back. The cube walls hold it; the felt holds its position along the depth.</li>
+<li>Load bottles base-first until they meet the stop plate. From the front, the rack is gone.</li>
+</ol>
+
+<h2>Parameters</h2>
+<p>Every dimension in the build script is an expression of these. Roots hold literals; the rest derive.</p>
+<div class="tbl"><table>
+<tr><th>Name</th><th class="n">Default</th><th>Drives</th></tr>
+<tr><td><code>space_w</code></td><td class="n">335 mm</td><td>cube opening; everything scales from it</td></tr>
+<tr><td><code>fit_gap</code></td><td class="n">1.25 mm</td><td>clearance per side; <code>rack_w = space_w − 2·fit_gap</code></td></tr>
+<tr><td><code>n_cells</code></td><td class="n">3</td><td>cells per row; <code>pitch = rack_w / n_cells</code></td></tr>
+<tr><td><code>slot_clear</code></td><td class="n">94 mm</td><td>bore of both rings; <code>ring_wall = (pitch − slot_clear)/2</code></td></tr>
+<tr><td><code>flare</code></td><td class="n">5 mm</td><td>45° entry chamfer on the front bore</td></tr>
+<tr><td><code>rear_drop</code></td><td class="n">4 mm</td><td>rear bore offset downward (neck-up bias)</td></tr>
+<tr><td><code>stop_bore</code>, <code>stop_t</code></td><td class="n">70, 3 mm</td><td>base stop plate on the rear ring</td></tr>
+<tr><td><code>ring_d</code></td><td class="n">12 mm</td><td>ring depth along the bottle axis</td></tr>
+<tr><td><code>half_d</code></td><td class="n">82 mm</td><td>half-cell depth; <code>cell_d = 2·half_d</code> = rack depth</td></tr>
+<tr><td><code>sock_w</code>, <code>rib_t</code></td><td class="n">7.2, 2.4 mm</td><td>peg bore and rear rib wall; <code>rib_w = sock_w + 2·rib_t</code></td></tr>
+<tr><td><code>frib_w</code></td><td class="n">10 mm</td><td>front rib, solid</td></tr>
+<tr><td><code>peg_gap</code>, <code>peg_l</code>, <code>peg_ch</code>, <code>sock_ch</code></td><td class="n">0.25, 10, 1, 0.8 mm</td><td>peg fit; <code>peg_w = sock_w − 2·peg_gap</code></td></tr>
+<tr><td><code>key_d</code>, <code>key_neck</code>, <code>key_in</code></td><td class="n">8, 5, 5.5 mm</td><td>bone key discs, neck, disc depth behind the face</td></tr>
+<tr><td><code>key_off</code></td><td class="n">30 mm</td><td>socket position from each side centre</td></tr>
+<tr><td><code>key_blind</code>, <code>dt_gap</code>, <code>key_slack</code></td><td class="n">2, 0.2, 0.3 mm</td><td>socket floor, key clearance; <code>key_len = ring_d − key_blind − key_slack</code></td></tr>
+<tr><td><code>edge_ch</code></td><td class="n">1.5 mm</td><td>chamfer on the outer vertical corners</td></tr>
+<tr><td><code>gap_step</code>, <code>coup_*</code>, <code>cpeg_t</code></td><td class="n">0.1 mm, …</td><td>coupon clearance steps and strip size</td></tr>
+<tr><td><code>lay_gap</code>, <code>cell_*</code>, <code>key_x</code>, <code>coup_x</code>, <code>cpeg_y</code></td><td class="n">derived</td><td>layout positions of the five modules in the document</td></tr>
+</table></div>
+<p class="note">Build script: <code>artifacts/wine-rack/quiet_author.py</code>, bundled to <code>quiet_author.bundled.py</code>, preflight PASS. Execution in Fusion and numeric verification are pending; the volumes above are analytic estimates.</p>
+
+<h2>Risks and open questions</h2>
+<ul>
+<li><b>Cube depth unknown.</b> The design assumes a 390 mm cube and a rack at the back. In a 335 mm niche it still works (bottles end flush, flutes protrude 25), but the lattice is then only 170 mm from the face and more visible. <code>half_d</code> is the lever; keep the front ring under the body.</li>
+<li><b>Front support on a sloping shoulder.</b> Short-bodied Burgundy and Champagne shapes may have started tapering by 155 mm from the base. The 4 mm rear drop covers up to 4 mm of radius loss; a bottle with more taper there sits level rather than neck-up. Verify with the fattest short bottle in the cellar before printing all nine.</li>
+<li><b>Fit coupon first.</b> 36 pegs and 24 keys share one clearance each; a 0.1 mm error repeats 60 times. The coupon exists for this.</li>
+<li><b>Slab shrink across 332.5 mm.</b> 0.3 % is 1 mm; the 1.25 mm gap and the loose peg fit absorb it, but print all halves from the same spool and plate temperature.</li>
+<li><b>ASA chamber.</b> The parts are small, but ASA still wants a 55–60 °C preheat and glue. If that is a nuisance, PETG matte prints the same geometry with no drama.</li>
+<li><b>Creep.</b> Not governing at these stresses, but the rings rest on their 8.4 mm walls for years; the 12 mm ring depth is deliberate headroom.</li>
+<li><b>Stop plate mass.</b> 25 g per cell is the single largest discretionary item. Four lugs instead of a full annulus would save ~150 g; left solid for bed adhesion and a clean rear face.</li>
+</ul>
+
+<div class="foot">quiet · 2026-10-03 · figures to scale in mm · values from the design brief and research reports</div>
+</main>

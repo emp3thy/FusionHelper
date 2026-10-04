@@ -1,0 +1,700 @@
+<title>Bloom Front Patterns</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400;1,6..96,500&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Companion page to bloom.html: same editorial column, same type (Bodoni / Source Sans / Plex Mono),
+   same celadon-paper palette. Filament tokens (walnut, marble, cf-black ...) are physical colours and
+   stay identical in both themes; only the UI tokens (bg, fg, line, accent) flip. */
+:root {
+  --bg: #edf0ea;
+  --bg-2: #e2e7df;
+  --fg: #1c211d;
+  --fg-2: #4a534c;
+  --line: #c3cbbf;
+  --accent: #5b3a22;
+  --accent-2: #9c7a2a;
+  --ok: #3e6a49;
+  --warn: #a4532b;
+  /* filament swatches: real materials, same in both themes */
+  --walnut: #5b3a22;
+  --walnut-lit: #8a5a35;
+  --walnut-hi: #ad7a4c;
+  --marble: #f3f1ea;
+  --cf-black: #2b2f2c;
+  --white-hf: #f7f7f3;
+  --cream: #e8dcc0;
+  --terracotta: #b8613a;
+  --sage: #6f8a6b;
+  --translucent: #e7e1d3;
+  --glow: #f0b24f;
+  --brass: #c9a24a;
+  --bore: #1d1f1d;
+  --seam: #2a2d2a;
+  --shade: rgba(0, 0, 0, 0.2);
+  --field: rgba(156, 122, 42, 0.28);
+  --font-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171a17; --bg-2: #1f241f; --fg: #e6e4dc; --fg-2: #a7ada5; --line: #39413a;
+    --accent: #c08a58; --accent-2: #d1ab52; --ok: #7faa88; --warn: #e08a5e;
+    --seam: #0d0f0d; --field: rgba(209, 171, 82, 0.32);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171a17; --bg-2: #1f241f; --fg: #e6e4dc; --fg-2: #a7ada5; --line: #39413a;
+  --accent: #c08a58; --accent-2: #d1ab52; --ok: #7faa88; --warn: #e08a5e;
+  --seam: #0d0f0d; --field: rgba(209, 171, 82, 0.32);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 17px; line-height: 1.5; margin: 0; padding-inline: 16px; padding-block: 0 64px; }
+.wrap { max-width: 1040px; margin: 0 auto; }
+header.masthead { padding-block: 40px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-2); }
+h1 { font-family: var(--font-display); font-weight: 400; font-style: italic; font-size: clamp(48px, 10vw, 104px); line-height: 0.95; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { font-style: normal; font-weight: 600; font-size: 0.4em; display: block; letter-spacing: 0.02em; margin-top: 6px; }
+.pitch { font-size: 20px; max-width: 52ch; color: var(--fg-2); margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.1; margin: 0 0 10px; text-wrap: balance; }
+h2 small { font-family: var(--font-body); font-weight: 400; font-size: 17px; color: var(--fg-2); display: block; margin-top: 4px; letter-spacing: 0; }
+h3 { font-family: var(--font-body); font-weight: 600; font-size: 17px; margin: 18px 0 6px; }
+section { padding-block: 34px; border-bottom: 1px solid var(--line); }
+section > p, section > ul, section > ol { max-width: 68ch; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+li { margin-bottom: 4px; }
+figure { margin: 14px 0; min-width: 0; }
+figure svg { width: 100%; height: auto; display: block; max-width: 100%; }
+figcaption { font-size: 14px; color: var(--fg-2); margin-top: 8px; }
+.pat-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 8px 28px; align-items: start; }
+@media (max-width: 760px) { .pat-grid { grid-template-columns: 1fr; } }
+.spec { display: grid; grid-template-columns: max-content 1fr; gap: 5px 12px; font-size: 14.5px; margin: 10px 0 0; }
+.spec dt { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); padding-top: 3px; }
+.spec dd { margin: 0; }
+.rate { display: grid; grid-template-columns: repeat(3, auto); gap: 6px 18px; margin: 12px 0 0; font-size: 14px; justify-content: start; }
+.rate b { display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); font-weight: 500; }
+.dots { font-family: var(--font-mono); letter-spacing: 0.12em; color: var(--accent-2); font-size: 15px; }
+.contact { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin: 18px 0 6px; }
+.contact a { display: block; text-decoration: none; color: var(--fg); border: 1px solid var(--line); padding: 8px; border-radius: 4px; background: var(--bg-2); }
+.contact a:hover { border-color: var(--accent-2); }
+.contact a svg { width: 100%; height: auto; display: block; }
+.contact a span { display: block; font-family: var(--font-mono); font-size: 12px; margin-top: 6px; letter-spacing: 0.04em; }
+.scroll { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; margin: 10px 0 16px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); font-weight: 500; }
+td.n, th.n { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.top td { font-weight: 600; }
+td code, p code, li code, dd code { font-family: var(--font-mono); font-size: 13.5px; background: var(--bg-2); padding: 1px 5px; border-radius: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--fg-2); margin-top: 6px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; border: 1px solid var(--line); }
+.note { border-left: 3px solid var(--accent); padding: 6px 14px; background: var(--bg-2); max-width: 72ch; }
+.keyline { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 28px; margin: 14px 0; }
+.keyline div { border-top: 2px solid var(--accent-2); padding-top: 8px; }
+.keyline b { display: block; font-family: var(--font-mono); font-size: 22px; font-weight: 500; }
+.keyline small { color: var(--fg-2); font-size: 14px; }
+.pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin: 14px 0; }
+.pick div { border-top: 3px solid var(--accent-2); padding-top: 10px; }
+.pick b { font-family: var(--font-display); font-size: 24px; font-weight: 600; display: block; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+<header class="masthead">
+  <div class="eyebrow">Bloom wine rack &middot; companion note &middot; front-plate patterns</div>
+  <h1>Ten faces<span>for the same nine tiles</span></h1>
+  <p class="pitch">The Bloom skeleton never changes. Each proposal below is a different 110.5 mm bezel tile: same bore, same pins, same seam, a different skin. Every drawing is to scale, generated from one geometry routine, so what you see at the grid nodes and around the bores is what the printer will make.</p>
+</header>
+
+<section id="field">
+  <div class="eyebrow">0 &middot; The field</div>
+  <h2>Where a pattern can live</h2>
+  <div class="pat-grid">
+    <div>
+      <p>A tile is 110.53 mm square and 8 mm thick, with a 92 mm clear bore that flares to 100 mm at the face. Between the flare lip and the tile edge there is only 5.3 mm at mid-side, but 28 mm along the diagonal to the corner. So the decorative field is four corner lobes plus a narrow collar, and because four tiles meet at every grid node, a motif built on the node (one quarter per tile) reads as a whole figure 16 times across the front. The 0.3 mm seam between tiles runs straight through every node.</p>
+      <p>Three ways to make a pattern, each with a different cost:</p>
+      <ul>
+        <li><b>Relief up.</b> Tile printed face-up; pattern extruded 0.6 to 2 mm above the face, vertical or 45 degree flanks, flat tops ironed. Second colour per nozzle at no purge cost. Visible layer steps on any slope.</li>
+        <li><b>Flat inlay.</b> Tile printed face-down; the face is the first layer on textured PEI, with two (H2D) or up to seven (H2C) colours side by side in the same layer. Crisp 0.8 mm edges, uniform satin texture, no relief, no extra material. The flare becomes a 33.7 degree inward overhang, inside the 45 limit.</li>
+        <li><b>Through-cut.</b> Holes through the 8 mm tile so a COB strip behind the row seams lights the face. Only sensible on the translucent PETG variant.</li>
+      </ul>
+      <p>Hard limits used throughout: 0.8 mm minimum feature (two 0.4 mm perimeters), relief 0.6 to 2 mm, motifs stop 0.6 mm short of the seam unless they are meant to cross it, nothing crosses the flare.</p>
+    </div>
+    <figure>
+      <svg id="field-svg" role="img" aria-label="One tile with the decorative field shaded: four corner lobes and a thin collar around the 100 mm face opening"></svg>
+      <figcaption>One tile, to scale. Shaded: the field outside the flare lip. 5.3 mm at mid-side, 28 mm on the diagonal; the four lobes of four tiles make a 56 mm figure at each node.</figcaption>
+    </figure>
+  </div>
+  <h3>Contact sheet</h3>
+  <div class="contact" id="contact"></div>
+  <div class="legend"><span><i style="background:var(--walnut)"></i>PLA Wood Black Walnut</span><span><i style="background:var(--marble)"></i>PLA Marble white</span><span><i style="background:var(--cf-black)"></i>PETG-CF / PLA-CF black</span><span><i style="background:var(--terracotta)"></i>matte terracotta</span><span><i style="background:var(--sage)"></i>matte sage</span><span><i style="background:var(--cream)"></i>matte cream</span><span><i style="background:var(--translucent)"></i>PETG Translucent</span><span><i style="background:var(--glow)"></i>lit window</span><span><i style="background:var(--brass)"></i>gold PLA (metal-fill, not silk)</span><span><i style="background:var(--bore)"></i>bore (skeleton behind)</span></div>
+</section>
+
+<!-- ============ 1 REED ============ -->
+<section class="pat" id="p-reed">
+  <div class="eyebrow">01 &middot; fluted / reeded</div>
+  <h2>Reed<small>Twenty-seven vertical reeds per tile, the furniture-showroom look</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="reed" data-view="grid" role="img" aria-label="Reed pattern on the full 3 by 3 front"></svg><figcaption>Full front. Reeds run top to bottom across the row seams; every column seam falls in a groove.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="reed" data-view="tile" role="img" aria-label="Reed pattern, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Made</dt><dd>Relief up. Trapezoid reeds 3.0 mm wide at the base, 1.0 mm flat top, 1.0 mm high, 45 degree flanks; pitch <code>TW / 27 = 4.094</code> so a 1.1 mm groove is centred on each column seam. A flat 3.5 mm collar ring at face level ends the reeds cleanly at the bore.</dd>
+        <dt>Colours</dt><dd>1 (the trend is monochrome). Optional 2: collar in marble.</dd>
+        <dt>Filament</dt><dd>PLA Wood Black Walnut (the wood fill reads as oak fluting), or Panchroma Matte for a painted-MDF look. PETG-CF black for the modern version.</dd>
+        <dt>Printability</dt><dd>Easy. No overhang, no bridging; the 45 degree flanks show 0.2 mm steps, so set the top 1.2 mm of the tile to 0.08 mm layers (variable layer height) or print the whole tile at 0.12. Iron the 1 mm reed tops. The 1 mm groove bottom is also ironed (it is the tile face).</dd>
+        <dt>Extra per tile</dt><dd>+5.9 g, +9 min at 0.2 mm (+22 min at 0.12 mm for the relief band).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams / layers</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The reed pitch is tied to the tile width so the groove lands on the seam: the 0.3 mm gap disappears inside a 1.1 mm groove and the column seams are gone. Row seams cross every reed as a hairline, softened by the reed shadows. Layer lines on the flat tile face are hidden under the reeds entirely. It is the safest pattern here and the one most likely to look like bought furniture. Its weakness is that it says nothing about the bottles: the bore is just a hole punched through fluting.</p>
+</section>
+
+<!-- ============ 2 CELLS ============ -->
+<section class="pat" id="p-cells">
+  <div class="eyebrow">02 &middot; voronoi / organic lattice</div>
+  <h2>Cells<small>A Voronoi ridge lattice that flows across every seam</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="cells" data-view="grid" role="img" aria-label="Voronoi cell pattern on the full 3 by 3 front"></svg><figcaption>Full front. The seed set is periodic with the tile pitch, so cells continue through the seams instead of mirroring at them.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="cells" data-view="tile" role="img" aria-label="Voronoi cell pattern, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Made</dt><dd>Relief up. 1.2 mm wide, 1.0 mm high ridges along the Voronoi edges of 30 seeds per tile (seeded, deterministic, identical on all nine). The collar is a 2 mm ridge ring at r 52. Cells under the bore are simply cut away.</dd>
+        <dt>Colours</dt><dd>2 (ridges in nozzle 2). Works in 1 colour as a pure relief.</dd>
+        <dt>Filament</dt><dd>Walnut body, marble ridges (the current pairing); or PETG-CF black body, PETG HF white ridges.</dd>
+        <dt>Printability</dt><dd>Good. 1.2 mm ridges are three perimeters wide, vertical flanks, iron the tops. Sharp ridge junctions can blob: set the seam to "rear" and slow outer walls on the relief layers. Short ridge segments under 2 mm appear near some vertices; the script should merge any under 1.5 mm.</dd>
+        <dt>Extra per tile</dt><dd>+0.8 g, +7 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div><div><b>Hides seams / layers</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The research's Voronoi hex modules put the lattice on the load path; here it is a skin. Because adjacent tiles are translates, not mirrors, no cell edge lies on the seam and the eye follows ridges across it. The cells around the bore become a ring of cut cells, which reads as the bottle breaking through a honeycomb. It is the most "3D-printed" looking option, which is either its charm or its problem.</p>
+</section>
+
+<!-- ============ 3 SUNBURST ============ -->
+<section class="pat" id="p-sunburst">
+  <div class="eyebrow">03 &middot; art deco</div>
+  <h2>Sunburst<small>Sixteen suns on the nodes, stepped rings on every bottle</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="sunburst" data-view="grid" role="img" aria-label="Art deco sunburst pattern on the full 3 by 3 front"></svg><figcaption>Full front. Each node carries a 9 mm sun disc and sixteen tapered rays; the seams lie in the dark gaps between rays.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="sunburst" data-view="tile" role="img" aria-label="Art deco sunburst, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Made</dt><dd>Flat inlay, face-down. Four 9 degree rays per corner starting 6 mm from the node (0.94 mm tip, widening to 6 mm), cut off at r 56 from the bore centre; collar of two rings, 2.0 and 1.0 mm, at r 51.5 and 54.4. Quarter sun disc r 4.5 at each corner.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>PETG-CF black tile (satin, hides layers) with PETG HF white rays; or walnut with marble for a warmer deco. Gold metal-fill PLA rays if the lead accepts an off-brief filament.</dd>
+        <dt>Printability</dt><dd>Very good. First-layer colour islands with 0.9 mm minimum width; textured PEI gives both colours the same sheen. Two colours in one layer on the H2D need the prime line only. The outer ring is 0.9 mm from the tile edge at mid-side: keep elephant-foot compensation on.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +4 min (colour change on the first two layers).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams / layers</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Deco wants crisp edges and flat colour, which is exactly what a face-down first layer gives and what relief does not. Rays are placed at 11.25 degrees off the seams so the 0.3 mm gap always falls in a dark gap, never through a white ray. The face has no layer lines at all (it is one layer on the plate), and the stepped collar rings pick up the stepped-ring motif of 1930s radio grilles. On the dark tile the rack reads as a brass-and-ebony cabinet front.</p>
+</section>
+
+<!-- ============ 4 ASANOHA ============ -->
+<section class="pat" id="p-asanoha">
+  <div class="eyebrow">04 &middot; japanese</div>
+  <h2>Asanoha<small>Hemp-leaf lattice, period-locked to the tile so it never breaks</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="asanoha" data-view="grid" role="img" aria-label="Asanoha hemp leaf lattice on the full 3 by 3 front"></svg><figcaption>Full front. Seven lattice columns and eight rows per pitch; the lattice is continuous across all twelve seams.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="asanoha" data-view="tile" role="img" aria-label="Asanoha lattice, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Made</dt><dd>Flat inlay, face-down (or 0.8 mm relief). Triangular lattice with side <code>P / 7 = 15.83</code> and row height <code>P / 8 = 13.85</code> (1 percent off a true equilateral, invisible) plus the three centroid spokes in every triangle: six diamonds meet at each lattice point. Lines 1.0 mm. A plain 2 mm margin then a 2 mm collar at r 52.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>Walnut with marble lines (shoji on wood); PLA-CF black with cream lines for a lacquer look; translucent PETG tile with white lines for the lit variant (the lattice glows).</dd>
+        <dt>Printability</dt><dd>Very good as inlay: 1.0 mm lines are two Arachne perimeters, continuous, no islands smaller than a diamond. As relief, 1.0 mm lines at 0.8 mm high are fine but junctions get fussy; inlay is the better route.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +5 min (longer first-layer path).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams / layers</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Asanoha is six lozenges around each point of a triangular lattice. The lattice has no natural square period, so the side is stretched by 1 percent to make seven columns and eight rows fit one tile pitch exactly; every tile then carries the same slice and the lattice runs through the seams without a kink. The bore punches a clean circle through it, as a window does through a shoji screen. Seigaiha (overlapping fan-waves) is the obvious sibling; it also period-locks (five waves per pitch) but its arcs mirror awkwardly at column seams, so asanoha is the one to build.</p>
+</section>
+
+<!-- ============ 5 ZELLIGE ============ -->
+<section class="pat" id="p-zellige">
+  <div class="eyebrow">05 &middot; moroccan / islamic geometry</div>
+  <h2>Khatem<small>Star-and-cross zellige: the star on the node, the bottle in the cross</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="zellige" data-view="grid" role="img" aria-label="Zellige eight-point star pattern on the full 3 by 3 front"></svg><figcaption>Full front, three-colour H2C version. Sixteen eight-point stars on the nodes; the bore occupies the cross between them, exactly as a star-and-cross tiling leaves it.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="zellige" data-view="tile" role="img" aria-label="Zellige star, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Made</dt><dd>Flat inlay, face-down. Eight-point khatem (circumradius 26 mm, inner octagon 15.6 mm, points 10 mm long) centred on each node: eight point-triangles in colour A, central octagon in colour B, 1 mm grout in the field colour between every piece. Grout follows the tile axes, so the seams fall on grout. Collar 2.5 mm in colour B.</dd>
+        <dt>Colours</dt><dd>3 on H2C (field, points, octagon). 2 on H2D: octagon takes the field colour, points and collar in marble.</dd>
+        <dt>Filament</dt><dd>Panchroma / Prusament Matte PLA for a glazed-clay flatness: terracotta field, sage points, cream or marble octagon. H2D: walnut field, marble pieces.</dd>
+        <dt>Printability</dt><dd>Good. Smallest piece is the 1.0 mm tip of a point triangle (12 mm wide at the root); the diagonal point stops 2.4 mm short of the flare. Three colours in the first layers is an 8 s swap on H2C, a purge on H2D. Matte PLA layer bonding is weak but a tile carries no load.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +6 min (H2C) / +10 min and +6 g purge (H2D, three colours).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div><div><b>Hides seams / layers</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The classic star-and-cross tiling has stars at the lattice points and cross-shaped voids between them. Our grid nodes are the lattice points and the bottles sit in the crosses: the geometry is not borrowed, it is the same geometry. Because zellige is cut tile with grout, the 0.3 mm seams through the star centre read as two more grout lines. On textured PEI the matte filaments come out like unglazed clay; smooth PEI would give the gloss of real glazed zellige, if the lead has one.</p>
+</section>
+
+<!-- ============ 6 TERRAZZO ============ -->
+<section class="pat" id="p-terrazzo">
+  <div class="eyebrow">06 &middot; terrazzo</div>
+  <h2>Terrazzo<small>Five-colour chip speckle on marble, the H2C showpiece</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="terrazzo" data-view="grid" role="img" aria-label="Terrazzo speckle on the full 3 by 3 front"></svg><figcaption>Full front. One chip map, rotated 90 degrees per tile so the repeat is not obvious; chips cut at the tile edges as real terrazzo is cut.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="terrazzo" data-view="tile" role="img" aria-label="Terrazzo, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Made</dt><dd>Flat inlay, face-down. About 95 convex chips per tile, 2 to 9 mm, in five colours on a white field; chips kept 1.5 mm off the flare. Nine identical tiles, placed in four rotations.</dd>
+        <dt>Colours</dt><dd>5 to 6 on H2C. 2 or 3 on H2D (walnut and black chips on marble still read as terrazzo).</dd>
+        <dt>Filament</dt><dd>PLA Marble field (the fleck in the filament adds a fine second scale of speckle), chips in walnut, PLA-CF black, matte terracotta, matte sage, matte cream.</dd>
+        <dt>Printability</dt><dd>Fine on H2C: only the first two layers are multicolour, so five swaps per layer at 8 s each. On H2D the AMS purges roughly 5 g per change and the tile waits; cap at three colours. Smallest chips 2 mm; textured PEI texture is uniform across colours, which is what sells the effect. Flush-cutter edges: elephant-foot compensation on.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +3 min (H2C, 5 colours) / +12 min and +15 g purge (H2D, 3 colours).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div><div><b>Hides seams / layers</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div></div>
+    </div>
+  </div>
+  <p>Random speckle is the best camouflage there is: seams, layer lines, a slightly proud pin, nothing registers against it. It is also the only direction where the H2C's cheap extra hotends matter, and the only one that looks better with more colours. What it lacks is a relationship with the bores; the holes are just holes, so a marble collar is drawn in the field colour to give each bottle an edge.</p>
+</section>
+
+<!-- ============ 7 HALO ============ -->
+<section class="pat" id="p-halo">
+  <div class="eyebrow">07 &middot; bold minimal</div>
+  <h2>Halo<small>One ring per bottle, one disc per node, nothing else</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="halo" data-view="grid" role="img" aria-label="Halo minimal pattern on the full 3 by 3 front"></svg><figcaption>Full front. Nine 3 mm rings and sixteen 30 mm discs; the discs are four quarter-circles meeting on the node.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="halo" data-view="tile" role="img" aria-label="Halo, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Made</dt><dd>Flat inlay (face-down) or 1.0 mm relief. Quarter disc r 15 at each corner; collar ring 3 mm wide at r 51.5 to 54.5.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>Walnut with marble; PETG-CF black with white; or all-matte ASA cream with matte black for a Bauhaus poster.</dd>
+        <dt>Printability</dt><dd>Trivial. Two large islands per colour, nothing under 3 mm. Iron if relief.</dd>
+        <dt>Extra per tile</dt><dd>0 g (inlay) or +1.1 g; +2 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams / layers</b><span class="dots">&#9679;&#9679;&#9675;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The control sample. It proves the node-quarter idea with the simplest possible figure, prints in any pair of filaments, and reads clearly from across a room. But a plain walnut field shows every seam as a crisp dark line and every first-layer texture change, and the disc on the node has a cross through it. Good for a Modern-direction rack; for Bloom it is the fallback if everything else fails on the printer.</p>
+</section>
+
+<!-- ============ 8 GINKGO ============ -->
+<section class="pat" id="p-ginkgo">
+  <div class="eyebrow">08 &middot; botanical</div>
+  <h2>Ginkgo<small>Four fan leaves on each node, stems meeting at the seam crossing</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="ginkgo" data-view="grid" role="img" aria-label="Ginkgo leaf pattern on the full 3 by 3 front"></svg><figcaption>Full front. Each node grows four ginkgo leaves whose stems meet on the seam crossing; clefts point along the diagonals toward the bottles.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="ginkgo" data-view="tile" role="img" aria-label="Ginkgo leaves, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Made</dt><dd>Relief up, 1.2 mm, vertical flanks, ironed top (the current method). Fan from r 5 to r 23 around the diagonal, 82 degrees wide, scalloped edge, 4 mm central cleft, 7 mm stem; nine 0.8 mm vein grooves. Outer edge stays 1.5 mm from the seam and 2 mm from the collar.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>Walnut with marble (as now); or PLA-CF black with a matte ochre leaf for autumn ginkgo. Fern and vine were tried on paper: a fern frond wants length the lobe does not have, a vine needs to cross the collar.</dd>
+        <dt>Printability</dt><dd>Same as the current leaf. Vein grooves at 0.8 mm are the minimum feature and will be slightly rounded; widen to 1.0 if they fill in. Scallops are 1.1 mm deep, fine in 0.4.</dd>
+        <dt>Extra per tile</dt><dd>+2.1 g, +6 min (the current eight half-leaves cost about the same).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams / layers</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The current leaf uses the seam as a midrib; the ginkgo uses the seam crossing as the point four stems meet, which is how ginkgo leaves actually grow (in clusters from a short shoot). The fan shape fits the triangular lobe better than any other leaf: it is widest exactly where the lobe is widest. Seams stay visible between adjacent fans, but they now read as the gap between two leaves rather than as a join.</p>
+</section>
+
+<!-- ============ 9 LANTERN ============ -->
+<section class="pat" id="p-lantern">
+  <div class="eyebrow">09 &middot; back-lit through-cut</div>
+  <h2>Lantern<small>Ripple rings cut through a translucent tile, lit from behind the row seams</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="lantern" data-view="grid" role="img" aria-label="Lantern through-cut pattern on the full 3 by 3 front, lit"></svg><figcaption>Full front, lit. Three through-cut arcs per corner make three full rings of light on each node; the warm bands mark the COB strips behind the two row seams.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="lantern" data-view="tile" role="img" aria-label="Lantern, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Made</dt><dd>Through-cut. Arcs 2.6 mm wide at r 9, 15 and 21 from each node, ending 2.2 mm from the seams, cut through the full 8 mm. Collar is a 2 mm clear-PETG inlay ring (a through-cut ring would sever the tile). Tile face-down so the cut edges are crisp.</dd>
+        <dt>Colours</dt><dd>1 (translucent PETG) + optional clear PETG collar on nozzle 2. Unlit variant: white PETG HF with the arcs filled in translucent instead of cut.</dd>
+        <dt>Filament</dt><dd>Bambu PETG Translucent (tile), PETG HF white for the opaque variant, 10 mm 24 V warm-white COB in the existing 11 x 3.2 mm rebates.</dd>
+        <dt>Printability</dt><dd>Moderate. Translucent PETG strings across the slots: dry 65 C, slow, low fan, wipe on retract. Slots are vertical holes, no overhang. The arcs nearest the seams (r 9) sit over the strip and glow hardest; the r 21 arcs rely on light carried through 8 mm of translucent body, so expect a gradient. Dust collects in through-cuts; the filled variant avoids that.</dd>
+        <dt>Extra per tile</dt><dd>-1.5 g, +4 min (more perimeters).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div><div><b>Hides seams / layers</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Light leaks in through the tile's top and bottom edges, so the brightest part of any lit tile is the band nearest the row seam. Concentric rings on the nodes use that: half of every ring sits in the bright band and the ring's own continuity carries the eye across the seam and down the dimmer half. Lit, the seams vanish inside the glow; unlit, it is a quiet white lattice and the column seams show. Only choose this if the LED variant is being built.</p>
+</section>
+
+<!-- ============ 10 KINTSUGI ============ -->
+<section class="pat" id="p-kintsugi">
+  <div class="eyebrow">10 &middot; wildcard</div>
+  <h2>Kintsugi<small>Gold cracks that run through the seams, so the joins become the ornament</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="kintsugi" data-view="grid" role="img" aria-label="Kintsugi gold crack pattern on the full 3 by 3 front"></svg><figcaption>Full front. Every crack that reaches a tile edge continues on the other side; a gold knot ring forms around each node and each bore wears a gold rim.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="kintsugi" data-view="tile" role="img" aria-label="Kintsugi cracks, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Made</dt><dd>Relief up, 1.0 mm, or flat inlay. Per corner: a knot arc joining the two edges at 16 mm from the node, and two longer cracks from 38 mm along each edge that meet at the knot and touch the collar. Line width 1.1 to 1.4 mm, round ends. Exit points are the same on every edge, so cracks match across all twelve seams. Collar ring 2 mm.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>PETG-CF black or PLA-CF black tile (the satin dark that makes gold read), cracks in a metal-fill gold PLA (not silk: silk is brittle and shows seams). On-brief alternative: walnut with marble "milk" cracks, which also works.</dd>
+        <dt>Printability</dt><dd>Very good. Lines are 1.1 mm and continuous, with round junctions; as relief iron the tops, as inlay nothing special. Metal-fill PLA is abrasive: the stock hardened nozzle is fine.</dd>
+        <dt>Extra per tile</dt><dd>+1.2 g, +5 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams / layers</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div></div>
+    </div>
+  </div>
+  <p>Every other pattern tries to hide the seams. This one admits the front is nine pieces and gilds the fact: the gold network is drawn so that the seams are themselves part of the crack map, with a knot at every node and a rim on every bottle. It costs almost nothing, prints on the H2D with no purge, and the only new ingredient is a gold spool. It is the one direction here that no other printed rack has.</p>
+</section>
+
+<section id="compare">
+  <div class="eyebrow">11 &middot; Comparison</div>
+  <h2>Side by side</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>#</th><th>Pattern</th><th>Made</th><th class="n">Colours</th><th>Filament</th><th class="n">+g / tile</th><th class="n">+min / tile</th><th class="n">Looks</th><th class="n">Print</th><th class="n">Hides</th><th class="n">Total</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Reed</td><td>relief up</td><td class="n">1</td><td>walnut</td><td class="n">5.9</td><td class="n">9</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr><td class="n">2</td><td>Cells</td><td>relief up</td><td class="n">2</td><td>walnut + marble</td><td class="n">0.8</td><td class="n">7</td><td class="n">4</td><td class="n">3</td><td class="n">4</td><td class="n">11</td></tr>
+      <tr><td class="n">3</td><td>Sunburst</td><td>flat inlay</td><td class="n">2</td><td>PETG-CF black + PETG HF white</td><td class="n">0</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr><td class="n">4</td><td>Asanoha</td><td>flat inlay</td><td class="n">2</td><td>walnut + marble</td><td class="n">0</td><td class="n">5</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr><td class="n">5</td><td>Khatem</td><td>flat inlay</td><td class="n">3 (2)</td><td>matte terracotta, sage, cream</td><td class="n">0</td><td class="n">6</td><td class="n">5</td><td class="n">3</td><td class="n">4</td><td class="n">12</td></tr>
+      <tr><td class="n">6</td><td>Terrazzo</td><td>flat inlay</td><td class="n">5 (3)</td><td>marble + 4 matte</td><td class="n">0</td><td class="n">3 (12)</td><td class="n">4</td><td class="n">3</td><td class="n">5</td><td class="n">12</td></tr>
+      <tr><td class="n">7</td><td>Halo</td><td>inlay / relief</td><td class="n">2</td><td>walnut + marble</td><td class="n">0</td><td class="n">2</td><td class="n">3</td><td class="n">5</td><td class="n">2</td><td class="n">10</td></tr>
+      <tr><td class="n">8</td><td>Ginkgo</td><td>relief up</td><td class="n">2</td><td>walnut + marble</td><td class="n">2.1</td><td class="n">6</td><td class="n">5</td><td class="n">4</td><td class="n">3</td><td class="n">12</td></tr>
+      <tr><td class="n">9</td><td>Lantern</td><td>through-cut</td><td class="n">1 (+1)</td><td>PETG translucent</td><td class="n">-1.5</td><td class="n">4</td><td class="n">4</td><td class="n">3</td><td class="n">3</td><td class="n">10</td></tr>
+      <tr><td class="n">10</td><td>Kintsugi</td><td>relief / inlay</td><td class="n">2</td><td>CF black + gold PLA</td><td class="n">1.2</td><td class="n">5</td><td class="n">4</td><td class="n">5</td><td class="n">5</td><td class="n">14</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14px;color:var(--fg-2)">Grams are relief volume at 1.24 g/cm3; minutes are relief layers plus colour-change overhead on an H2D at 0.4 / 0.2 mm, against a 38 g, 48 min base tile. Bracketed colour counts are the H2D reduction; bracketed minutes are the H2D cost with AMS purging. Hides = how well the tile seams and layer lines disappear. No tile has been printed; the ratings are a designer's estimate.</p>
+</section>
+
+<section id="pick">
+  <div class="eyebrow">12 &middot; Recommendation</div>
+  <h2>Top three</h2>
+  <div class="pick">
+    <div><b>1. Kintsugi</b><p>Highest total. It is the only pattern that turns the nine-piece front into a virtue instead of a flaw, costs 1.2 g and one gold spool, and prints on the H2D with no purge. Build this first as a relief in the current author script: it is a few polylines and a ring.</p></div>
+    <div><b>2. Reed</b><p>The safe, fashionable one. Single colour, no colour alignment risk, column seams vanish into grooves, and walnut fluting is what people are buying in 2026. Needs fine layers on the relief band, otherwise nothing new to learn.</p></div>
+    <div><b>3. Asanoha</b><p>The best flat-inlay candidate: zero extra material, one continuous 1 mm line network that is period-locked to the pitch so it never breaks at a seam, and a face that has no layer lines because it is the first layer. Also the natural pattern for the lit PETG variant.</p></div>
+  </div>
+  <p>Honourable mentions: <b>Terrazzo</b> if the lead prints on an H2C (it is the only design that gets better with more colours) and <b>Ginkgo</b> if the botanical identity of Bloom is to be kept, as the direct successor to the current leaf. <b>Sunburst</b> ties on score and is the pick for a dark, deco-leaning room.</p>
+  <div class="note"><p style="margin:0"><b>Before any of these is modelled:</b> print one face-down tile and one face-up tile of the current design in the chosen filaments and look at them side by side under the room light. The face-down route (Sunburst, Asanoha, Khatem, Terrazzo) depends on the textured-PEI finish being wanted; the face-up route (Reed, Cells, Ginkgo, Kintsugi) depends on ironing hiding the top-layer lines. That one plate decides which half of this page is live.</p></div>
+</section>
+
+<section id="sources">
+  <div class="eyebrow">13 &middot; References used</div>
+  <ul style="font-size:14px">
+    <li>Asanoha construction (six lozenges on a triangular lattice): <a href="https://musubikiln.com/blogs/glossary/asanoha">Musubi Kiln glossary</a>, <a href="https://projects.mcah.columbia.edu/jaanus/node/5159">JAANUS asa-no-ha</a>.</li>
+    <li>Seigaiha as half-offset overlapping arcs: <a href="https://projects.mcah.columbia.edu/jaanus/record/seigaiha">JAANUS seigaiha</a>, <a href="https://levelup.gitconnected.com/how-to-create-seigaiha-pattern-using-p5-js-code-b9061b28b81e">p5.js construction</a>.</li>
+    <li>Khatem from two squares and star-and-cross layout: <a href="https://www.birs.ca/workshops/2021/21w2240/files/Samira_Mian.pdf">Samira Mian, BIRS 2021</a>, <a href="https://mymoroccantile.com/pages/star-and-cross">star-and-cross zellij</a>.</li>
+    <li>Fluted vs reeded profiles and the 2026 trend: <a href="https://sheerluxe.com/home/trend-watch-fluting">SheerLuxe trend watch</a>, <a href="https://www.aol.com/articles/designers-calling-furniture-trends-everywhere-194700780.html">2026 furniture trends</a>.</li>
+    <li>Multi-colour first-layer terrazzo on AMS machines: <a href="https://www.printables.com/model/798593-multi-material-terrazzo-coaster-with-storage-tray">Printables terrazzo coaster</a>, <a href="https://makerworld.com/models/2883232">more than four colours in one layer</a>.</li>
+    <li>Ironing flow on Bambu Studio: <a href="https://www.makerworld.com/en/models/991953">ironing flow test</a>.</li>
+  </ul>
+</section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function rng(seed) { // mulberry32: deterministic, so all nine tiles are identical prints
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  // ---- shared geometry (mm) ----
+  var P = 110.8333, TG = 0.3, TW = P - TG, H = TW / 2, GAP = 1.25, OPEN = 335, RB = 46, RF = 50;
+  var D2 = Math.PI / 180, uid = 0;
+  var CORNERS = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+  function f2(v) { return (Math.round(v * 100) / 100).toString(); }
+  function pt(r, a) { return [r * Math.cos(a * D2), r * Math.sin(a * D2)]; }
+  function ptsAttr(pts) { return pts.map(function (p) { return f2(p[0]) + "," + f2(p[1]); }).join(" "); }
+  function polyEl(g, pts, attrs) { attrs.points = ptsAttr(pts); return el("polygon", attrs, g); }
+  function plineEl(g, pts, attrs) { attrs.points = ptsAttr(pts); return el("polyline", attrs, g); }
+  function ring(g, r, w, col) { return el("circle", {cx: 0, cy: 0, r: r, fill: "none", stroke: col, "stroke-width": w}, g); }
+  function text(parent, x, y, s, size, fill, anchor, extra) {
+    var t = el("text", {x: x, y: y, "font-size": size || 5, fill: fill || "var(--fg-2)", "text-anchor": anchor || "middle", "font-family": "var(--font-mono)"}, parent);
+    if (extra) for (var k in extra) t.setAttribute(k, extra[k]);
+    t.textContent = s;
+    return t;
+  }
+
+  // one tile, local coords centred on the bore, clipped to the 110.53 square; pattern then flare then bore
+  function drawTile(parent, spec, idx, rot) {
+    var g = el("g", {}, parent);
+    var id = "clip" + (uid++);
+    var cp = el("clipPath", {id: id}, g);
+    el("rect", {x: -H, y: -H, width: TW, height: TW}, cp);
+    var gi = el("g", {"clip-path": "url(#" + id + ")"}, g);
+    el("rect", {x: -H - 1, y: -H - 1, width: TW + 2, height: TW + 2, fill: spec.body}, gi);
+    var gp = el("g", {transform: "rotate(" + (rot || 0) + ")"}, gi);
+    spec.draw(gp, idx);
+    el("circle", {cx: 0, cy: 0, r: RF, fill: spec.flare || spec.body}, gi);
+    el("circle", {cx: 0, cy: 0, r: (RF + RB) / 2, fill: "none", stroke: "var(--shade)", "stroke-width": RF - RB}, gi);
+    el("circle", {cx: 0, cy: 0, r: RB, fill: "var(--bore)"}, gi);
+    return g;
+  }
+  function renderGrid(svg, spec) {
+    svg.setAttribute("viewBox", "-1 -1 337 337");
+    el("rect", {x: -1, y: -1, width: 337, height: 337, fill: "var(--seam)"}, svg);
+    for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) {
+      var idx = r * 3 + c;
+      var g = el("g", {transform: "translate(" + f2(GAP + P * (c + 0.5)) + " " + f2(GAP + P * (r + 0.5)) + ")"}, svg);
+      drawTile(g, spec, idx, spec.rotate ? spec.rotate(idx) : 0);
+    }
+    if (spec.after) spec.after(svg, "grid");
+  }
+  function renderTile(svg, spec) {
+    svg.setAttribute("viewBox", "-59 -59 118 118");
+    el("rect", {x: -59, y: -59, width: 118, height: 118, fill: "var(--bg-2)"}, svg);
+    el("rect", {x: -H - TG, y: -H - TG, width: TW + 2 * TG, height: TW + 2 * TG, fill: "var(--seam)"}, svg);
+    var g = el("g", {}, svg);
+    drawTile(g, spec, 0, 0);
+    if (spec.after) spec.after(svg, "tile");
+  }
+
+  // ---- 1 reed ----
+  var reed = {body: "var(--walnut)", draw: function (g) {
+    var n = 27, p = TW / n;
+    for (var i = 0; i < n; i++) {
+      var x = -H + p * (i + 0.5);
+      el("rect", {x: f2(x - 1.5), y: -H - 1, width: 3, height: TW + 2, fill: "var(--walnut-lit)"}, g);
+      el("rect", {x: f2(x - 0.5), y: -H - 1, width: 1, height: TW + 2, fill: "var(--walnut-hi)"}, g);
+    }
+    el("circle", {cx: 0, cy: 0, r: 53.5, fill: "var(--walnut)"}, g);
+  }};
+
+  // ---- 2 cells (Voronoi by half-plane clipping; seeds periodic with the pitch) ----
+  function clipPoly(poly, a, b) {
+    var mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, nx = b[0] - a[0], ny = b[1] - a[1], out = [];
+    function side(p) { return (p[0] - mx) * nx + (p[1] - my) * ny; }
+    for (var i = 0; i < poly.length; i++) {
+      var p = poly[i], q = poly[(i + 1) % poly.length], sp = side(p), sq = side(q);
+      if (sp <= 0) out.push(p);
+      if ((sp < 0 && sq > 0) || (sp > 0 && sq < 0)) { var t = sp / (sp - sq); out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]); }
+    }
+    return out;
+  }
+  var cellSeeds = (function () {
+    var R = rng(11), s = [], tries = 0;
+    while (s.length < 30 && tries < 8000) {
+      tries++;
+      var x = -H + R() * TW, y = -H + R() * TW;
+      if (Math.hypot(x, y) < 38) continue;
+      var ok = true;
+      for (var i = 0; i < s.length && ok; i++) for (var dx = -1; dx <= 1 && ok; dx++) for (var dy = -1; dy <= 1 && ok; dy++) {
+        if (Math.hypot(s[i][0] + dx * P - x, s[i][1] + dy * P - y) < 11.5) ok = false;
+      }
+      if (ok) s.push([x, y]);
+    }
+    return s;
+  })();
+  var cells = {body: "var(--walnut)", draw: function (g) {
+    var all = [];
+    cellSeeds.forEach(function (s) { for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) all.push([s[0] + dx * P, s[1] + dy * P]); });
+    all.forEach(function (s) {
+      if (Math.abs(s[0]) > H + 40 || Math.abs(s[1]) > H + 40) return;
+      var poly = [[-H - 2, -H - 2], [H + 2, -H - 2], [H + 2, H + 2], [-H - 2, H + 2]];
+      for (var i = 0; i < all.length && poly.length >= 3; i++) {
+        var o = all[i];
+        if (o === s) continue;
+        if (Math.hypot(o[0] - s[0], o[1] - s[1]) > 90) continue;
+        poly = clipPoly(poly, s, o);
+      }
+      if (poly.length >= 3) polyEl(g, poly, {fill: "var(--walnut)", stroke: "var(--marble)", "stroke-width": 1.2, "stroke-linejoin": "round"});
+    });
+    el("circle", {cx: 0, cy: 0, r: 53, fill: "var(--walnut)"}, g);
+    ring(g, 52, 2, "var(--marble)");
+  }};
+
+  // ---- 3 sunburst ----
+  var sunburst = {body: "var(--cf-black)", draw: function (g) {
+    CORNERS.forEach(function (c) {
+      var cx = c[0] * H, cy = c[1] * H, base = Math.atan2(-c[1], -c[0]) / D2;
+      for (var k = 0; k < 4; k++) {
+        var a = base - 45 + 11.25 + 22.5 * k;
+        var p1 = pt(6, a - 4.5), p2 = pt(62, a - 4.5), p3 = pt(62, a + 4.5), p4 = pt(6, a + 4.5);
+        polyEl(g, [[cx + p1[0], cy + p1[1]], [cx + p2[0], cy + p2[1]], [cx + p3[0], cy + p3[1]], [cx + p4[0], cy + p4[1]]], {fill: "var(--white-hf)"});
+      }
+      el("circle", {cx: cx, cy: cy, r: 4.5, fill: "var(--white-hf)"}, g);
+    });
+    el("circle", {cx: 0, cy: 0, r: 56, fill: "var(--cf-black)"}, g);
+    ring(g, 51.5, 2, "var(--white-hf)");
+    ring(g, 54.4, 1, "var(--white-hf)");
+  }};
+
+  // ---- 4 asanoha (triangular lattice + centroid spokes, 7 columns x 8 rows per pitch) ----
+  var asanoha = {body: "var(--walnut)", draw: function (g) {
+    var a = P / 7, rh = P / 8, col = "var(--marble)";
+    function L(x1, y1, x2, y2) { el("line", {x1: f2(x1), y1: f2(y1), x2: f2(x2), y2: f2(y2), stroke: col, "stroke-width": 1, "stroke-linecap": "round"}, g); }
+    for (var j = -5; j <= 5; j++) {
+      var y = j * rh, off = (j & 1) ? a / 2 : 0;
+      for (var i = -5; i <= 5; i++) {
+        var x = i * a + off;
+        L(x, y, x + a, y); L(x, y, x + a / 2, y + rh); L(x, y, x - a / 2, y + rh);
+        L(x + a / 2, y + rh / 3, x, y); L(x + a / 2, y + rh / 3, x + a, y); L(x + a / 2, y + rh / 3, x + a / 2, y + rh);
+        L(x + a / 2, y - rh / 3, x, y); L(x + a / 2, y - rh / 3, x + a, y); L(x + a / 2, y - rh / 3, x + a / 2, y - rh);
+      }
+    }
+    el("circle", {cx: 0, cy: 0, r: 54.5, fill: "var(--walnut)"}, g);
+    ring(g, 52, 2, col);
+  }};
+
+  // ---- 5 khatem (star-and-cross, star on the node) ----
+  var zellige = {body: "var(--terracotta)", draw: function (g) {
+    var R = 26, ri = R * 0.6, grout = {stroke: "var(--terracotta)", "stroke-width": 1, "stroke-linejoin": "round"};
+    CORNERS.forEach(function (c) {
+      var gg = el("g", {transform: "translate(" + f2(c[0] * H) + " " + f2(c[1] * H) + ")"}, g);
+      var oct = [];
+      for (var k = 0; k < 8; k++) oct.push(pt(ri, 22.5 + 45 * k));
+      var o = {fill: "var(--cream)"}; for (var q in grout) o[q] = grout[q];
+      polyEl(gg, oct, o);
+      for (k = 0; k < 8; k++) {
+        var t = {fill: "var(--sage)"}; for (q in grout) t[q] = grout[q];
+        polyEl(gg, [pt(R, 45 * k), pt(ri, 45 * k - 22.5), pt(ri, 45 * k + 22.5)], t);
+      }
+      // grout along the axes through the octagon (the seams become grout)
+      el("line", {x1: -ri, y1: 0, x2: ri, y2: 0, stroke: "var(--terracotta)", "stroke-width": 1}, gg);
+      el("line", {x1: 0, y1: -ri, x2: 0, y2: ri, stroke: "var(--terracotta)", "stroke-width": 1}, gg);
+    });
+    ring(g, 52.5, 2.5, "var(--cream)");
+    ring(g, 51.25, 0.8, "var(--terracotta)");
+  }};
+
+  // ---- 6 terrazzo ----
+  var terrazzo = {body: "var(--marble)", rotate: function (i) { return (i * 90) % 360; }, draw: function (g) {
+    var R = rng(23), cols = ["var(--walnut)", "var(--terracotta)", "var(--sage)", "var(--cf-black)", "var(--cream)", "var(--walnut)"];
+    var n = 0, tries = 0;
+    while (n < 95 && tries < 4000) {
+      tries++;
+      var x = -H + R() * TW, y = -H + R() * TW, r = 1.6 + R() * R() * 4.5;
+      if (Math.hypot(x, y) < RF + r + 1.5) continue;
+      var k = 5 + Math.floor(R() * 3), pts = [], a0 = R() * 360;
+      for (var i = 0; i < k; i++) { var a = a0 + 360 * i / k + (R() - 0.5) * 25, rr = r * (0.6 + R() * 0.5); pts.push([x + rr * Math.cos(a * D2), y + rr * Math.sin(a * D2)]); }
+      polyEl(g, pts, {fill: cols[Math.floor(R() * cols.length)]});
+      n++;
+    }
+    ring(g, 52.5, 2, "var(--cream)");
+  }};
+
+  // ---- 7 halo ----
+  var halo = {body: "var(--walnut)", draw: function (g) {
+    CORNERS.forEach(function (c) { el("circle", {cx: c[0] * H, cy: c[1] * H, r: 15, fill: "var(--marble)"}, g); });
+    ring(g, 53, 3, "var(--marble)");
+  }};
+
+  // ---- 8 ginkgo ----
+  function ginkgoR(t) { return 23 - 4.2 * Math.exp(-(t / 6) * (t / 6)) + 1.1 * Math.cos(t * (360 / 20.5) * D2); }
+  var ginkgo = {body: "var(--walnut)", draw: function (g) {
+    CORNERS.forEach(function (c) {
+      var ang = Math.atan2(-c[1], -c[0]) / D2;
+      var gg = el("g", {transform: "translate(" + f2(c[0] * H) + " " + f2(c[1] * H) + ") rotate(" + f2(ang) + ")"}, g);
+      var d = "", th0 = -41, th1 = 41;
+      for (var t = th0; t <= th1; t += 1) { var p = pt(ginkgoR(t), t); d += (t === th0 ? "M" : "L") + f2(p[0]) + " " + f2(p[1]); }
+      var q = pt(5, th1), q0 = pt(5, th0);
+      d += "L" + f2(q[0]) + " " + f2(q[1]) + "A5 5 0 0 0 " + f2(q0[0]) + " " + f2(q0[1]) + "Z";
+      el("path", {d: d, fill: "var(--marble)"}, gg);
+      el("rect", {x: 0, y: -0.9, width: 7, height: 1.8, fill: "var(--marble)"}, gg);
+      for (var v = -36; v <= 36; v += 9) {
+        var p1 = pt(6.5, v), p2 = pt(ginkgoR(v) - 1.8, v);
+        el("line", {x1: f2(p1[0]), y1: f2(p1[1]), x2: f2(p2[0]), y2: f2(p2[1]), stroke: "var(--walnut)", "stroke-width": 0.8, "stroke-linecap": "round"}, gg);
+      }
+    });
+    ring(g, 52, 2, "var(--marble)");
+  }};
+
+  // ---- 9 lantern (through-cut arcs on the node, LED behind row seams) ----
+  var lantern = {body: "var(--translucent)", draw: function (g) {
+    CORNERS.forEach(function (c) {
+      var cx = c[0] * H, cy = c[1] * H, base = Math.atan2(-c[1], -c[0]) / D2;
+      [9, 15, 21].forEach(function (r) {
+        var m = Math.asin(2.2 / r) / D2, p1 = pt(r, base - 45 + m), p2 = pt(r, base + 45 - m);
+        el("path", {d: "M" + f2(cx + p1[0]) + " " + f2(cy + p1[1]) + "A" + r + " " + r + " 0 0 1 " + f2(cx + p2[0]) + " " + f2(cy + p2[1]), fill: "none", stroke: "var(--glow)", "stroke-width": 2.6, "stroke-linecap": "round"}, g);
+      });
+    });
+    ring(g, 52.5, 2, "var(--glow)");
+  }, after: function (svg, mode) {
+    if (mode === "grid") {
+      [1, 2].forEach(function (k) {
+        var y = GAP + P * k;
+        el("rect", {x: 0, y: f2(y - 16), width: OPEN, height: 32, fill: "var(--glow)", "fill-opacity": 0.1}, svg);
+        el("rect", {x: 0, y: f2(y - 6), width: OPEN, height: 12, fill: "var(--glow)", "fill-opacity": 0.2}, svg);
+      });
+      text(svg, OPEN / 2, GAP + P + 2, "10 mm COB strip behind the row seam", 5, "var(--fg)");
+    } else {
+      [-H, H].forEach(function (y) {
+        el("rect", {x: -H, y: f2(y - 6), width: TW, height: 12, fill: "var(--glow)", "fill-opacity": 0.2}, svg);
+      });
+    }
+  }};
+
+  // ---- 10 kintsugi (cracks with matched exits on every edge) ----
+  var kintsugi = {body: "var(--cf-black)", draw: function (g) {
+    var R = rng(5);
+    function J(p, k) { return [p[0] + (R() - 0.5) * k, p[1] + (R() - 0.5) * k]; }
+    CORNERS.forEach(function (c) {
+      var sx = c[0], sy = c[1];
+      function M(p) { return [sx * (H - p[0]), sy * (H - p[1])]; }
+      var A = [[16, 0], [13, 5.5], [9.5, 9.5], [5.5, 13], [0, 16]].map(function (p, i) { return (i === 0 || i === 4) ? p : J(p, 2.2); });
+      var B = [[38, 0], [33, 6.5], [27, 11], [19, 13.5]].map(function (p, i) { return i === 0 ? p : J(p, 2); }).concat([A[2]]);
+      var C = [[0, 38], [6.5, 33], [11, 27], [13.5, 19]].map(function (p, i) { return i === 0 ? p : J(p, 2); }).concat([A[2]]);
+      var st = {fill: "none", stroke: "var(--brass)", "stroke-linecap": "round", "stroke-linejoin": "round"};
+      var sA = {"stroke-width": 1.4}, sB = {"stroke-width": 1.1};
+      for (var q in st) { sA[q] = st[q]; sB[q] = st[q]; }
+      plineEl(g, A.map(M), sA);
+      plineEl(g, B.map(M), sB);
+      plineEl(g, C.map(M), sB);
+      var k = M(A[2]);
+      el("circle", {cx: f2(k[0]), cy: f2(k[1]), r: 1.3, fill: "var(--brass)"}, g);
+    });
+    ring(g, 52.5, 2, "var(--brass)");
+  }};
+
+  var specs = {reed: reed, cells: cells, sunburst: sunburst, asanoha: asanoha, zellige: zellige, terrazzo: terrazzo, halo: halo, ginkgo: ginkgo, lantern: lantern, kintsugi: kintsugi};
+  var order = [["reed", "01 Reed", "p-reed"], ["cells", "02 Cells", "p-cells"], ["sunburst", "03 Sunburst", "p-sunburst"], ["asanoha", "04 Asanoha", "p-asanoha"], ["zellige", "05 Khatem", "p-zellige"], ["terrazzo", "06 Terrazzo", "p-terrazzo"], ["halo", "07 Halo", "p-halo"], ["ginkgo", "08 Ginkgo", "p-ginkgo"], ["lantern", "09 Lantern", "p-lantern"], ["kintsugi", "10 Kintsugi", "p-kintsugi"]];
+
+  // ---- field diagram ----
+  var fs = document.getElementById("field-svg");
+  if (fs) {
+    fs.setAttribute("viewBox", "-66 -66 132 132");
+    el("rect", {x: -66, y: -66, width: 132, height: 132, fill: "var(--bg)"}, fs);
+    el("rect", {x: -H, y: -H, width: TW, height: TW, fill: "var(--bg-2)", stroke: "var(--fg-2)", "stroke-width": 0.4}, fs);
+    el("path", {d: "M" + (-H) + " " + (-H) + "h" + TW + "v" + TW + "h" + (-TW) + "Z M" + RF + " 0A" + RF + " " + RF + " 0 1 0 " + (-RF) + " 0A" + RF + " " + RF + " 0 1 0 " + RF + " 0Z", fill: "var(--field)", "fill-rule": "evenodd"}, fs);
+    el("circle", {cx: 0, cy: 0, r: RF, fill: "none", stroke: "var(--fg-2)", "stroke-width": 0.4}, fs);
+    el("circle", {cx: 0, cy: 0, r: RB, fill: "var(--bore)"}, fs);
+    el("circle", {cx: 0, cy: 0, r: 52.5, fill: "none", stroke: "var(--accent-2)", "stroke-width": 0.5, "stroke-dasharray": "2 1.5"}, fs);
+    var d1 = pt(RF, -135), d2 = pt(H * Math.SQRT2, -135);
+    el("line", {x1: f2(d1[0]), y1: f2(d1[1]), x2: f2(d2[0]), y2: f2(d2[1]), stroke: "var(--fg)", "stroke-width": 0.5}, fs);
+    text(fs, -44, -36, "28 mm", 5, "var(--fg)", "end");
+    el("line", {x1: RF, y1: 0, x2: H, y2: 0, stroke: "var(--fg)", "stroke-width": 0.5}, fs);
+    text(fs, RF + 2.6, -2.2, "5.3", 4.5, "var(--fg)");
+    text(fs, 0, 2, "bore 92 / face 100", 5, "var(--marble)");
+    text(fs, 0, -H - 3, "tile 110.53, seam 0.3", 5, "var(--fg)");
+    text(fs, 0, H + 7, "four lobes + collar (dashed, r 52.5)", 5, "var(--fg-2)");
+  }
+
+  // ---- contact sheet ----
+  var contact = document.getElementById("contact");
+  if (contact) order.forEach(function (o) {
+    var a = document.createElement("a"); a.href = "#" + o[2];
+    var s = el("svg", {role: "img", "aria-label": o[1]}, a);
+    renderGrid(s, specs[o[0]]);
+    var sp = document.createElement("span"); sp.textContent = o[1]; a.appendChild(sp);
+    contact.appendChild(a);
+  });
+
+  // ---- pattern figures ----
+  Array.prototype.forEach.call(document.querySelectorAll("svg[data-pat]"), function (svg) {
+    var spec = specs[svg.getAttribute("data-pat")];
+    if (!spec) return;
+    if (svg.getAttribute("data-view") === "tile") renderTile(svg, spec); else renderGrid(svg, spec);
+  });
+})();
+</script>

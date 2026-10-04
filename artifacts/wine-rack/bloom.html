@@ -1,0 +1,545 @@
+<title>Bloom Wine Rack</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400;1,6..96,500&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one editorial column (max 980px), drawings full width, numbers in mono tables.
+   Palette: celadon paper, ink, walnut, marble, brass. Display Bodoni (deco), body Source Sans, data Plex Mono. */
+:root {
+  --bg: #edf0ea;
+  --bg-2: #e2e7df;
+  --fg: #1c211d;
+  --fg-2: #4a534c;
+  --line: #c3cbbf;
+  --walnut: #5b3a22;
+  --walnut-2: #8a5a35;
+  --marble: #f3f1ea;
+  --marble-2: #d9d5c9;
+  --brass: #9c7a2a;
+  --leaf: #3e6a49;
+  --glass: #5d7a4f;
+  --petg: #2b2f2c;
+  --petg-2: #585e59;
+  --warn: #a4532b;
+  --font-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171a17; --bg-2: #1f241f; --fg: #e6e4dc; --fg-2: #a7ada5; --line: #39413a;
+    --walnut: #c08a58; --walnut-2: #8a5a35; --marble: #d9d5c9; --marble-2: #6b685f;
+    --brass: #d1ab52; --leaf: #7faa88; --glass: #8fae7f; --petg: #c9cec8; --petg-2: #7d837e;
+    --warn: #e08a5e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171a17; --bg-2: #1f241f; --fg: #e6e4dc; --fg-2: #a7ada5; --line: #39413a;
+  --walnut: #c08a58; --walnut-2: #8a5a35; --marble: #d9d5c9; --marble-2: #6b685f;
+  --brass: #d1ab52; --leaf: #7faa88; --glass: #8fae7f; --petg: #c9cec8; --petg-2: #7d837e;
+  --warn: #e08a5e; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 17px; line-height: 1.5; margin: 0; padding-inline: 16px; padding-block: 0 64px; }
+.wrap { max-width: 980px; margin: 0 auto; }
+header.masthead { padding-block: 40px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); }
+h1 { font-family: var(--font-display); font-weight: 400; font-style: italic; font-size: clamp(56px, 11vw, 112px); line-height: 0.95; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { font-style: normal; font-weight: 600; font-size: 0.42em; display: block; letter-spacing: 0.02em; margin-top: 6px; }
+.pitch { font-size: 21px; max-width: 46ch; color: var(--fg-2); margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.1; margin: 0 0 12px; text-wrap: balance; }
+h3 { font-family: var(--font-body); font-weight: 600; font-size: 17px; margin: 20px 0 6px; letter-spacing: 0.01em; }
+section { padding-block: 36px; border-bottom: 1px solid var(--line); }
+section > p, section > ul, section > ol { max-width: 66ch; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+li { margin-bottom: 4px; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+figure { margin: 18px 0; }
+figure svg { width: 100%; height: auto; display: block; max-width: 100%; }
+figcaption { font-size: 14px; color: var(--fg-2); margin-top: 8px; max-width: 70ch; }
+.fig-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.fig-row figure { margin: 0; min-width: 0; }
+.scroll { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 10px 0 16px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); font-weight: 500; }
+td.n, th.n { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td code, p code, li code { font-family: var(--font-mono); font-size: 14px; background: var(--bg-2); padding: 1px 5px; border-radius: 3px; }
+tr.total td { font-weight: 600; border-top: 2px solid var(--fg); }
+.fit { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.04em; padding: 1px 7px; border-radius: 3px; white-space: nowrap; }
+.fit.yes { color: var(--leaf); background: var(--bg-2); }
+.fit.tight { color: var(--brass); background: var(--bg-2); }
+.fit.no { color: var(--warn); background: var(--bg-2); }
+.keyline { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 28px; margin: 14px 0; }
+.keyline div { border-top: 2px solid var(--brass); padding-top: 8px; }
+.keyline b { display: block; font-family: var(--font-mono); font-size: 24px; font-weight: 500; }
+.keyline small { color: var(--fg-2); font-size: 14px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--fg-2); margin-top: 6px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
+.note { border-left: 3px solid var(--walnut); padding: 6px 14px; background: var(--bg-2); max-width: 70ch; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px 32px; }
+.two > * { min-width: 0; }
+a { color: var(--walnut); }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .masthead h1 { animation: rise 600ms ease-out both; }
+  @keyframes rise { from { opacity: 0.2; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+<div class="wrap">
+<header class="masthead">
+  <div class="eyebrow">Wine rack for a 335 mm cube &middot; pretty direction &middot; slug bloom</div>
+  <h1>Bloom<span>nine bottles, one flower at every crossing</span></h1>
+  <p class="pitch">A plain PETG-CF skeleton of flat rings on square rods carries the bottles. Walnut-wood tiles with marble leaves pin to its face and carry nothing but the look. Two colours, one nozzle each, no supports, no glue.</p>
+</header>
+
+<section id="rev2">
+  <div class="eyebrow">Rev 2</div>
+  <p class="note"><b>What changed.</b> Each cell now has three rings on four pass-through 10 mm rods instead of two rings on integral posts. In rev 1 the front ring sat 256 mm from the bottle base, past the shoulder of a 320 mm Bordeaux, so only the rear ring touched the body and the bottle rested on its shoulder taper. The new middle ring (contact 156-172 from the base) and the rear ring (0-16) both bear on the body either side of the centre of gravity, so bottles lie level. Rods print lying flat; the 240 mm towers are gone. Cost: one ring and four rods more per cell, about 0.5 kg and 6 h over the whole rack.</p>
+</section>
+
+<section id="hero">
+  <figure>
+    <svg id="hero-svg" viewBox="-26 -26 387 387" role="img" aria-label="Front elevation of the Bloom rack inside a 335 mm opening with bottles drawn at real diameters"></svg>
+    <figcaption>Front elevation, to scale in mm. Cube opening 335 (hatched), rack envelope 332.5, pitch 110.8, face opening 100 flaring to a 92 clear bore. Bottles drawn at their real body diameters: Bordeaux 76, Alsace 78, Burgundy 85 and 88, Champagne 90. Each grid node grows a four-petal bloom whose midrib is the tile seam; every bottle wears a marble collar.</figcaption>
+  </figure>
+  <div class="legend"><span><i style="background:var(--walnut)"></i>PLA Wood Black Walnut tile</span><span><i style="background:var(--marble);border:1px solid var(--line)"></i>PLA Marble relief (nozzle 2)</span><span><i style="background:var(--glass)"></i>bottle glass</span><span><i style="background:var(--petg)"></i>PETG-CF skeleton (hidden behind the tiles)</span></div>
+</section>
+
+<section id="concept">
+  <div class="eyebrow">1 &middot; Concept</div>
+  <h2>The decoration is a separate part</h2>
+  <p>Every reference in the pretty direction (GustaVino's Gaudi cells, the Alessi Barkcellar, the Voronoi hex modules, edge-lit acrylic racks) puts the ornament on the load path and pays for it in material, supports or sag. The research's strongest advice is to split the two: a plain creep-resistant skeleton, and a decorative skin in a filament chosen for its surface. Bloom does exactly that.</p>
+  <ul>
+    <li><b>Skeleton.</b> Each cell is three flat square rings 16 mm thick (hoop in XY, bottle axis vertical on the bed) on four 10 mm square rods. The end rings carry 12 mm blind pockets, the middle ring square through holes; every rod has a tick groove where the middle ring sits. Rings print flat, rods print flat, nothing overhangs; the one bridge is the 10.2 mm pocket roof inside the front ring.</li>
+    <li><b>Skin.</b> A 110.5 mm bezel tile, 8 mm thick, pins onto the front ring. It carries the 33.7 degree entry flare, eight half-leaves and a collar in a second filament (1.2 mm raised, vertical flanks), and an 11 x 3.2 mm rebate on its back for a 10 mm COB strip. It can be reprinted in any colour without touching the structure.</li>
+    <li><b>Why leaves at the nodes.</b> Between a 92 mm bore and a 110.8 mm pitch the annulus is only 5 mm wide at mid-side; there is no field for a motif around the bottle. The field is at the grid crossings, so each tile corner carries two quarter-leaves and four tiles complete one flower. The 0.3 mm seam reads as the midrib.</li>
+    <li><b>Ties.</b> Double-dovetail keys slide front-to-back into a groove on every ring face, at all three planes. 36 keys turn nine cells into one block and hold every middle ring to its neighbours; the tiles then cover the front groove mouths.</li>
+  </ul>
+  <div class="keyline">
+    <div><b class="num">9</b><small>bottles, 3 x 3 at 110.8 pitch</small></div>
+    <div><b class="num">92 / 100</b><small>clear bore / face opening, mm</small></div>
+    <div><b class="num">2.78 kg</b><small>total filament, 2.44 kg of it PETG-CF</small></div>
+    <div><b class="num">34 h</b><small>over 10 plates, none above 5 h</small></div>
+  </div>
+</section>
+
+<section id="views">
+  <div class="eyebrow">2 &middot; Views</div>
+  <h2>Section, cell and joints</h2>
+  <figure>
+    <svg viewBox="-125 -92 475 270" role="img" aria-label="Side section through one cell showing the three rings, the rods and the bottle centre of gravity between the rear and middle rings">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--fg-2)"/></marker>
+      </defs>
+      <rect x="-125" y="-92" width="475" height="270" fill="var(--bg)"/>
+      <line x1="0" y1="-60" x2="0" y2="120" stroke="var(--fg-2)" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="-6" y="-50" font-size="9" fill="var(--fg-2)" text-anchor="end" font-family="var(--font-mono)">cube back</text><text x="-6" y="-39" font-size="9" fill="var(--fg-2)" text-anchor="end" font-family="var(--font-mono)">(depth unknown)</text>
+      <!-- rods: centre y = +-47.4, 10 wide, x 4..268 -->
+      <rect x="4" y="-52.4" width="264" height="10" fill="var(--petg-2)"/>
+      <rect x="4" y="42.4" width="264" height="10" fill="var(--petg-2)"/>
+      <rect x="155.6" y="-52.4" width="0.8" height="10" fill="var(--bg)"/>
+      <rect x="155.6" y="42.4" width="0.8" height="10" fill="var(--bg)"/>
+      <!-- rings: rear 0..16, middle 156..172, front 256..272 -->
+      <rect x="0" y="-55.4" width="16" height="9.4" fill="var(--petg)"/><rect x="0" y="46" width="16" height="9.4" fill="var(--petg)"/>
+      <rect x="156" y="-55.4" width="16" height="9.4" fill="var(--petg)"/><rect x="156" y="46" width="16" height="9.4" fill="var(--petg)"/>
+      <rect x="256" y="-55.4" width="16" height="9.4" fill="var(--petg)"/><rect x="256" y="46" width="16" height="9.4" fill="var(--petg)"/>
+      <rect x="4" y="-52.5" width="12" height="10.2" fill="none" stroke="var(--bg)" stroke-width="0.8"/>
+      <rect x="256" y="-52.5" width="12" height="10.2" fill="none" stroke="var(--bg)" stroke-width="0.8"/>
+      <rect x="156" y="-52.5" width="16" height="10.2" fill="none" stroke="var(--bg)" stroke-width="0.8"/>
+      <rect x="272" y="-45.4" width="5" height="6" fill="var(--petg)"/>
+      <rect x="272" y="39.4" width="5" height="6" fill="var(--petg)"/>
+      <path d="M272 -55.3 H280 V-50 L274 -46 V-55.3 Z" fill="var(--walnut)"/>
+      <path d="M272 55.3 H280 V50 L274 46 V55.3 Z" fill="var(--walnut)"/>
+      <rect x="280" y="-54.7" width="1.2" height="7" fill="var(--marble)" stroke="var(--line)" stroke-width="0.3"/>
+      <rect x="280" y="47.7" width="1.2" height="7" fill="var(--marble)" stroke="var(--line)" stroke-width="0.3"/>
+      <path d="M0 -38 H200 Q232 -38 238 -15 L238 -15 H320 V15 H238 Q232 38 200 38 H0 Z" fill="var(--glass)" fill-opacity="0.55" stroke="var(--glass)" stroke-width="1"/>
+      <circle cx="135" cy="0" r="4" fill="var(--bg)" stroke="var(--fg)" stroke-width="1.2"/>
+      <path d="M135 -4 A4 4 0 0 1 139 0 L135 0 Z M135 4 A4 4 0 0 1 131 0 L135 0 Z" fill="var(--fg)"/>
+      <text x="135" y="-16" font-size="9" fill="var(--fg)" text-anchor="middle" font-family="var(--font-mono)">CoG 130-145 from base</text>
+      <line x1="8" y1="74" x2="8" y2="90" stroke="var(--brass)" stroke-width="1.5"/>
+      <line x1="164" y1="74" x2="164" y2="90" stroke="var(--brass)" stroke-width="1.5"/>
+      <line x1="8" y1="82" x2="164" y2="82" stroke="var(--brass)" stroke-width="1" marker-start="url(#arr)" marker-end="url(#arr)"/>
+      <text x="86" y="100" font-size="9" fill="var(--brass)" text-anchor="middle" font-family="var(--font-mono)">body contacts 0-16 and 156-172 straddle the CoG</text>
+      <line x1="0" y1="-74" x2="280" y2="-74" stroke="var(--fg-2)" stroke-width="0.8" marker-start="url(#arr)" marker-end="url(#arr)"/>
+      <text x="140" y="-78" font-size="9" fill="var(--fg-2)" text-anchor="middle" font-family="var(--font-mono)">rack_d 280 (cell 272 + tile 8)</text>
+      <line x1="280" y1="112" x2="320" y2="112" stroke="var(--fg-2)" stroke-width="0.8" marker-start="url(#arr)" marker-end="url(#arr)"/>
+      <text x="300" y="124" font-size="9" fill="var(--fg-2)" text-anchor="middle" font-family="var(--font-mono)">protrudes 40</text>
+      <text x="8" y="-60" font-size="8" fill="var(--fg-2)" text-anchor="middle" font-family="var(--font-mono)">rear ring</text>
+      <text x="164" y="-60" font-size="8" fill="var(--fg-2)" text-anchor="middle" font-family="var(--font-mono)">middle ring (mid_z 140)</text>
+      <text x="264" y="-60" font-size="8" fill="var(--fg-2)" text-anchor="middle" font-family="var(--font-mono)">front ring</text>
+      <text x="136" y="66" font-size="9" fill="var(--petg-2)" text-anchor="middle" font-family="var(--font-mono)">4 rods 10 x 10 x 264; tick at 152 from the rear end</text>
+      <text x="100" y="140" font-size="9" fill="var(--fg-2)" text-anchor="middle" font-family="var(--font-mono)">Bordeaux 76 x 320 shown, base against the cube back; bottle axis level</text>
+    </svg>
+    <figcaption>Side section, mm. The bottle body rests on the rear ring (0-16 from the base) and the middle ring (156-172); its centre of gravity, 130-145 from the base for a full 320 mm bottle, lies between them, so it cannot tip and it lies level. Body-length check: a Bordeaux body is cylindrical to about 195-205 mm, so the middle ring sits fully on the body. Burgundy and Champagne shoulders begin sloping at about 150-165 mm, so on those the middle ring catches the top of the slope and the bottle sits up to 2 mm lower there, about 1 degree nose-down over the 156 mm span; for a Burgundy-heavy cellar set <code>mid_z</code> to 125 (contact 141-157), which still brackets the CoG. The front ring at 256-272 only guides; on a 320 mm bottle it surrounds the neck.</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="-6 -16 300 108" role="img" aria-label="Rod end in a blind pocket and rod through the middle ring, with chamfers, clearances and the tick groove">
+      <rect x="-6" y="-16" width="300" height="108" fill="var(--bg)"/>
+      <text x="144" y="-7" font-size="7" fill="var(--fg-2)" text-anchor="middle" font-family="var(--font-mono)">rod to pocket and hole: 0.1 per side (push fit)</text>
+      <g transform="scale(3)">
+        <rect x="0" y="0" width="16" height="20" fill="var(--petg)"/>
+        <path d="M4 4.9 H16 V15.1 H4 Z" fill="var(--bg)"/>
+        <path d="M16 4.9 L15.5 4.4 L16 4.4 Z M16 15.1 L15.5 15.6 L16 15.6 Z" fill="var(--bg)"/>
+        <path d="M4.5 6 L5.5 5 H40 V15 H5.5 L4.5 14 Z" fill="var(--petg-2)"/>
+        <text x="8" y="2.9" font-size="2.6" fill="var(--bg)" text-anchor="middle" font-family="var(--font-mono)">end ring</text>
+        <rect x="56" y="0" width="16" height="20" fill="var(--petg)"/>
+        <path d="M56 4.9 H72 V15.1 H56 Z" fill="var(--bg)"/>
+        <rect x="48" y="5" width="40" height="10" fill="var(--petg-2)"/>
+        <rect x="55.6" y="5" width="0.8" height="0.4" fill="var(--bg)"/><rect x="55.6" y="14.6" width="0.8" height="0.4" fill="var(--bg)"/>
+        <text x="64" y="2.9" font-size="2.6" fill="var(--bg)" text-anchor="middle" font-family="var(--font-mono)">mid ring</text>
+      </g>
+      <text x="0" y="72" font-size="6.5" fill="var(--fg)" font-family="var(--font-mono)">left: pocket 10.2, 12 deep, 4 floor, 0.5 mouth chamfer, 1 rod end chamfer</text>
+      <text x="0" y="84" font-size="6.5" fill="var(--fg)" font-family="var(--font-mono)">right: through hole 10.2; 0.8 x 0.4 tick groove at the ring rear face</text>
+    </svg>
+    <figcaption>Rod joints, scale 3:1. A 10 mm square rod with 1 mm end chamfers enters a 10.2 blind pocket (12 deep, 4 mm floor, 0.5 mm chamfered mouth) in each end ring and passes a 10.2 through hole in the middle ring, whose rear face sits on the rod's tick groove. All three fits are 0.1 mm per side; the coupon prints every one of them.</figcaption>
+  </figure>
+
+  <div class="fig-row">
+    <figure>
+      <svg id="cell-svg" viewBox="-12 -24 190 178" role="img" aria-label="Front view of one cell with the clear bore, flare, pins, grooves and posts dimensioned"></svg>
+      <figcaption>One ring from the front, tile removed, mm. Square ring 110.8, bore 92, flare to 100 on the tile, 6 mm pins at 13 from each face, dovetail grooves centred on every face, 10.2 mm rod pockets at the corners inset 3 mm from the outer faces (14 mm from the bore). Wall at mid-side 9.4, of which 6.4 remains behind the groove.</figcaption>
+    </figure>
+    <figure>
+      <svg viewBox="0 0 340 335" role="img" aria-label="Exploded view of one cell: tile, front ring, keys, rods, middle ring, rear ring">
+        <rect width="340" height="335" fill="var(--bg)"/>
+        <g transform="translate(20 24)">
+          <g transform="translate(180 200)">
+            <rect x="0" y="0" width="90" height="90" fill="var(--petg)"/>
+            <circle cx="45" cy="45" r="37" fill="var(--bg)"/>
+            <rect x="3" y="3" width="8" height="8" fill="var(--bg)" stroke="var(--petg-2)" stroke-width="0.8"/><rect x="79" y="3" width="8" height="8" fill="var(--bg)" stroke="var(--petg-2)" stroke-width="0.8"/><rect x="3" y="79" width="8" height="8" fill="var(--bg)" stroke="var(--petg-2)" stroke-width="0.8"/><rect x="79" y="79" width="8" height="8" fill="var(--bg)" stroke="var(--petg-2)" stroke-width="0.8"/>
+          </g>
+          <g transform="translate(120 130)">
+            <rect x="0" y="0" width="90" height="90" fill="var(--petg)"/>
+            <circle cx="45" cy="45" r="37" fill="var(--bg)"/>
+            <rect x="3" y="3" width="8" height="8" fill="var(--bg)"/><rect x="79" y="3" width="8" height="8" fill="var(--bg)"/><rect x="3" y="79" width="8" height="8" fill="var(--bg)"/><rect x="79" y="79" width="8" height="8" fill="var(--bg)"/>
+          </g>
+          <g stroke="var(--petg-2)" stroke-width="4" stroke-linecap="round">
+            <line x1="187" y1="207" x2="67" y2="67"/><line x1="263" y1="207" x2="143" y2="67"/><line x1="187" y1="283" x2="67" y2="143"/><line x1="263" y1="283" x2="143" y2="143"/>
+          </g>
+          <g transform="translate(60 60)">
+            <rect x="0" y="0" width="90" height="90" fill="var(--petg)"/>
+            <circle cx="45" cy="45" r="37" fill="var(--bg)"/>
+            <circle cx="13" cy="13" r="2.5" fill="var(--brass)"/><circle cx="77" cy="13" r="2.5" fill="var(--brass)"/><circle cx="13" cy="77" r="2.5" fill="var(--brass)"/><circle cx="77" cy="77" r="2.5" fill="var(--brass)"/>
+            <path d="M45 0 l-3 0 l0 2.5 l6 0 l0 -2.5 z M45 90 l-3 0 l0 -2.5 l6 0 l0 2.5 z M0 45 l0 -3 l2.5 0 l0 6 l-2.5 0 z M90 45 l0 -3 l-2.5 0 l0 6 l2.5 0 z" fill="var(--bg)"/>
+          </g>
+          <g transform="translate(0 0)">
+            <rect x="0" y="0" width="90" height="90" fill="var(--walnut)"/>
+            <circle cx="45" cy="45" r="40" fill="var(--bg)"/>
+            <circle cx="45" cy="45" r="37" fill="none" stroke="var(--walnut-2)" stroke-width="1"/>
+            <circle cx="45" cy="45" r="41.5" fill="none" stroke="var(--marble)" stroke-width="1.6"/>
+            <path d="M3 2 Q20 8 33 2 Z M2 3 Q8 20 2 33 Z M87 2 Q70 8 57 2 Z M88 3 Q82 20 88 33 Z M3 88 Q20 82 33 88 Z M2 87 Q8 70 2 57 Z M87 88 Q70 82 33 88 Z M88 87 Q82 70 88 57 Z" fill="var(--marble)"/>
+          </g>
+          <g transform="translate(200 -4)">
+            <path d="M0 0 L6 0 L5 3 L6 6 L0 6 L1 3 Z" fill="var(--brass)" transform="scale(1.6)"/>
+            <text x="14" y="8" font-size="9" fill="var(--fg)" font-family="var(--font-mono)">key x36, every ring face</text>
+          </g>
+          <g font-size="9" font-family="var(--font-mono)" fill="var(--fg)">
+            <text x="0" y="-8">tile + 8 leaves + collar</text>
+            <text x="96" y="52">ring_f: pins up, pockets behind</text>
+            <text x="116" y="236" text-anchor="end">ring_m: through holes</text>
+            <text x="274" y="150" fill="var(--petg-2)">rod x4</text>
+            <text x="225" y="306" text-anchor="middle">ring_r: pockets facing forward</text>
+          </g>
+        </g>
+      </svg>
+      <figcaption>Exploded, front to back: tile (pins into its back), front ring with blind pockets on its back, four rods, middle ring with through holes, rear ring with blind pockets facing forward; keys slide into the face grooves of all three rings. Every joint is square or keyed: nothing can go in rotated.</figcaption>
+    </figure>
+  </div>
+
+  <figure>
+    <svg viewBox="-10 -10 300 70" role="img" aria-label="Dovetail groove and bowtie key cross-section with dimensions">
+      <rect x="-10" y="-10" width="300" height="70" fill="var(--bg)"/>
+      <!-- two abutting cell walls, scale 4x : groove mouth 7, base 8.3, depth 3 -->
+      <g transform="translate(0 0) scale(4)">
+        <rect x="0" y="0" width="30" height="12" fill="var(--petg)"/>
+        <rect x="30.2" y="0" width="30" height="12" fill="var(--petg)"/>
+        <!-- grooves centred at y=6: left wall face at x=30 -->
+        <path d="M30 2.5 L27 1.85 L27 10.15 L30 9.5 Z" fill="var(--bg)"/>
+        <path d="M30.2 2.5 L33.2 1.85 L33.2 10.15 L30.2 9.5 Z" fill="var(--bg)"/>
+        <!-- key with 0.25 clearance -->
+        <path d="M27.25 2.1 L30.1 2.75 L32.95 2.1 L32.95 9.9 L30.1 9.25 L27.25 9.9 Z" fill="var(--brass)"/>
+      </g>
+      <g font-size="8" font-family="var(--font-mono)" fill="var(--fg)">
+        <text x="2" y="-3">cell wall A</text><text x="200" y="-3">cell wall B</text>
+        <text x="130" y="58" text-anchor="middle">groove: mouth 7, base 8.3, depth 3, flank 12 deg. key: 6.5 waist, 7.8 ends, 15.5 long, 0.25 clearance per side</text>
+      </g>
+    </svg>
+    <figcaption>Cell-to-cell joint, scale 4:1. The key slides in along the bottle axis so its flanks print as XY perimeters; it cannot be pulled apart in the plane of the rack, which is the only direction loaded. The coupon prints the same groove with keys at 0.15, 0.25 and 0.35 mm.</figcaption>
+  </figure>
+</section>
+
+<section id="bottles">
+  <div class="eyebrow">3 &middot; Bottle compatibility</div>
+  <h2>Mixed cellar, nine positions</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Bottle</th><th class="n">Body dia</th><th class="n">Length</th><th>In a 92 bore, 100 face</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Bordeaux (claret), incl. Barolo, Rioja</td><td class="n">74-81</td><td class="n">300-330</td><td><span class="fit yes">fits</span></td><td>11+ mm clearance; protrudes 20-50</td></tr>
+      <tr><td>Burgundy / Rhone, typical</td><td class="n">82-88</td><td class="n">293-300</td><td><span class="fit yes">fits</span></td><td>4-10 mm clearance; sits flush</td></tr>
+      <tr><td>Burgundy, deep-punt premium (1859 mould)</td><td class="n">92.9</td><td class="n">300</td><td><span class="fit no">no</span></td><td>set <code>slot_clear</code> 96 and <code>dt_depth</code> 2.5 for these</td></tr>
+      <tr><td>Champagne, standard</td><td class="n">88-91</td><td class="n">300</td><td><span class="fit tight">tight</span></td><td>1-4 mm clearance; the flare guides it; 1.7 kg each</td></tr>
+      <tr><td>Champagne, vintage / prestige (Krug, Comtes)</td><td class="n">96-101</td><td class="n">280-300</td><td><span class="fit no">no</span></td><td>needs a 2 x 2 rack at 125+ pitch</td></tr>
+      <tr><td>Alsace / Mosel flute</td><td class="n">75-79</td><td class="n">329-357</td><td><span class="fit yes">fits</span></td><td>protrudes 50-77 mm; harmless in a 390 cube</td></tr>
+      <tr><td>Magnum, Bordeaux prestige (92.3)</td><td class="n">92-100</td><td class="n">356-404</td><td><span class="fit no">no</span></td><td>2.1-3.3 kg; not a 3 x 3 rack</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Capacity 9 bottles. Design load 9 x 1.7 kg = 15.3 kg of Champagne plus 2.4 kg of skeleton. The bottom row bears about 0.02 MPa on its ring faces, three orders of magnitude under PETG-CF's creep threshold. Support check per type: Bordeaux and Alsace bodies are cylindrical past the middle ring (156-172 from the base); Burgundy and Champagne shoulders start at about 150-165, so the middle ring meets the top of their slope and they sit about 1 degree nose-down unless <code>mid_z</code> is reduced to 125.</p>
+</section>
+
+<section id="plates">
+  <div class="eyebrow">4 &middot; Module and plate plan</div>
+  <h2>Every printed part</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Part</th><th>Size mm (x y z as printed)</th><th>Bed orientation</th><th class="n">Qty</th><th>Material</th><th class="n">g each</th><th class="n">h each</th></tr></thead>
+    <tbody>
+      <tr><td>ring_f, front ring</td><td class="num">110.8 x 110.8 x 21</td><td>face up (pins up), pockets on the bed side</td><td class="n">9</td><td>PETG-CF</td><td class="n">55</td><td class="n">0.6</td></tr>
+      <tr><td>ring_m, middle ring</td><td class="num">110.8 x 110.8 x 16</td><td>flat, through holes</td><td class="n">9</td><td>PETG-CF</td><td class="n">53</td><td class="n">0.6</td></tr>
+      <tr><td>ring_r, rear ring</td><td class="num">110.8 x 110.8 x 16</td><td>flat, pockets open upward</td><td class="n">9</td><td>PETG-CF</td><td class="n">54</td><td class="n">0.6</td></tr>
+      <tr><td>rod</td><td class="num">264 x 10 x 10</td><td>lying flat along Y in the spare strip of a ring plate; tick 152 from one end</td><td class="n">36</td><td>PETG-CF</td><td class="n">26</td><td class="n">0.3</td></tr>
+      <tr><td>tile + 8 leaves + collar</td><td class="num">110.5 x 110.5 x 9.2</td><td>face up; holes and LED rebate on the bed side</td><td class="n">9</td><td>PLA Wood + PLA Marble</td><td class="n">38</td><td class="n">0.8</td></tr>
+      <tr><td>key, bowtie</td><td class="num">6 x 7.8 x 15.5</td><td>standing on its end</td><td class="n">36 + 4</td><td>PETG-CF</td><td class="n">0.8</td><td class="n">0.01</td></tr>
+      <tr><td>coupon block + rod_stub + key_tight + key_loose</td><td class="num">56 x 24 x 20; 20 x 10 x 10</td><td>flat</td><td class="n">1 set</td><td>PETG-CF</td><td class="n">19</td><td class="n">0.3</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3>Plates (H2D single-nozzle bed 325 x 320; tiles inside the 300 x 320 two-nozzle zone)</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Plate</th><th>Contents</th><th>Nozzle / layer</th><th class="n">g</th><th class="n">h</th></tr></thead>
+    <tbody>
+      <tr><td class="num">R1-R4</td><td>4 rings (2 x 2, 221.7 square) + 8 rods along Y in the remaining 103 x 320 strip</td><td>0.6 HF / 0.3</td><td class="n">422</td><td class="n">4.6</td></tr>
+      <tr><td class="num">R5</td><td>4 rings + 4 rods</td><td>0.6 HF / 0.3</td><td class="n">319</td><td class="n">3.5</td></tr>
+      <tr><td class="num">R6</td><td>4 rings</td><td>0.6 HF / 0.3</td><td class="n">216</td><td class="n">2.4</td></tr>
+      <tr><td class="num">R7</td><td>3 rings + 40 keys + coupon + rod_stub (print the coupon set alone first)</td><td>0.6 HF / 0.3</td><td class="n">215</td><td class="n">2.4</td></tr>
+      <tr><td class="num">F, G</td><td>4 tiles, walnut on nozzle 1, marble on nozzle 2</td><td>0.4 / 0.2</td><td class="n">152</td><td class="n">3.1</td></tr>
+      <tr><td class="num">H</td><td>1 tile (or add it to G at 5 tiles if the prime tower fits)</td><td>0.4 / 0.2</td><td class="n">38</td><td class="n">0.8</td></tr>
+      <tr class="total"><td colspan="3">Total: 10 plates (27 rings, 36 rods, 40 keys, coupon set, 9 tiles)</td><td class="n">2780</td><td class="n">33.9</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Rates from the brief: 11 h/kg at 0.6 mm / 0.3 mm for the skeleton, 17 h/kg at 0.4 mm / 0.2 mm plus 20 percent nozzle-switch overhead for the two-colour tiles. Masses assume 4 walls and 15 percent gyroid in PETG-CF (density 1.27) and 85 percent solid tiles. Rev 1 (two rings, integral posts) was 2.29 kg and 28 h over 8 plates.</p>
+</section>
+
+<section id="joints">
+  <div class="eyebrow">5 &middot; Joints and tolerances</div>
+  <h2>Four fits, one coupon</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Joint</th><th>Geometry</th><th class="n">Clearance / side</th><th>Brief class</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td>Cell to cell</td><td>Double dovetail: groove mouth 7, base 8.3, depth 3, 12 deg flank on every face of all three rings; bowtie key 15.5 long, slid front-to-back</td><td class="n">0.25</td><td>sliding dovetail 0.20-0.30</td><td>36 keys (12 internal edges x 3 planes)</td></tr>
+      <tr><td>Rod to end ring</td><td>10 mm square rod, 1 mm 45 deg end chamfers, into a 10.2 square blind pocket 12 deep (4 mm floor) with a 0.5 mm 45 deg mouth chamfer. Front ring pockets open on its bed face (10.2 mm bridged roof); rear ring pockets open upward</td><td class="n">0.10</td><td>push / snap 0.05-0.10</td><td>72</td></tr>
+      <tr><td>Rod to middle ring</td><td>10.2 square through hole; the ring's rear face sits on the 0.8 x 0.4 tick groove at 152 from the rod's rear end. Friction plus the keys to the neighbours; CA optional</td><td class="n">0.10</td><td>push / snap</td><td>36</td></tr>
+      <tr><td>Tile to front ring</td><td>6 mm pin, 5 tall, into a 6.6 mm blind hole 5.5 deep (0.1 fit + 0.4 round-hole undersize allowance)</td><td class="n">0.10 (+0.4 comp)</td><td>push / snap</td><td>36</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>Coupon.</b> <code>coupon</code> is a 56 x 24 x 20 block carrying the production groove, one pin hole, one chamfered 10.2 pocket and one 10.2 through hole; <code>rod_stub</code> is a 20 mm rod end with the same chamfers; <code>key_tight</code>, <code>key</code> and <code>key_loose</code> are keys at 0.15, 0.25 and 0.35 mm. Print the set, push the stub into the pocket and through the hole (thumb pressure, no mallet), pick the key that slides and holds against a shake, then set <code>rod_gap</code> and <code>dt_clr</code>. If a pin rattles, lower <code>hole_comp</code> by 0.1. Nothing on the full plates is printed until the coupon says so.</p>
+  <p>Elephant-foot compensation 0.15 mm in the slicer handles every bed-side edge; the model carries no bed chamfers so the rings keep their full bearing face. Only pocket mouths and rod ends are chamfered in the model.</p>
+</section>
+
+<section id="filament">
+  <div class="eyebrow">6 &middot; Filament and settings</div>
+  <h2>Walnut and marble on a carbon frame</h2>
+  <div class="two">
+    <div>
+      <h3>Skeleton: Bambu PETG-CF (primary)</h3>
+      <ul>
+        <li>Colour irrelevant; black hides best through the 0.3 mm seams.</li>
+        <li>0.6 mm hardened HF nozzle, 0.3 mm layers, 250-260 C, bed 70 C.</li>
+        <li>Textured PEI with a thin glue-stick release layer; chamber lid closed, heater off.</li>
+        <li>4 walls, 15 percent gyroid, 5 top/bottom layers, Arachne on.</li>
+        <li>5 mm brim on the ring plates; rods with the seam aligned to one edge, no brim needed.</li>
+        <li>Dry 65 C / 8 h (AMS 2 Pro does this). Alternative: PETG HF at 5 walls, about 40 percent less stiff, GBP 18/kg.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Tiles: Bambu PLA Wood Black Walnut + PLA Marble (primary)</h3>
+      <ul>
+        <li>Nozzle 1 walnut for the tile body, nozzle 2 marble for leaves and collar. Two colours, one per nozzle: near zero purge, tiles inside the 300 x 320 zone.</li>
+        <li>0.4 mm hardened nozzle, 0.2 mm layers, 210-220 C, bed 55 C, chamber vented.</li>
+        <li>4 walls, 20 percent gyroid, ironing on the relief tops, seam aligned to a tile corner.</li>
+        <li>Dry 55 C / 8 h. Wood PLA is mildly abrasive; the stock hardened nozzle is fine.</li>
+        <li>Alternatives: Fiberlogy FiberWood (sands and stains like timber) with Panchroma Marble; or the lit version below.</li>
+      </ul>
+    </div>
+  </div>
+  <h3>Lit variant (optional electronics)</h3>
+  <p>Print the tiles in Bambu PETG Translucent with the relief in PETG HF white (265 C, 0.1 mm layers for clarity). Lay a 10 mm wide, 24 V warm-white COB strip (about 1.5 mm thick) in the 11 x 3.2 mm rebates that run along the top and bottom of every tile; across a row the rebates line up into one channel behind the seams, so three strips of 330 mm light the whole face from behind the midribs. Feed wires exit at the sides into the 1.25 mm fit gap. A 12-24 V 2 A supply at the back of the cube is plenty. Without the strip the rebates are invisible and cost 7 g per tile.</p>
+</section>
+
+<section id="assembly">
+  <div class="eyebrow">7 &middot; Assembly and retention</div>
+  <h2>Half an hour, no tools</h2>
+  <ol>
+    <li>Print and test the coupon set; adjust <code>rod_gap</code>, <code>dt_clr</code>, <code>fit_push</code>, <code>hole_comp</code> if needed, re-bundle, re-gate.</li>
+    <li>Print plates R1 to R7 and F to H.</li>
+    <li>For each cell: push four rods into the rear ring's pockets, tick end up (the tick is 152 mm from the rod's rear end, 112 from its front end). Slide the middle ring down the rods until its rear face sits on the ticks. Press the front ring onto the rod ends, pockets first, pins facing out. A drop of CA in each middle-ring hole is optional.</li>
+    <li>Lay the nine cells on a table front-face up in a 3 x 3. Slide a key into every pair of facing grooves at the front plane (12), stand the block up and do the middle plane (12), then the rear plane (12). Keys go in from the face, flush.</li>
+    <li>Press a tile onto each front ring: four pins, one way. If lighting, lay the strips in the rebates first and run the leads out at the sides.</li>
+    <li>Stick four 20 mm rubber feet under the bottom rear and front rings; slide the rack into the cube. The 332.5 envelope leaves 1.25 mm per side; at 20 kg loaded it goes nowhere. If the cube is deeper than 280, push the rack to the front edge so the bottles stay reachable.</li>
+  </ol>
+  <p>Tiles cover the front groove mouths, the cube back blocks the rear ones; no key can walk out. To change the look, pull the tiles and print another set: 340 g, three plates.</p>
+</section>
+
+<section id="params">
+  <div class="eyebrow">8 &middot; Parameters</div>
+  <h2>From the build script</h2>
+  <p>All user parameters, <code>snake_case</code>, in <code>artifacts/wine-rack/bloom_author.py</code> (rev 2). Derived values are expressions, so changing <code>space_w</code>, <code>rack_d</code> or <code>mid_z</code> moves everything, rods and ticks included.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Name</th><th class="n">Default</th><th>Drives</th></tr></thead>
+    <tbody>
+      <tr><td><code>space_w</code>, <code>fit_gap</code></td><td class="n">335, 1.25</td><td>opening and per-side clearance; <code>cell_w = (space_w - 2 fit_gap)/3</code> = 110.83</td></tr>
+      <tr><td><code>rack_d</code>, <code>bezel_t</code></td><td class="n">280, 8</td><td>total depth, tile thickness; <code>cell_d = rack_d - bezel_t</code> = 272</td></tr>
+      <tr><td><code>slot_clear</code></td><td class="n">92</td><td>clear bore through rings and tile</td></tr>
+      <tr><td><code>flare_r</code>, <code>flare_h</code></td><td class="n">4, 6</td><td>entry flare; script asserts flare_r/flare_h &le; 45 deg</td></tr>
+      <tr><td><code>ring_d</code></td><td class="n">16</td><td>thickness of all three rings; also key length (<code>key_len = ring_d - key_short</code>)</td></tr>
+      <tr><td><code>mid_z</code></td><td class="n">140</td><td>rear ring inner face to middle ring rear face; middle ring contact 156-172 from the bottle base; <code>tick_z = ring_d + mid_z - pocket_floor</code> = 152</td></tr>
+      <tr><td><code>rod_w</code>, <code>rod_gap</code>, <code>rod_in</code>, <code>rod_ch</code></td><td class="n">10, 0.1, 3, 1</td><td>rod section, fit per side, inset from the outer faces, end chamfer; <code>hole_w = rod_w + 2 rod_gap</code> = 10.2, <code>post_c = cell_w/2 - rod_w/2 - rod_in</code> = 47.4, <code>rod_len = cell_d - 2 pocket_floor</code> = 264</td></tr>
+      <tr><td><code>pocket_d</code>, <code>pocket_ch</code>, <code>tick_w</code>, <code>tick_d</code></td><td class="n">12, 0.5, 0.8, 0.4</td><td>blind pocket depth (<code>pocket_floor = ring_d - pocket_d</code> = 4), mouth chamfer, rod tick groove</td></tr>
+      <tr><td><code>dt_mouth</code>, <code>dt_base</code>, <code>dt_depth</code>, <code>dt_clr</code></td><td class="n">7, 8.3, 3, 0.25</td><td>dovetail groove and key clearance</td></tr>
+      <tr><td><code>pin_d</code>, <code>pin_h</code>, <code>pin_inset</code>, <code>fit_push</code>, <code>hole_comp</code></td><td class="n">6, 5, 13, 0.1, 0.4</td><td>tile pins and holes; <code>hole_d = pin_d + 2 fit_push + hole_comp</code> = 6.6</td></tr>
+      <tr><td><code>tile_gap</code>, <code>relief_h</code>, <code>relief_in</code></td><td class="n">0.3, 1.2, 0.6</td><td>seam, relief height, leaf inset from the seam (midrib width 1.5)</td></tr>
+      <tr><td><code>leaf_s0</code>, <code>leaf_len</code>, <code>leaf_w</code></td><td class="n">3, 38, 7</td><td>leaf start from the corner, length, half-width (parabolic edge)</td></tr>
+      <tr><td><code>collar_w</code>, <code>collar_gap</code></td><td class="n">2, 0.5</td><td>collar ring around the flare lip</td></tr>
+      <tr><td><code>led_w</code>, <code>led_d</code></td><td class="n">11, 3.2</td><td>LED rebate on the tile back</td></tr>
+      <tr><td><code>dt_ovr</code>, <code>key_short</code></td><td class="n">1, 0.5</td><td>cut overshoot outside faces; key shortfall below ring_d</td></tr>
+      <tr><td><code>coupon_w/h/z</code>, <code>stub_len</code></td><td class="n">56, 24, 20, 20</td><td>coupon block and rod stub</td></tr>
+      <tr><td><code>layout_gap</code>, <code>lay_ky</code>, <code>lay_kx</code></td><td class="n">40, 45, 20</td><td>document layout only (tile at <code>tile_cx</code>, rear ring at <code>ring_r_cy</code>, middle ring at <code>ring_m_cy</code>, rod at <code>rod_cy</code>, coupon at <code>lay_x3</code>)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Bundle: <code>python -m fusionhelper.bundle artifacts/wine-rack/bloom_author.py</code>. Gate: <code>python -m fusionhelper.preflight artifacts/wine-rack/bloom_author.bundled.py</code> returned exit 0 (lint 0 errors, pyright 0). Execution in Fusion and the numeric verdict are pending.</p>
+</section>
+
+<section id="risks">
+  <div class="eyebrow">9 &middot; Risks and open questions</div>
+  <h2>What could still go wrong</h2>
+  <ol>
+    <li><b>Cube depth is unknown.</b> At rack_d 280 a 320 bottle protrudes 40 mm. If the cube is under 300 deep or the look must be flush, set <code>rack_d</code> to 250: rods shorten to 234 and the middle ring stays where it is.</li>
+    <li><b>Three fits decide everything.</b> The 0.1 mm rod, 0.25 mm key and 0.1 mm pin clearances are printed-tolerance guesses within the brief's bands. The coupon set exists so the first full plate is never the test.</li>
+    <li><b>Middle ring held by friction.</b> It is located by the rod ticks and tied to its neighbours by 12 keys, but nothing clamps it to the rods. If a ring walks under a knock, a drop of CA in each through hole fixes it; the outer cells' free faces have no neighbour key, so check those first.</li>
+    <li><b>Pocket roofs in the front ring.</b> Each is a 10.2 mm bridge printed at 12 mm height; PETG-CF bridges this cleanly but inspect the underside of the first ring_f plate.</li>
+    <li><b>Burgundy and Champagne shoulders.</b> The middle ring at 156-172 meets the start of their shoulder slope (about 1 degree nose-down). Set <code>mid_z</code> 125 for a Burgundy-heavy cellar.</li>
+    <li><b>PLA tiles near heat.</b> Walnut PLA softens at 57 C. Beside an oven or in a sunny window, print the tiles in ASA (matte, lower surface detail) or the translucent PETG variant; the skeleton does not care.</li>
+    <li><b>Creep.</b> Skeleton stress is around 0.02 MPa in bearing and the hoops are loaded in XY. No PLA carries load anywhere. Expected sag over years: none measurable.</li>
+    <li><b>Prestige Champagne and magnums do not fit.</b> That is the 3 x 3 trade; a 96 mm bore is one parameter away (with <code>dt_depth</code> 2.5).</li>
+    <li><b>Unverified model.</b> The rev 2 script passed the offline gate but has not run in Fusion; its runtime checks (profile counts, volume deltas, 16-edge chamfer picks, bed fit) stop it loudly if a feature misbehaves.</li>
+  </ol>
+</section>
+</div>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function text(parent, x, y, s, size, fill, anchor, extra) {
+    var t = el("text", {x: x, y: y, "font-size": size || 7, fill: fill || "var(--fg-2)", "text-anchor": anchor || "middle", "font-family": "var(--font-mono)"}, parent);
+    if (extra) for (var k in extra) t.setAttribute(k, extra[k]);
+    t.textContent = s;
+    return t;
+  }
+  // leaf outline along an edge: from (x0,y0) going direction (dx,dy) for len L, bulging towards normal (nx,ny) by w
+  function leafPath(x0, y0, dx, dy, nx, ny, L, w, s0) {
+    var a = s0, b = s0 + L, m = (a + b) / 2;
+    var ax = x0 + dx * a, ay = y0 + dy * a, bx = x0 + dx * b, by = y0 + dy * b;
+    var cx = x0 + dx * m + nx * w * 2, cy = y0 + dy * m + ny * w * 2; // quadratic control at 2w gives apex ~w
+    return "M" + ax + " " + ay + " Q" + cx + " " + cy + " " + bx + " " + by + " Z";
+  }
+  // ---------------- hero ----------------
+  var hero = document.getElementById("hero-svg");
+  if (hero) {
+    var OPEN = 335, GAP = 1.25, P = 110.8333, TG = 0.3, TW = P - TG;
+    el("rect", {x: -26, y: -26, width: 387, height: 387, fill: "var(--bg)"}, hero);
+    // cube frame (hatched band 18 mm around the opening)
+    var defs = el("defs", {}, hero);
+    var pat = el("pattern", {id: "hatch", width: 6, height: 6, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)"}, defs);
+    el("line", {x1: 0, y1: 0, x2: 0, y2: 6, stroke: "var(--line)", "stroke-width": 1.5}, pat);
+    el("rect", {x: -22, y: -22, width: OPEN + 44, height: OPEN + 44, fill: "url(#hatch)", stroke: "var(--fg-2)", "stroke-width": 0.6}, hero);
+    el("rect", {x: 0, y: 0, width: OPEN, height: OPEN, fill: "var(--bg-2)", stroke: "var(--fg-2)", "stroke-width": 0.6}, hero);
+    var bottles = [[76, "Bordeaux 76"], [88, "Burgundy 88"], [90, "Champagne 90"], [78, "Alsace 78"], [76, "Bordeaux 76"], [85, "Burgundy 85"], [90, "Champagne 90"], [80, "Bordeaux 80"], [0, "empty"]];
+    for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) {
+      var cx = GAP + P * (c + 0.5), cy = GAP + P * (r + 0.5);
+      var g = el("g", {transform: "translate(" + cx + " " + cy + ")"}, hero);
+      el("rect", {x: -TW / 2, y: -TW / 2, width: TW, height: TW, fill: "var(--walnut)"}, g);
+      // flare (face opening 100) then bore 92 seen as a darker ring, skeleton behind
+      el("circle", {cx: 0, cy: 0, r: 50, fill: "var(--walnut-2)"}, g);
+      el("circle", {cx: 0, cy: 0, r: 46, fill: "var(--petg)"}, g);
+      var b = bottles[r * 3 + c];
+      if (b[0] > 0) {
+        el("circle", {cx: 0, cy: 46 - b[0] / 2, r: b[0] / 2, fill: "var(--glass)", stroke: "var(--bg)", "stroke-width": 0.6}, g);
+        el("circle", {cx: 0, cy: 46 - b[0] / 2, r: 14, fill: "none", stroke: "var(--bg)", "stroke-width": 0.8, "stroke-opacity": 0.7}, g);
+        text(g, 0, 46 - b[0] / 2 + 2.5, b[1], 6.5, "var(--bg)");
+      } else {
+        text(g, 0, 2, "92 clear", 7, "var(--marble)");
+      }
+      // collar
+      el("circle", {cx: 0, cy: 0, r: 51.5, fill: "none", stroke: "var(--marble)", "stroke-width": 2}, g);
+      // eight half-leaves: two per corner, straight side 0.6 inside the edge
+      var h = TW / 2 - 0.6, L = 38, W = 7, S0 = 3;
+      var corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+      for (var k = 0; k < 4; k++) {
+        var sx = corners[k][0], sy = corners[k][1];
+        // along x edge (y = sy*h), from x = sx*(TW/2) inward
+        var p1 = leafPath(sx * TW / 2, sy * h, -sx, 0, 0, -sy, L, W, S0);
+        var p2 = leafPath(sx * h, sy * TW / 2, 0, -sy, -sx, 0, L, W, S0);
+        el("path", {d: p1, fill: "var(--marble)"}, g);
+        el("path", {d: p2, fill: "var(--marble)"}, g);
+      }
+    }
+    // dimensions
+    var dimg = el("g", {}, hero);
+    el("line", {x1: 0, y1: -12, x2: OPEN, y2: -12, stroke: "var(--fg-2)", "stroke-width": 0.6}, dimg);
+    el("line", {x1: 0, y1: -15, x2: 0, y2: -9, stroke: "var(--fg-2)", "stroke-width": 0.6}, dimg);
+    el("line", {x1: OPEN, y1: -15, x2: OPEN, y2: -9, stroke: "var(--fg-2)", "stroke-width": 0.6}, dimg);
+    text(dimg, OPEN / 2, -15, "opening 335 / rack 332.5 / pitch 110.8", 8, "var(--fg)");
+    el("line", {x1: OPEN + 10, y1: GAP, x2: OPEN + 10, y2: GAP + P, stroke: "var(--brass)", "stroke-width": 0.8}, dimg);
+    text(dimg, OPEN + 14, GAP + P / 2, "110.8", 7, "var(--brass)", "middle", {transform: "rotate(90 " + (OPEN + 14) + " " + (GAP + P / 2) + ")"});
+    text(dimg, OPEN / 2, OPEN + 16, "face opening 100, clear bore 92 (dark), marble collar and leaves raised 1.2", 8, "var(--fg)");
+  }
+  // ---------------- cell detail ----------------
+  var cell = document.getElementById("cell-svg");
+  if (cell) {
+    var CW = 110.833, BORE = 92, POST = 10.2, ROD_IN = 3, PIN = 13;
+    el("rect", {x: -12, y: -24, width: 190, height: 178, fill: "var(--bg)"}, cell);
+    var g2 = el("g", {transform: "translate(55.4 55.4)"}, cell);
+    el("rect", {x: -CW / 2, y: -CW / 2, width: CW, height: CW, fill: "var(--petg)"}, g2);
+    el("circle", {cx: 0, cy: 0, r: BORE / 2, fill: "var(--bg)"}, g2);
+    el("circle", {cx: 0, cy: 0, r: 50, fill: "none", stroke: "var(--walnut)", "stroke-width": 0.8, "stroke-dasharray": "3 2"}, g2);
+    // posts (dashed, behind)
+    var pc = CW / 2 - 5 - ROD_IN;
+    [[1, 1], [-1, 1], [-1, -1], [1, -1]].forEach(function (s) {
+      el("rect", {x: s[0] * pc - POST / 2, y: s[1] * pc - POST / 2, width: POST, height: POST, fill: "var(--petg-2)", stroke: "var(--bg)", "stroke-width": 0.5}, g2);
+      el("rect", {x: s[0] * pc - 5, y: s[1] * pc - 5, width: 10, height: 10, fill: "none", stroke: "var(--bg)", "stroke-width": 0.5, "stroke-dasharray": "1.5 1"}, g2);
+      var a = CW / 2 - PIN;
+      el("circle", {cx: s[0] * a, cy: s[1] * a, r: 3, fill: "var(--brass)"}, g2);
+    });
+    // grooves at mid faces: trapezoid mouth 7 base 8.3 depth 3
+    var gp = "M55.4 -3.5 L52.4 -4.15 L52.4 4.15 L55.4 3.5 Z";
+    [0, 90, 180, 270].forEach(function (ang) { el("path", {d: gp, fill: "var(--bg)", transform: "rotate(" + ang + ")"}, g2); });
+    // dims
+    var d = el("g", {"font-family": "var(--font-mono)"}, cell);
+    text(d, 55.4, -12, "cell_w 110.8", 7, "var(--fg)");
+    el("line", {x1: 0, y1: -8, x2: 110.8, y2: -8, stroke: "var(--fg-2)", "stroke-width": 0.5}, d);
+    text(d, 55.4, 53, "bore 92", 8, "var(--fg)");
+    text(d, 55.4, 62, "flare to 100 on the tile", 6, "var(--walnut)");
+    text(d, 55.4, 126, "groove 7 / 8.3 x 3 on every face", 7, "var(--fg)");
+    text(d, 55.4, 136, "rod pockets 10.2 at 3 from the faces, pins d6 at 13", 7, "var(--fg)");
+    el("line", {x1: 118, y1: 0, x2: 118, y2: 9.4, stroke: "var(--brass)", "stroke-width": 0.8}, d);
+    text(d, 122, 7, "9.4 wall", 6, "var(--brass)", "start");
+    el("line", {x1: 118, y1: 101.4, x2: 118, y2: 110.8, stroke: "var(--brass)", "stroke-width": 0.8}, d);
+    text(d, 122, 108, "6.4 behind groove", 6, "var(--brass)", "start");
+  }
+})();
+</script>

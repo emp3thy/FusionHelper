@@ -1,0 +1,717 @@
+<title>Bloom Geometric Patterns</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400;1,6..96,500&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Second companion page to bloom.html: geometric patterns only. Same column, type and palette as
+   bloom-patterns.html. Filament tokens are physical colours and stay identical in both themes. */
+:root {
+  --bg: #edf0ea;
+  --bg-2: #e2e7df;
+  --fg: #1c211d;
+  --fg-2: #4a534c;
+  --line: #c3cbbf;
+  --accent: #5b3a22;
+  --accent-2: #9c7a2a;
+  --ok: #3e6a49;
+  --warn: #a4532b;
+  --walnut: #5b3a22;
+  --walnut-lit: #8a5a35;
+  --walnut-hi: #ad7a4c;
+  --marble: #f3f1ea;
+  --cf-black: #2b2f2c;
+  --white-hf: #f7f7f3;
+  --cream: #e8dcc0;
+  --terracotta: #b8613a;
+  --sage: #6f8a6b;
+  --translucent: #e7e1d3;
+  --glow: #f0b24f;
+  --bore: #1d1f1d;
+  --seam: #2a2d2a;
+  --shade: rgba(0, 0, 0, 0.2);
+  --field: rgba(156, 122, 42, 0.28);
+  --font-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171a17; --bg-2: #1f241f; --fg: #e6e4dc; --fg-2: #a7ada5; --line: #39413a;
+    --accent: #c08a58; --accent-2: #d1ab52; --ok: #7faa88; --warn: #e08a5e;
+    --seam: #0d0f0d; --field: rgba(209, 171, 82, 0.32);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171a17; --bg-2: #1f241f; --fg: #e6e4dc; --fg-2: #a7ada5; --line: #39413a;
+  --accent: #c08a58; --accent-2: #d1ab52; --ok: #7faa88; --warn: #e08a5e;
+  --seam: #0d0f0d; --field: rgba(209, 171, 82, 0.32);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 17px; line-height: 1.5; margin: 0; padding-inline: 16px; padding-block: 0 64px; }
+.wrap { max-width: 1040px; margin: 0 auto; }
+header.masthead { padding-block: 40px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-2); }
+h1 { font-family: var(--font-display); font-weight: 400; font-style: italic; font-size: clamp(48px, 10vw, 104px); line-height: 0.95; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { font-style: normal; font-weight: 600; font-size: 0.4em; display: block; letter-spacing: 0.02em; margin-top: 6px; }
+.pitch { font-size: 20px; max-width: 52ch; color: var(--fg-2); margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.1; margin: 0 0 10px; text-wrap: balance; }
+h2 small { font-family: var(--font-body); font-weight: 400; font-size: 17px; color: var(--fg-2); display: block; margin-top: 4px; letter-spacing: 0; }
+h3 { font-family: var(--font-body); font-weight: 600; font-size: 17px; margin: 18px 0 6px; }
+section { padding-block: 34px; border-bottom: 1px solid var(--line); }
+section > p, section > ul, section > ol { max-width: 68ch; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+li { margin-bottom: 4px; }
+figure { margin: 14px 0; min-width: 0; }
+figure svg { width: 100%; height: auto; display: block; max-width: 100%; }
+figcaption { font-size: 14px; color: var(--fg-2); margin-top: 8px; }
+.pat-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 8px 28px; align-items: start; }
+@media (max-width: 760px) { .pat-grid { grid-template-columns: 1fr; } }
+.spec { display: grid; grid-template-columns: max-content 1fr; gap: 5px 12px; font-size: 14.5px; margin: 10px 0 0; }
+.spec dt { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); padding-top: 3px; }
+.spec dd { margin: 0; }
+.rate { display: grid; grid-template-columns: repeat(3, auto); gap: 6px 18px; margin: 12px 0 0; font-size: 14px; justify-content: start; }
+.rate b { display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); font-weight: 500; }
+.dots { font-family: var(--font-mono); letter-spacing: 0.12em; color: var(--accent-2); font-size: 15px; }
+.contact { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin: 18px 0 6px; }
+.contact a { display: block; text-decoration: none; color: var(--fg); border: 1px solid var(--line); padding: 8px; border-radius: 4px; background: var(--bg-2); }
+.contact a:hover { border-color: var(--accent-2); }
+.contact a svg { width: 100%; height: auto; display: block; }
+.contact a span { display: block; font-family: var(--font-mono); font-size: 12px; margin-top: 6px; letter-spacing: 0.04em; }
+.scroll { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; margin: 10px 0 16px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); font-weight: 500; }
+td.n, th.n { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.dim td { color: var(--fg-2); }
+td code, p code, li code, dd code { font-family: var(--font-mono); font-size: 13.5px; background: var(--bg-2); padding: 1px 5px; border-radius: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--fg-2); margin-top: 6px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; border: 1px solid var(--line); }
+.note { border-left: 3px solid var(--accent); padding: 6px 14px; background: var(--bg-2); max-width: 72ch; }
+.pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin: 14px 0; }
+.pick div { border-top: 3px solid var(--accent-2); padding-top: 10px; }
+.pick b { font-family: var(--font-display); font-size: 24px; font-weight: 600; display: block; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+<header class="masthead">
+  <div class="eyebrow">Bloom wine rack &middot; companion note 2 &middot; geometric front-plate patterns</div>
+  <h1>Twelve geometries<span>for the same nine tiles</span></h1>
+  <p class="pitch">A second pass on the Bloom front, geometric only. Every pattern is either registered to the 110.83 mm pitch so it runs through the seams unbroken, or built on the grid nodes so four tiles complete one figure. All drawings are to scale from one geometry routine; the collar and the 100 mm face opening are drawn so you can see exactly where each pattern meets the bottle.</p>
+</header>
+
+<section id="field">
+  <div class="eyebrow">0 &middot; Ground rules</div>
+  <h2>How a geometry survives nine tiles and nine holes</h2>
+  <div class="pat-grid">
+    <div>
+      <p>The tile is 110.53 mm square, the pitch 110.83 (0.3 mm seam), the face opening 100 mm. Two things break a geometric pattern here: the seam, which cuts straight through every grid node, and the bore, which removes a 100 mm disc from the middle of every 110 mm tile, leaving 5.3 mm at mid-side and 28 mm on the diagonal.</p>
+      <p>Each pattern below answers both. For the seam it does one of two things: <b>registers</b> to the pitch (an integer number of repeats per 110.83 mm in both axes, so every tile carries the same slice and the lattice runs on across the gap), or <b>centres on the node</b> (one quarter of a figure per tile, mirror-matched across the seam). For the bore it <b>resolves at the collar</b>: a plain clearance band 1 to 2 mm wide, then a ring in the second colour, so no motif is cut off mid-shape by the flare.</p>
+      <p>Making: <b>relief up</b> (face-up print, 0.6 to 2 mm, ironed tops) or <b>flat inlay</b> (face-down, first layer on textured PEI, two colours side by side on the H2D, more on the H2C, zero extra material, no layer lines on the face). Minimum feature 0.8 mm; most patterns here use 1.0 to 1.75 mm lines. Through-cut is noted where a pattern suits the lit PETG variant.</p>
+    </div>
+    <figure>
+      <svg id="field-svg" role="img" aria-label="One tile showing the decorative field, the collar band and the pitch registration lines"></svg>
+      <figcaption>One tile, to scale. Shaded: the field outside the flare. Dashed: the collar ring at r 52. Ticks on the edges mark the two registrations used below: sevenths and eighths of the pitch (15.83 and 13.85 mm).</figcaption>
+    </figure>
+  </div>
+  <h3>Contact sheet</h3>
+  <div class="contact" id="contact"></div>
+  <div class="legend"><span><i style="background:var(--walnut)"></i>PLA Wood Black Walnut</span><span><i style="background:var(--walnut-lit)"></i>walnut, raised face in light</span><span><i style="background:var(--marble)"></i>PLA Marble white</span><span><i style="background:var(--cf-black)"></i>PETG-CF / PLA-CF black</span><span><i style="background:var(--white-hf)"></i>PETG HF white</span><span><i style="background:var(--terracotta)"></i>matte terracotta (H2C third colour)</span><span><i style="background:var(--bore)"></i>bore (skeleton behind)</span></div>
+</section>
+
+<!-- 1 GIRIH -->
+<section class="pat" id="p-girih">
+  <div class="eyebrow">01 &middot; islamic star / girih</div>
+  <h2>Girih<small>Eight-point strapwork stars on the nodes, rails along every seam</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="girih" data-view="grid" role="img" aria-label="Girih strapwork on the full 3 by 3 front"></svg><figcaption>Full front. Two interlaced squares make the khatem on each node; a pair of rails 1.2 mm inside every tile edge turns each seam into a deliberate double strap.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="girih" data-view="tile" role="img" aria-label="Girih, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Islamic geometric, khatem sulemani drawn as strapwork (lines, not filled pieces).</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down; also good at 0.8 mm relief.</dd>
+        <dt>Registration</dt><dd>Node-centred: two squares of circumradius 24 mm (one axis-aligned, one at 45 degrees) centred on each node; the diagonal point stops 2.2 mm short of the collar. Rails 1.5 mm wide, 1.2 mm inside each edge. Collar ring 2 mm at r 51.5.</dd>
+        <dt>Colours</dt><dd>2 (H2C: rails in a third colour).</dd>
+        <dt>Filament</dt><dd>Walnut with marble lines; PETG-CF black with PETG HF white for a sharper reading.</dd>
+        <dt>Min feature</dt><dd>1.5 mm lines; smallest enclosed field 3 mm (the star-point triangles).</dd>
+        <dt>Extra per tile</dt><dd>0 g, +4 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Star-and-cross is the one classical geometry that already contains this rack: stars at the lattice points, a cross-shaped field between them, and our bottles sit in the crosses. Drawn as strapwork rather than filled tiles it stays two-colour, and the rails give the seams a reason to exist: each 0.3 mm gap runs down the middle of a 3.3 mm double strap. The star is cut by nothing; the straps are cut only by the collar, at right angles.</p>
+</section>
+
+<!-- 2 SEIGAIHA -->
+<section class="pat" id="p-seigaiha">
+  <div class="eyebrow">02 &middot; japanese waves</div>
+  <h2>Seigaiha<small>Overlapping scales, four per pitch, sixteen rows per pitch</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="seigaiha" data-view="grid" role="img" aria-label="Seigaiha scale pattern on the full 3 by 3 front"></svg><figcaption>Full front. Scale diameter 27.7 mm (P/4), row pitch 6.93 mm (P/16), so the field is one continuous sea; the bores sit in it like stones.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="seigaiha" data-view="tile" role="img" aria-label="Seigaiha, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Japanese wagara, concentric arcs in half-offset rows.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down.</dd>
+        <dt>Registration</dt><dd>Pitch-registered: circles r 13.85 at 27.7 mm centres, rows 6.93 mm apart, alternate rows offset half a scale. Four concentric 1.2 mm arcs per scale. 2 mm plain band then a 2 mm collar at r 52.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>Walnut with marble arcs (wood-block print); PETG-CF black with white for the indigo look; translucent PETG with white arcs if lit.</dd>
+        <dt>Min feature</dt><dd>1.2 mm arcs, 2.2 mm between arcs; the visible crescent of each scale is 6.9 mm tall.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +6 min (long first-layer path).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Seigaiha only works if it never stops, so it is drawn as translates (every tile carries the same slice) rather than mirrored at the seams; the arcs cross the gaps at the same angle on both sides. Four scales per pitch is the coarsest grain that still reads as waves from across a room, and it gives the column seams a scale boundary to hide in.</p>
+</section>
+
+<!-- 3 CHEVRON -->
+<section class="pat" id="p-chevron">
+  <div class="eyebrow">03 &middot; herringbone / chevron</div>
+  <h2>Chevron<small>Four zigzag columns per pitch, stripes every 6.93 mm</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="chevron" data-view="grid" role="img" aria-label="Chevron stripes on the full 3 by 3 front"></svg><figcaption>Full front. Column width P/4, stripe pitch P/16: every column seam lands on a chevron fold and every row seam on a stripe repeat.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="chevron" data-view="tile" role="img" aria-label="Chevron, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Parquet chevron (point-matched herringbone).</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down; or single-colour relief (stripes raised 0.8) for a carved-panel look.</dd>
+        <dt>Registration</dt><dd>Pitch-registered: columns 27.7 mm wide, stripes 2.6 mm wide at 45 degrees on a 6.93 mm vertical pitch; fold lines coincide with the tile edges. Plain 2 mm band then a 2 mm collar at r 52.</dd>
+        <dt>Colours</dt><dd>2 (or 1 as relief).</dd>
+        <dt>Filament</dt><dd>Walnut with marble (two-tone parquet); walnut alone as relief.</dd>
+        <dt>Min feature</dt><dd>2.6 mm stripes, 4.3 mm gaps; stripe ends at the folds are 90 degree points, fine at 0.4.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +4 min (relief: +3.1 g, +7 min).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>A true 2:1 block herringbone has no square period, so this is the chevron variant: it folds exactly on the tile edges, which makes the column seams read as the folds a parquet floor has anyway. The stripes cross the row seams without a kink. The collar cuts the stripes at every angle, which is why a plain band sits between them and the ring.</p>
+</section>
+
+<!-- 4 FRET -->
+<section class="pat" id="p-fret">
+  <div class="eyebrow">04 &middot; greek key</div>
+  <h2>Fret<small>A square Greek-key frame on every node, 35 mm across</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="fret" data-view="grid" role="img" aria-label="Greek key frames on the full 3 by 3 front"></svg><figcaption>Full front. Sixteen square frets, each made of four quarter-frames; the rail is continuous across the seams and the hooks mirror on either side.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="fret" data-view="tile" role="img" aria-label="Fret, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Greek key / meander, as a corner frame.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down; equally good at 1 mm relief.</dd>
+        <dt>Registration</dt><dd>Node-centred: band from 8.75 to 17.5 mm off the node, unit 1.75 mm (lines and gaps), one hook per half-side, a square dot in the corner cell. The frame's outer corner is 1.5 mm clear of the collar on the diagonal. Collar ring 2 mm at r 52.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>PETG-CF black with PETG HF white (the classic); walnut with marble.</dd>
+        <dt>Min feature</dt><dd>1.75 mm lines and 1.75 mm gaps; nothing finer.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +3 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>A key border around each bore does not fit: the band at mid-side is 5.3 mm and a key needs five line widths. So the key frames the node instead, where there is room for a 10 mm band, and the bore gets a plain ring. Each tile holds an L of the frame; the rail runs straight across the seam and the hooks reverse direction there, as the hooks on a real fret do at every corner.</p>
+</section>
+
+<!-- 5 TUMBLING -->
+<section class="pat" id="p-tumbling">
+  <div class="eyebrow">05 &middot; tumbling blocks</div>
+  <h2>Blocks<small>Isometric cubes, seven across and eight rows per pitch</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="tumbling" data-view="grid" role="img" aria-label="Tumbling blocks on the full 3 by 3 front"></svg><figcaption>Full front. Three faces, three tones: marble top, walnut left, raised walnut right. The lattice is continuous through all twelve seams.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="tumbling" data-view="tile" role="img" aria-label="Blocks, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Rhombille / tumbling blocks (quilt and marble-floor classic).</dd>
+        <dt>Made</dt><dd>H2C: flat inlay in three colours. H2D: two colours plus a 0.6 mm relief on the third face (the right rhombus is raised walnut and reads darker or lighter with the room light).</dd>
+        <dt>Registration</dt><dd>Pitch-registered: cube width P/7 = 15.83, row pitch P/8 = 13.85 (edge 9.24, one percent off a true regular cube). Plain 2 mm band then a 2 mm collar at r 52.</dd>
+        <dt>Colours</dt><dd>3 on H2C; 2 + relief on H2D.</dd>
+        <dt>Filament</dt><dd>Walnut, marble and (H2C) a matte mid-tone such as terracotta or cream; or PETG-CF black, white and grey.</dd>
+        <dt>Min feature</dt><dd>Rhombus short diagonal 9.2 mm; acute corners 60 degrees, fine. Relief faces 0.6 mm high need 3 layers at 0.2.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +6 min (H2C); +1.6 g, +8 min (H2D hybrid).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div></div>
+    </div>
+  </div>
+  <p>The strongest optical pattern of the set and the best camouflage after terrazzo: the eye is busy resolving cubes and never finds a seam. It also makes the bores look like holes drilled through a solid block. The price is a third tone; on the H2D that tone comes from relief and light rather than a third filament, which works in a lit room and flattens in a dark one.</p>
+</section>
+
+<!-- 6 TESSERA -->
+<section class="pat" id="p-tessera">
+  <div class="eyebrow">06 &middot; triangle tessellation</div>
+  <h2>Tessera<small>Alternating triangles, the hardest-edged two-colour field here</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="tessera" data-view="grid" role="img" aria-label="Triangle tessellation on the full 3 by 3 front"></svg><figcaption>Full front. Seven triangles across and eight rows per pitch; down-pointing triangles in marble, up-pointing in walnut.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="tessera" data-view="tile" role="img" aria-label="Tessera, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Regular triangular tessellation (also the lattice under asanoha and the hexagon).</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down.</dd>
+        <dt>Registration</dt><dd>Pitch-registered: side P/7 = 15.83, row P/8 = 13.85. Plain 2 mm band, collar 2 mm at r 52.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>Walnut with marble; PETG-CF black with white for a chessboard-sharp version.</dd>
+        <dt>Min feature</dt><dd>Triangle side 15.8 mm; 60 degree corners. Both colours in large connected regions, nothing to detach.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +4 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Chosen over a hexagon lattice because the hex is already the Hex rack's identity and the Cells page covers lattice ridges. Triangles give a flat, equal-area two-colour field that the seams cross along a triangle edge (column seams) or across a row of apexes (row seams); at 1.0 mm the gap is lost in the colour edges. Where the collar cuts the field it leaves a ring of half-triangles, which is the one place this pattern looks accidental; the 2 mm plain band is there to tidy that.</p>
+</section>
+
+<!-- 7 TRUCHET -->
+<section class="pat" id="p-truchet">
+  <div class="eyebrow">07 &middot; truchet arcs</div>
+  <h2>Truchet<small>Sixty-four seeded quarter-circle cells per tile, continuous across every seam</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="truchet" data-view="grid" role="img" aria-label="Truchet arc pattern on the full 3 by 3 front"></svg><figcaption>Full front. Each tile is the same 8 x 8 seeded map placed in four rotations; arcs always end at cell-edge midpoints, so every seam is crossed cleanly whatever the neighbour's orientation.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="truchet" data-view="tile" role="img" aria-label="Truchet, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Smith-Truchet tiling: each square cell carries two quarter-arcs in one of two orientations.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down; also good as a 1 mm ridge relief, and as a through-cut lattice on the lit variant (the loops become light channels).</dd>
+        <dt>Registration</dt><dd>Pitch-registered: cell P/8 = 13.85 mm, arcs r 6.93; one deterministic seed. Clearance 1.5 mm then a 2 mm collar at r 52.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>PETG-CF black with PETG HF white (shown); walnut with marble.</dd>
+        <dt>Min feature</dt><dd>1.6 mm arcs; closest approach between arcs 2.2 mm.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +4 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div></div>
+    </div>
+  </div>
+  <p>Truchet is the geometric answer to "random but ordered": every cell is one of two states, yet the arcs chain into loops and paths that never break, including across seams, because the cell grid is the pitch grid and arcs leave each cell at its edge midpoints. Nine identical tiles in four rotations look like nine different ones. The bore simply interrupts loops, which Truchet patterns tolerate better than any other here.</p>
+</section>
+
+<!-- 8 QUATREFOIL -->
+<section class="pat" id="p-quatrefoil">
+  <div class="eyebrow">08 &middot; gothic tracery</div>
+  <h2>Quatrefoil<small>Four lobes on every node, each lobe shared by two tiles</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="quatrefoil" data-view="grid" role="img" aria-label="Quatrefoil pattern on the full 3 by 3 front"></svg><figcaption>Full front. Sixteen quatrefoils 45 mm across; the lobes lie on the seams so each tile carries two half-lobes per corner.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="quatrefoil" data-view="tile" role="img" aria-label="Quatrefoil, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Gothic tracery, the quatrefoil of four overlapping circles.</dd>
+        <dt>Made</dt><dd>1.2 mm relief (the outline reads as tracery) or flat inlay.</dd>
+        <dt>Registration</dt><dd>Node-centred: four circles r 11 at 11 mm from the node along the axes, 1.5 mm outline, 3 mm central boss. Outermost point 3.3 mm clear of the collar on the diagonal. Collar ring 2 mm at r 52.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>Walnut with marble (stone tracery on oak); PETG-CF black with white.</dd>
+        <dt>Min feature</dt><dd>1.5 mm outline; the cusps between lobes close to 1.5 mm, the minimum here.</dd>
+        <dt>Extra per tile</dt><dd>+0.9 g, +4 min (relief); 0 g, +3 min (inlay).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The quatrefoil is the node figure with the strongest "designed" presence per gram, and it is the direct geometric cousin of the current four-petal bloom. Its weakness is the seam: each lobe is split down its axis, so a 0.3 mm line runs through the middle of eight lobes per node. At 1.5 mm outline that line is a quarter of the line width and reads as a drawn axis, but it is visible.</p>
+</section>
+
+<!-- 9 SASHIKO -->
+<section class="pat" id="p-sashiko">
+  <div class="eyebrow">09 &middot; sashiko</div>
+  <h2>Sashiko<small>Hishi diamond stitch grid, six lines per pitch, gaps at every crossing</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="sashiko" data-view="grid" role="img" aria-label="Sashiko stitch grid on the full 3 by 3 front"></svg><figcaption>Full front. Diagonal stitch lines 13.06 mm apart with 2.9 mm stitches; the stitch phase is locked to the lattice, so stitches match across the seams.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="sashiko" data-view="tile" role="img" aria-label="Sashiko, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Japanese sashiko, hishi (diamond) grid in running stitch.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down (stitches are first-layer islands, anchored by the body printed over them).</dd>
+        <dt>Registration</dt><dd>Pitch-registered: lines at 45 degrees with intercepts every P/6 = 18.47 mm, stitch period 4.354 mm (three per lattice span), dash offset so every crossing falls in a gap. Clearance 1.5 mm then a 2 mm collar at r 52.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>PETG-CF black (indigo stand-in) with PETG HF white stitches; walnut with marble.</dd>
+        <dt>Min feature</dt><dd>Stitches 2.9 x 1.2 mm, about 600 small islands per tile: widen to 1.4 if any fail to stick on the first layer; textured PEI helps.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +6 min (many short first-layer moves).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Sashiko reads as cloth from a distance and as geometry up close. The lattice is period-locked and the dash phase is computed from the lattice vertices, so a stitch never straddles a seam at a different length on the two sides. It is the most fragile first layer on this page: hundreds of 1.2 mm islands, each printed before the body covers it. The textured plate and a slow first layer make it routine; a smooth plate would not.</p>
+</section>
+
+<!-- 10 BAUHAUS -->
+<section class="pat" id="p-bauhaus">
+  <div class="eyebrow">10 &middot; bauhaus</div>
+  <h2>Bauhaus<small>Concentric targets on the nodes, one coloured quarter per tile, rotated</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="bauhaus" data-view="grid" role="img" aria-label="Bauhaus circles on the full 3 by 3 front"></svg><figcaption>Full front. Targets on every node; each tile carries one terracotta quarter disc (H2C) and the tiles are rotated in turn, so the composition changes from node to node.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="bauhaus" data-view="tile" role="img" aria-label="Bauhaus, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Bauhaus / Kandinsky circles, quarter arcs and discs.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down.</dd>
+        <dt>Registration</dt><dd>Node-centred: disc r 5.5, rings 11.5 to 15.5 and 19.5 to 23.5 on every node; a quarter disc r 24 in the third colour on one corner only. Tiles placed in four rotations. Clearance 1 mm then a 2 mm collar at r 52.</dd>
+        <dt>Colours</dt><dd>3 on H2C; 2 on H2D (the quarter disc becomes white or is dropped).</dd>
+        <dt>Filament</dt><dd>PETG-CF black with PETG HF white and a matte terracotta; or ASA cream body with matte black and terracotta for the poster look.</dd>
+        <dt>Min feature</dt><dd>4 mm rings; nothing under 4 mm.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +4 min (H2C) / +3 min (H2D).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The one pattern that uses the nine-tile grid as a composition rather than a repeat: identical tiles, four rotations, and the coloured quarters fall on different sides of different nodes. The rings are thick enough that the seam through them is a thin axis line. Without the third colour it is still a clean target grid, but it loses the thing that makes it Bauhaus.</p>
+</section>
+
+<!-- 11 DECO FAN -->
+<section class="pat" id="p-decofan">
+  <div class="eyebrow">11 &middot; art deco</div>
+  <h2>Stepped fan<small>Nested arcs that shorten as they grow, four fans to a node</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="decofan" data-view="grid" role="img" aria-label="Art deco stepped fans on the full 3 by 3 front"></svg><figcaption>Full front. Each node is a four-pointed stepped star of arcs; the stepped double ring on every bore repeats the motif at the bottle.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="decofan" data-view="tile" role="img" aria-label="Stepped fan, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Art Deco, stepped fan / scallop (Chrysler arch).</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down; or 1 mm relief.</dd>
+        <dt>Registration</dt><dd>Node-centred: four 3 mm arcs at r 6, 11, 16, 21 spanning 84, 72, 60 and 48 degrees about the diagonal, 3 mm boss on the node; stepped collar of 2.0 and 1.0 mm rings at r 51.5 and 54.4. Outer arc 0.7 mm clear of the plain band.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>PETG-CF black with PETG HF white (shown); walnut with marble for a warmer deco.</dd>
+        <dt>Min feature</dt><dd>3 mm arcs, 2 mm gaps, 1.0 mm outer collar ring (edge 0.4 mm from the tile edge at mid-side: keep elephant-foot compensation on).</dd>
+        <dt>Extra per tile</dt><dd>0 g, +4 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The inner arcs end 3 degrees from the seam and the outer ones 21 degrees, so around each node the four fans make a stepped star whose notches are the seams: the gap sits in a notch that is there by design. On a black tile with white arcs the front reads as a 1930s lift door, and the stepped collar carries the same vocabulary onto the bottle.</p>
+</section>
+
+<!-- 12 MOIRE -->
+<section class="pat" id="p-moire">
+  <div class="eyebrow">12 &middot; line interference</div>
+  <h2>Moire<small>Rings about the bore crossing rings about the nodes</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="moire" data-view="grid" role="img" aria-label="Moire interference field on the full 3 by 3 front"></svg><figcaption>Full front. Two families of 1 mm rings at a 3 mm pitch, one centred on each bore and one on each node; where they cross at shallow angles they merge into the interference bands.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="moire" data-view="tile" role="img" aria-label="Moire, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Family</dt><dd>Op-art / line interference (two concentric families).</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down (the merging of crossing lines is a union of first-layer paths, which the slicer handles). Not a relief: raised 1 mm lines crossing at 5 degrees would blob.</dd>
+        <dt>Registration</dt><dd>Node rings r 3 to 48 and bore rings r 55 to 80, both 1.0 mm on a 3.0 mm pitch. Node rings are shared by four tiles and continue exactly; bore rings mirror at the seams. Clearance band r 53.5, collar 2 mm at r 52.</dd>
+        <dt>Colours</dt><dd>2.</dd>
+        <dt>Filament</dt><dd>Walnut with marble (the fleck in both softens the bands); PETG-CF black with white for the full op-art effect.</dd>
+        <dt>Min feature</dt><dd>1.0 mm lines, 2.0 mm gaps; where lines cross at under 10 degrees they fuse into 2 to 4 mm patches, intended.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +6 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Both families are circles about points the rack already has, so the interference figure is the rack's own geometry made visible: hyperbolic bands between each bottle and each node. The node rings hide the seams because four tiles share them. The bore rings do not: at mid-side they meet their neighbour's rings in mirror image, which reads as a crease. It is the most unusual option here and the one that most needs a printed sample before judging.</p>
+</section>
+
+<section id="compare">
+  <div class="eyebrow">13 &middot; Comparison</div>
+  <h2>Side by side</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>#</th><th>Pattern</th><th>Family</th><th>Registration</th><th>Made</th><th class="n">Colours</th><th class="n">Min mm</th><th class="n">+g</th><th class="n">+min</th><th class="n">Looks</th><th class="n">Print</th><th class="n">Hides</th><th class="n">Total</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Girih</td><td>Islamic star</td><td>node</td><td>inlay</td><td class="n">2</td><td class="n">1.5</td><td class="n">0</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr><td class="n">2</td><td>Seigaiha</td><td>Japanese waves</td><td>pitch 4 x 16</td><td>inlay</td><td class="n">2</td><td class="n">1.2</td><td class="n">0</td><td class="n">6</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">12</td></tr>
+      <tr><td class="n">3</td><td>Chevron</td><td>herringbone</td><td>pitch 4 x 16</td><td>inlay / relief</td><td class="n">2 (1)</td><td class="n">2.6</td><td class="n">0</td><td class="n">4</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr><td class="n">4</td><td>Fret</td><td>Greek key</td><td>node</td><td>inlay / relief</td><td class="n">2</td><td class="n">1.75</td><td class="n">0</td><td class="n">3</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr><td class="n">5</td><td>Blocks</td><td>tumbling blocks</td><td>pitch 7 x 8</td><td>inlay (3) / hybrid</td><td class="n">3 (2+relief)</td><td class="n">9.2</td><td class="n">0 (1.6)</td><td class="n">6 (8)</td><td class="n">5</td><td class="n">3</td><td class="n">5</td><td class="n">13</td></tr>
+      <tr><td class="n">6</td><td>Tessera</td><td>triangles</td><td>pitch 7 x 8</td><td>inlay</td><td class="n">2</td><td class="n">15.8</td><td class="n">0</td><td class="n">4</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr><td class="n">7</td><td>Truchet</td><td>Truchet arcs</td><td>pitch 8 x 8</td><td>inlay / relief / cut</td><td class="n">2</td><td class="n">1.6</td><td class="n">0</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">5</td><td class="n">13</td></tr>
+      <tr><td class="n">8</td><td>Quatrefoil</td><td>Gothic</td><td>node</td><td>relief / inlay</td><td class="n">2</td><td class="n">1.5</td><td class="n">0.9 (0)</td><td class="n">4</td><td class="n">4</td><td class="n">5</td><td class="n">3</td><td class="n">12</td></tr>
+      <tr><td class="n">9</td><td>Sashiko</td><td>stitch grid</td><td>pitch 6 x 6</td><td>inlay</td><td class="n">2</td><td class="n">1.2</td><td class="n">0</td><td class="n">6</td><td class="n">4</td><td class="n">3</td><td class="n">3</td><td class="n">10</td></tr>
+      <tr><td class="n">10</td><td>Bauhaus</td><td>circles</td><td>node + rotation</td><td>inlay</td><td class="n">3 (2)</td><td class="n">4.0</td><td class="n">0</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">3</td><td class="n">11</td></tr>
+      <tr><td class="n">11</td><td>Stepped fan</td><td>Art Deco</td><td>node</td><td>inlay / relief</td><td class="n">2</td><td class="n">1.0</td><td class="n">0</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr><td class="n">12</td><td>Moire</td><td>interference</td><td>node + bore</td><td>inlay</td><td class="n">2</td><td class="n">1.0</td><td class="n">0</td><td class="n">6</td><td class="n">4</td><td class="n">4</td><td class="n">3</td><td class="n">11</td></tr>
+      <tr class="dim"><td></td><td>Asanoha</td><td>Japanese lattice</td><td>pitch 7 x 8</td><td>inlay</td><td class="n">2</td><td class="n">1.0</td><td class="n">0</td><td class="n">5</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr class="dim"><td></td><td>Khatem</td><td>zellige pieces</td><td>node</td><td>inlay</td><td class="n">3 (2)</td><td class="n">1.0</td><td class="n">0</td><td class="n">6</td><td class="n">5</td><td class="n">3</td><td class="n">4</td><td class="n">12</td></tr>
+      <tr class="dim"><td></td><td>Sunburst</td><td>Art Deco rays</td><td>node</td><td>inlay</td><td class="n">2</td><td class="n">0.9</td><td class="n">0</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr class="dim"><td></td><td>Reed</td><td>fluting</td><td>pitch 27</td><td>relief</td><td class="n">1</td><td class="n">1.0</td><td class="n">5.9</td><td class="n">9</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">13</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14px;color:var(--fg-2)">Greyed rows are the geometric entries from the first study (bloom-patterns.html), listed for comparison and not re-drawn here. Grams are relief volume at 1.24 g/cm3; minutes are relief layers plus colour-change overhead on an H2D at 0.4 / 0.2 against a 38 g, 48 min base tile; bracketed values are the alternative make. Hides = how well the tile seams disappear. Nothing has been printed; ratings are a designer's estimate.</p>
+</section>
+
+<section id="pick">
+  <div class="eyebrow">14 &middot; Recommendation</div>
+  <h2>Top three</h2>
+  <div class="pick">
+    <div><b>1. Girih</b><p>The geometry of the grid itself: stars on the nodes, bottles in the crosses, and the seams turned into straps. Two colours, 1.5 mm lines, nothing under the minimum, zero extra material. It is the one pattern here that looks more considered the closer you get.</p></div>
+    <div><b>2. Truchet</b><p>Best seam-hiding of the geometric set, two colours, and nine identical tiles that read as nine different ones through rotation alone. Also the only one that converts directly to a through-cut lattice for the lit variant. Ordered randomness that a geometry-minded eye will enjoy decoding.</p></div>
+    <div><b>3. Blocks</b><p>The showpiece if the H2C is available: three tones, the strongest optical depth, and the bores become drilled holes in a solid. On the H2D the third tone comes from a 0.6 mm relief, which works in daylight and flattens at night, so print one tile both ways before deciding.</p></div>
+  </div>
+  <p>Close behind: <b>Stepped fan</b> for a dark, deco-leaning room (ties on score with Girih), <b>Fret</b> if the preference is classical and two-colour, and <b>Chevron</b> as the quiet, wood-floor option that prints in a single colour.</p>
+  <div class="note"><p style="margin:0"><b>Before modelling:</b> all twelve are flat-inlay candidates, so one face-down test tile in the chosen filament pair settles the surface question for the whole page. Print it with the Girih star on one corner and a Truchet cell row on the other and look at both under the room light.</p></div>
+</section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function rng(seed) { // mulberry32: deterministic, so all nine tiles are identical prints
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  // ---- shared geometry (mm) ----
+  var P = 110.8333, TG = 0.3, TW = P - TG, H = TW / 2, GAP = 1.25, OPEN = 335, RB = 46, RF = 50;
+  var D2 = Math.PI / 180, uid = 0;
+  var CORNERS = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+  function f2(v) { return (Math.round(v * 100) / 100).toString(); }
+  function pt(r, a) { return [r * Math.cos(a * D2), r * Math.sin(a * D2)]; }
+  function ptsAttr(pts) { return pts.map(function (p) { return f2(p[0]) + "," + f2(p[1]); }).join(" "); }
+  function polyEl(g, pts, attrs) { attrs.points = ptsAttr(pts); return el("polygon", attrs, g); }
+  function plineEl(g, pts, attrs) { attrs.points = ptsAttr(pts); return el("polyline", attrs, g); }
+  function ring(g, r, w, col) { return el("circle", {cx: 0, cy: 0, r: r, fill: "none", stroke: col, "stroke-width": w}, g); }
+  function disc(g, r, col) { return el("circle", {cx: 0, cy: 0, r: r, fill: col}, g); }
+  function arc(g, cx, cy, r, a1, a2, attrs) {
+    var p1 = pt(r, a1), p2 = pt(r, a2), large = (a2 - a1) > 180 ? 1 : 0;
+    attrs.d = "M" + f2(cx + p1[0]) + " " + f2(cy + p1[1]) + "A" + f2(r) + " " + f2(r) + " 0 " + large + " 1 " + f2(cx + p2[0]) + " " + f2(cy + p2[1]);
+    attrs.fill = "none";
+    return el("path", attrs, g);
+  }
+  function text(parent, x, y, s, size, fill, anchor, extra) {
+    var t = el("text", {x: x, y: y, "font-size": size || 5, fill: fill || "var(--fg-2)", "text-anchor": anchor || "middle", "font-family": "var(--font-mono)"}, parent);
+    if (extra) for (var k in extra) t.setAttribute(k, extra[k]);
+    t.textContent = s;
+    return t;
+  }
+  function drawTile(parent, spec, idx, rot) {
+    var g = el("g", {}, parent);
+    var id = "clip" + (uid++);
+    var cp = el("clipPath", {id: id}, g);
+    el("rect", {x: -H, y: -H, width: TW, height: TW}, cp);
+    var gi = el("g", {"clip-path": "url(#" + id + ")"}, g);
+    el("rect", {x: -H - 1, y: -H - 1, width: TW + 2, height: TW + 2, fill: spec.body}, gi);
+    var gp = el("g", {transform: "rotate(" + (rot || 0) + ")"}, gi);
+    spec.draw(gp, idx);
+    el("circle", {cx: 0, cy: 0, r: RF, fill: spec.body}, gi);
+    el("circle", {cx: 0, cy: 0, r: (RF + RB) / 2, fill: "none", stroke: "var(--shade)", "stroke-width": RF - RB}, gi);
+    el("circle", {cx: 0, cy: 0, r: RB, fill: "var(--bore)"}, gi);
+    return g;
+  }
+  function renderGrid(svg, spec) {
+    svg.setAttribute("viewBox", "-1 -1 337 337");
+    el("rect", {x: -1, y: -1, width: 337, height: 337, fill: "var(--seam)"}, svg);
+    for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) {
+      var idx = r * 3 + c;
+      var g = el("g", {transform: "translate(" + f2(GAP + P * (c + 0.5)) + " " + f2(GAP + P * (r + 0.5)) + ")"}, svg);
+      drawTile(g, spec, idx, spec.rotate ? spec.rotate(idx) : 0);
+    }
+  }
+  function renderTile(svg, spec) {
+    svg.setAttribute("viewBox", "-59 -59 118 118");
+    el("rect", {x: -59, y: -59, width: 118, height: 118, fill: "var(--bg-2)"}, svg);
+    el("rect", {x: -H - TG, y: -H - TG, width: TW + 2 * TG, height: TW + 2 * TG, fill: "var(--seam)"}, svg);
+    drawTile(el("g", {}, svg), spec, 0, 0);
+  }
+  var W = "var(--white-hf)", K = "var(--cf-black)", M = "var(--marble)", WN = "var(--walnut)";
+
+  // ---- 1 girih ----
+  var girih = {body: WN, draw: function (g) {
+    var R = 24, st = {fill: "none", stroke: M, "stroke-width": 1.5, "stroke-linejoin": "miter"};
+    CORNERS.forEach(function (c) {
+      var gg = el("g", {transform: "translate(" + f2(c[0] * H) + " " + f2(c[1] * H) + ")"}, g);
+      var s1 = [], s2 = [];
+      for (var k = 0; k < 4; k++) { s1.push(pt(R, 90 * k)); s2.push(pt(R, 45 + 90 * k)); }
+      var a = {}, b = {}; for (var q in st) { a[q] = st[q]; b[q] = st[q]; }
+      polyEl(gg, s1, a); polyEl(gg, s2, b);
+    });
+    var e = H - 1.2;
+    [[-e, -H - 1, -e, H + 1], [e, -H - 1, e, H + 1], [-H - 1, -e, H + 1, -e], [-H - 1, e, H + 1, e]].forEach(function (l) {
+      el("line", {x1: f2(l[0]), y1: f2(l[1]), x2: f2(l[2]), y2: f2(l[3]), stroke: M, "stroke-width": 1.5}, g);
+    });
+    ring(g, 51.5, 2, M);
+  }};
+
+  // ---- 2 seigaiha ----
+  var seigaiha = {body: WN, draw: function (g) {
+    var r = P / 8, h = P / 16;
+    for (var j = -10; j <= 10; j++) {
+      var y = j * h, off = (j & 1) ? r : 0;
+      for (var i = -5; i <= 5; i++) {
+        var x = i * 2 * r + off;
+        if (Math.abs(x) > H + r || y > H + r || y < -H - r) continue;
+        el("circle", {cx: f2(x), cy: f2(y), r: f2(r), fill: WN}, g);
+        [r - 0.8, r * 0.72, r * 0.44, r * 0.16].forEach(function (rr) { el("circle", {cx: f2(x), cy: f2(y), r: f2(rr), fill: "none", stroke: M, "stroke-width": 1.2}, g); });
+      }
+    }
+    disc(g, 54, WN); ring(g, 52, 2, M);
+  }};
+
+  // ---- 3 chevron ----
+  var chevron = {body: WN, draw: function (g) {
+    var c = P / 4, s = P / 16;
+    for (var k = -2; k <= 1; k++) {
+      var x0 = k * c, d = (k % 2 === 0) ? 1 : -1;
+      for (var m = -14; m <= 14; m++) {
+        var y0 = m * s;
+        el("line", {x1: f2(x0), y1: f2(y0), x2: f2(x0 + c), y2: f2(y0 + d * c), stroke: M, "stroke-width": 2.6}, g);
+      }
+    }
+    disc(g, 54, WN); ring(g, 52, 2, M);
+  }};
+
+  // ---- 4 fret ----
+  var fret = {body: K, draw: function (g) {
+    var u = 1.75, st = {fill: "none", stroke: W, "stroke-width": u, "stroke-linejoin": "miter", "stroke-linecap": "butt"};
+    function T(t) { return 5 * u + (t + 0.5) * u; }
+    var hook = [[4, 4], [4, 0], [1, 0], [1, 2], [2.5, 2]];
+    CORNERS.forEach(function (c) {
+      var sx = c[0], sy = c[1];
+      function Mp(p) { return [sx * (H - p[0]), sy * (H - p[1])]; }
+      function cp() { var o = {}; for (var q in st) o[q] = st[q]; return o; }
+      plineEl(g, [[-1, T(4)], [T(4), T(4)], [T(4), -1]].map(Mp), cp());
+      plineEl(g, hook.map(function (p) { return Mp([(p[0] + 0.5) * u, T(p[1])]); }), cp());
+      plineEl(g, hook.map(function (p) { return Mp([T(p[1]), (p[0] + 0.5) * u]); }), cp());
+      var d = Mp([7.5 * u, 7.5 * u]);
+      el("rect", {x: f2(d[0] - u / 2), y: f2(d[1] - u / 2), width: u, height: u, fill: W}, g);
+    });
+    ring(g, 52, 2, W);
+  }};
+
+  // ---- 5 tumbling blocks ----
+  var tumbling = {body: WN, draw: function (g) {
+    var w = P / 7, rh = P / 8, a = rh / 1.5;
+    for (var j = -6; j <= 6; j++) {
+      var cy = j * rh, off = (j & 1) ? w / 2 : 0;
+      for (var i = -5; i <= 5; i++) {
+        var cx = i * w + off;
+        if (Math.abs(cx) > H + w || Math.abs(cy) > H + 2 * a) continue;
+        polyEl(g, [[cx, cy - a], [cx + w / 2, cy - a / 2], [cx, cy], [cx - w / 2, cy - a / 2]], {fill: M});
+        polyEl(g, [[cx - w / 2, cy - a / 2], [cx, cy], [cx, cy + a], [cx - w / 2, cy + a / 2]], {fill: WN});
+        polyEl(g, [[cx, cy], [cx + w / 2, cy - a / 2], [cx + w / 2, cy + a / 2], [cx, cy + a]], {fill: "var(--walnut-lit)"});
+      }
+    }
+    disc(g, 54, WN); ring(g, 52, 2, M);
+  }};
+
+  // ---- 6 tessera ----
+  var tessera = {body: WN, draw: function (g) {
+    var a = P / 7, rh = P / 8;
+    for (var j = -5; j <= 5; j++) {
+      var y = j * rh, off = (j & 1) ? a / 2 : 0;
+      for (var i = -5; i <= 5; i++) {
+        var x = i * a + off;
+        polyEl(g, [[x, y], [x + a, y], [x + a / 2, y + rh]], {fill: M});
+      }
+    }
+    disc(g, 54, WN); ring(g, 52, 2, M);
+  }};
+
+  // ---- 7 truchet ----
+  var truchet = {body: K, rotate: function (i) { return (i * 90) % 360; }, draw: function (g) {
+    var t = P / 8, R = rng(31), st = {stroke: W, "stroke-width": 1.6};
+    for (var j = 0; j < 8; j++) for (var i = 0; i < 8; i++) {
+      var x = -P / 2 + i * t, y = -P / 2 + j * t, o = R() < 0.5;
+      if (o) { arc(g, x, y, t / 2, 0, 90, {stroke: W, "stroke-width": 1.6}); arc(g, x + t, y + t, t / 2, 180, 270, {stroke: W, "stroke-width": 1.6}); }
+      else { arc(g, x + t, y, t / 2, 90, 180, {stroke: W, "stroke-width": 1.6}); arc(g, x, y + t, t / 2, 270, 360, {stroke: W, "stroke-width": 1.6}); }
+    }
+    disc(g, 53.5, K); ring(g, 52, 2, W);
+  }};
+
+  // ---- 8 quatrefoil ----
+  var quatrefoil = {body: WN, draw: function (g) {
+    var r = 11, o = 1.5;
+    CORNERS.forEach(function (c) {
+      var cx = c[0] * H, cy = c[1] * H, cs = [[cx + r, cy], [cx - r, cy], [cx, cy + r], [cx, cy - r]];
+      cs.forEach(function (p) { el("circle", {cx: f2(p[0]), cy: f2(p[1]), r: r + o, fill: M}, g); });
+      cs.forEach(function (p) { el("circle", {cx: f2(p[0]), cy: f2(p[1]), r: r, fill: WN}, g); });
+      el("circle", {cx: f2(cx), cy: f2(cy), r: 3, fill: M}, g);
+    });
+    ring(g, 52, 2, M);
+  }};
+
+  // ---- 9 sashiko ----
+  var sashiko = {body: K, draw: function (g) {
+    var e = P / 6, s0 = 9 * e / 2, st = {stroke: W, "stroke-width": 1.2, "stroke-dasharray": "2.9 1.454", "stroke-dashoffset": 3.627};
+    for (var k = -9; k <= 9; k++) {
+      var c = k * e;
+      el("line", {x1: f2(c - s0), y1: f2(-s0), x2: f2(c + s0), y2: f2(s0), stroke: W, "stroke-width": 1.2, "stroke-dasharray": "2.9 1.454", "stroke-dashoffset": 3.627}, g);
+      el("line", {x1: f2(c + s0), y1: f2(-s0), x2: f2(c - s0), y2: f2(s0), stroke: W, "stroke-width": 1.2, "stroke-dasharray": "2.9 1.454", "stroke-dashoffset": 3.627}, g);
+    }
+    disc(g, 53.5, K); ring(g, 52, 2, W);
+  }};
+
+  // ---- 10 bauhaus ----
+  var bauhaus = {body: K, rotate: function (i) { return (i * 90) % 360; }, draw: function (g) {
+    el("circle", {cx: f2(H), cy: f2(H), r: 24, fill: "var(--terracotta)"}, g);
+    CORNERS.forEach(function (c) {
+      var cx = f2(c[0] * H), cy = f2(c[1] * H);
+      el("circle", {cx: cx, cy: cy, r: 21.5, fill: "none", stroke: W, "stroke-width": 4}, g);
+      el("circle", {cx: cx, cy: cy, r: 13.5, fill: "none", stroke: W, "stroke-width": 4}, g);
+      el("circle", {cx: cx, cy: cy, r: 5.5, fill: W}, g);
+    });
+    disc(g, 54, K); ring(g, 52, 2, W);
+  }};
+
+  // ---- 11 stepped fan ----
+  var decofan = {body: K, draw: function (g) {
+    CORNERS.forEach(function (c) {
+      var cx = c[0] * H, cy = c[1] * H, base = Math.atan2(-c[1], -c[0]) / D2;
+      [6, 11, 16, 21].forEach(function (r, k) {
+        var half = 42 - 6 * k;
+        arc(g, cx, cy, r, base - half, base + half, {stroke: W, "stroke-width": 3});
+      });
+      el("circle", {cx: f2(cx), cy: f2(cy), r: 3, fill: W}, g);
+    });
+    disc(g, 55, K); ring(g, 51.5, 2, W); ring(g, 54.4, 1, W);
+  }};
+
+  // ---- 12 moire ----
+  var moire = {body: WN, draw: function (g) {
+    var p = 3.0, r;
+    CORNERS.forEach(function (c) {
+      var cx = f2(c[0] * H), cy = f2(c[1] * H);
+      for (r = p; r <= 48; r += p) el("circle", {cx: cx, cy: cy, r: f2(r), fill: "none", stroke: M, "stroke-width": 1}, g);
+    });
+    disc(g, 53.5, WN);
+    for (r = 55; r <= 80; r += p) ring(g, r, 1, M);
+    ring(g, 52, 2, M);
+  }};
+
+  var specs = {girih: girih, seigaiha: seigaiha, chevron: chevron, fret: fret, tumbling: tumbling, tessera: tessera, truchet: truchet, quatrefoil: quatrefoil, sashiko: sashiko, bauhaus: bauhaus, decofan: decofan, moire: moire};
+  var order = [["girih", "01 Girih", "p-girih"], ["seigaiha", "02 Seigaiha", "p-seigaiha"], ["chevron", "03 Chevron", "p-chevron"], ["fret", "04 Fret", "p-fret"], ["tumbling", "05 Blocks", "p-tumbling"], ["tessera", "06 Tessera", "p-tessera"], ["truchet", "07 Truchet", "p-truchet"], ["quatrefoil", "08 Quatrefoil", "p-quatrefoil"], ["sashiko", "09 Sashiko", "p-sashiko"], ["bauhaus", "10 Bauhaus", "p-bauhaus"], ["decofan", "11 Stepped fan", "p-decofan"], ["moire", "12 Moire", "p-moire"]];
+
+  // ---- field diagram ----
+  var fs = document.getElementById("field-svg");
+  if (fs) {
+    fs.setAttribute("viewBox", "-66 -66 132 132");
+    el("rect", {x: -66, y: -66, width: 132, height: 132, fill: "var(--bg)"}, fs);
+    el("rect", {x: -H, y: -H, width: TW, height: TW, fill: "var(--bg-2)", stroke: "var(--fg-2)", "stroke-width": 0.4}, fs);
+    el("path", {d: "M" + (-H) + " " + (-H) + "h" + TW + "v" + TW + "h" + (-TW) + "Z M" + RF + " 0A" + RF + " " + RF + " 0 1 0 " + (-RF) + " 0A" + RF + " " + RF + " 0 1 0 " + RF + " 0Z", fill: "var(--field)", "fill-rule": "evenodd"}, fs);
+    el("circle", {cx: 0, cy: 0, r: RF, fill: "none", stroke: "var(--fg-2)", "stroke-width": 0.4}, fs);
+    el("circle", {cx: 0, cy: 0, r: RB, fill: "var(--bore)"}, fs);
+    el("circle", {cx: 0, cy: 0, r: 52, fill: "none", stroke: "var(--accent-2)", "stroke-width": 0.6, "stroke-dasharray": "2 1.5"}, fs);
+    for (var i = -3; i <= 3; i++) { // sevenths on the top edge (even rows), eighths on the left edge
+      var x = i * P / 7; el("line", {x1: f2(x), y1: -H - 3, x2: f2(x), y2: -H, stroke: "var(--accent-2)", "stroke-width": 0.6}, fs);
+    }
+    for (i = -4; i <= 4; i++) { var y = i * P / 8; el("line", {x1: -H - 3, y1: f2(y), x2: -H, y2: f2(y), stroke: "var(--accent-2)", "stroke-width": 0.6}, fs); }
+    text(fs, 0, -H - 5, "P / 7 = 15.83", 4.5, "var(--fg)");
+    text(fs, -H - 5, 0, "P / 8 = 13.85", 4.5, "var(--fg)", "middle", {transform: "rotate(-90 " + (-H - 5) + " 0)"});
+    text(fs, 0, 2, "bore 92 / face 100", 5, "var(--marble)");
+    text(fs, 0, H + 6, "tile 110.53, seam 0.3, collar r 52 (dashed)", 4.5, "var(--fg-2)");
+  }
+
+  // ---- contact sheet ----
+  var contact = document.getElementById("contact");
+  if (contact) order.forEach(function (o) {
+    var a = document.createElement("a"); a.href = "#" + o[2];
+    var s = el("svg", {role: "img", "aria-label": o[1]}, a);
+    renderGrid(s, specs[o[0]]);
+    var sp = document.createElement("span"); sp.textContent = o[1]; a.appendChild(sp);
+    contact.appendChild(a);
+  });
+
+  // ---- pattern figures ----
+  Array.prototype.forEach.call(document.querySelectorAll("svg[data-pat]"), function (svg) {
+    var spec = specs[svg.getAttribute("data-pat")];
+    if (!spec) return;
+    if (svg.getAttribute("data-view") === "tile") renderTile(svg, spec); else renderGrid(svg, spec);
+  });
+})();
+</script>

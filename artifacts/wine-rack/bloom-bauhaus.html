@@ -1,0 +1,605 @@
+<title>Bloom Bauhaus Patterns</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400;1,6..96,500&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Third companion page to bloom.html: Bauhaus variants only. Same column, type and palette.
+   Filament tokens (--bh-*) are physical colours, identical in light and dark; the palette toggle
+   (primaries / muted) swaps them for the muted filament set, which is a different spool, not a theme. */
+:root {
+  --bg: #edf0ea;
+  --bg-2: #e2e7df;
+  --fg: #1c211d;
+  --fg-2: #4a534c;
+  --line: #c3cbbf;
+  --accent: #5b3a22;
+  --accent-2: #9c7a2a;
+  --walnut: #5b3a22;
+  --marble: #f3f1ea;
+  --bh-red: #c23b2a;
+  --bh-yellow: #e6b422;
+  --bh-blue: #23519e;
+  --bh-black: #1e1f1e;
+  --bh-white: #efe8d8;
+  --bh-orange: #d9742a;
+  --bore: #1d1f1d;
+  --seam: #2a2d2a;
+  --shade: rgba(0, 0, 0, 0.2);
+  --font-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+:root[data-palette="muted"] {
+  --bh-red: #9b4f3a;
+  --bh-yellow: #c99a3a;
+  --bh-blue: #4d5a66;
+  --bh-black: #2b2f2c;
+  --bh-white: #e8dfcc;
+  --bh-orange: #b4733a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171a17; --bg-2: #1f241f; --fg: #e6e4dc; --fg-2: #a7ada5; --line: #39413a;
+    --accent: #c08a58; --accent-2: #d1ab52; --seam: #0d0f0d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171a17; --bg-2: #1f241f; --fg: #e6e4dc; --fg-2: #a7ada5; --line: #39413a;
+  --accent: #c08a58; --accent-2: #d1ab52; --seam: #0d0f0d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 17px; line-height: 1.5; margin: 0; padding-inline: 16px; padding-block: 0 64px; }
+.wrap { max-width: 1040px; margin: 0 auto; }
+header.masthead { padding-block: 40px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-2); }
+h1 { font-family: var(--font-display); font-weight: 400; font-style: italic; font-size: clamp(48px, 10vw, 104px); line-height: 0.95; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { font-style: normal; font-weight: 600; font-size: 0.4em; display: block; letter-spacing: 0.02em; margin-top: 6px; }
+.pitch { font-size: 20px; max-width: 52ch; color: var(--fg-2); margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.1; margin: 0 0 10px; text-wrap: balance; }
+h2 small { font-family: var(--font-body); font-weight: 400; font-size: 17px; color: var(--fg-2); display: block; margin-top: 4px; letter-spacing: 0; }
+h3 { font-family: var(--font-body); font-weight: 600; font-size: 17px; margin: 18px 0 6px; }
+section { padding-block: 34px; border-bottom: 1px solid var(--line); }
+section > p, section > ul, section > ol { max-width: 68ch; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+li { margin-bottom: 4px; }
+figure { margin: 14px 0; min-width: 0; }
+figure svg { width: 100%; height: auto; display: block; max-width: 100%; }
+figcaption { font-size: 14px; color: var(--fg-2); margin-top: 8px; }
+.pat-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 8px 28px; align-items: start; }
+@media (max-width: 760px) { .pat-grid { grid-template-columns: 1fr; } }
+.spec { display: grid; grid-template-columns: max-content 1fr; gap: 5px 12px; font-size: 14.5px; margin: 10px 0 0; }
+.spec dt { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); padding-top: 3px; }
+.spec dd { margin: 0; }
+.rate { display: grid; grid-template-columns: repeat(3, auto); gap: 6px 18px; margin: 12px 0 0; font-size: 14px; justify-content: start; }
+.rate b { display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); font-weight: 500; }
+.dots { font-family: var(--font-mono); letter-spacing: 0.12em; color: var(--accent-2); font-size: 15px; }
+.contact { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin: 18px 0 6px; }
+.contact a { display: block; text-decoration: none; color: var(--fg); border: 1px solid var(--line); padding: 8px; border-radius: 4px; background: var(--bg-2); }
+.contact a:hover { border-color: var(--accent-2); }
+.contact a svg { width: 100%; height: auto; display: block; }
+.contact a span { display: block; font-family: var(--font-mono); font-size: 12px; margin-top: 6px; letter-spacing: 0.04em; }
+.toggle { display: inline-flex; gap: 0; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; margin: 6px 0 10px; }
+.toggle button { font: inherit; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.06em; padding: 7px 14px; border: 0; background: var(--bg-2); color: var(--fg-2); cursor: pointer; }
+.toggle button[aria-pressed="true"] { background: var(--accent-2); color: var(--bg); }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--fg-2); margin: 4px 0 10px; }
+.swatches i { display: inline-block; width: 14px; height: 14px; border-radius: 2px; vertical-align: -2px; margin-right: 6px; border: 1px solid var(--line); }
+.scroll { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; margin: 10px 0 16px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); font-weight: 500; }
+td.n, th.n { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td code, p code, li code, dd code { font-family: var(--font-mono); font-size: 13.5px; background: var(--bg-2); padding: 1px 5px; border-radius: 3px; }
+.note { border-left: 3px solid var(--accent); padding: 6px 14px; background: var(--bg-2); max-width: 72ch; }
+.pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin: 14px 0; }
+.pick div { border-top: 3px solid var(--accent-2); padding-top: 10px; }
+.pick b { font-family: var(--font-display); font-size: 24px; font-weight: 600; display: block; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+<header class="masthead">
+  <div class="eyebrow">Bloom wine rack &middot; companion note 3 &middot; Bauhaus front-plate variants</div>
+  <h1>Nine squares, nine circles<span>ten Bauhaus fronts for the same tiles</span></h1>
+  <p class="pitch">The Bauhaus direction, worked through. The bottle is the blue circle of Kandinsky's trio; the tile is the square; the lobes carry the triangle, the quarter-disc and the bar. Because each of the nine tiles is its own print, the rack can be nine different two-colour tiles from a five-colour palette on an H2D with no purge at all, and that is used here as a compositional tool.</p>
+</header>
+
+<section id="intro">
+  <div class="eyebrow">0 &middot; Vocabulary, palette, rules</div>
+  <h2>What is being drawn</h2>
+  <div class="pat-grid">
+    <div>
+      <p>Tile 110.53 mm square, pitch 110.83, seam 0.3, face opening 100 mm. The decorative field is four corner lobes (28 mm on the diagonal, 5.3 mm at mid-side) and a collar. All ten variants are flat two-colour-per-layer inlays printed face-down: the face is the first layer on textured PEI, every colour edge is crisp to 0.8 mm, and no material is added. Shapes stay outside r 53.5 from the bore centre, so nothing is cut mid-form by the flare.</p>
+      <p><b>Per-tile colour.</b> On the H2D each tile is body + one accent (two nozzles, zero purge), and different tiles can use different pairs. The whole rack can therefore show four or five colours while every plate stays two-colour. Three or more colours on one tile need the H2C (8 s hotend swaps on the first two layers only). Each variant states which.</p>
+      <p><b>Seams and nodes.</b> Figures either sit on the nodes (one quarter per tile, so adjacent tiles' colours meet and make the composition), run along the seams as bars that swallow them, or frame each tile deliberately so the seam reads as a drawn gap.</p>
+      <h3>Palette</h3>
+      <div class="toggle" role="group" aria-label="Palette"><button type="button" id="pal-primary" aria-pressed="true">Primaries</button><button type="button" id="pal-muted" aria-pressed="false">Muted</button></div>
+      <div class="swatches" id="sw-primary"><span><i style="background:var(--bh-red)"></i>red</span><span><i style="background:var(--bh-yellow)"></i>yellow</span><span><i style="background:var(--bh-blue)"></i>blue</span><span><i style="background:var(--bh-black)"></i>black</span><span><i style="background:var(--bh-white)"></i>off-white</span></div>
+      <p style="font-size:14.5px;color:var(--fg-2)" id="pal-note">Primaries: Bambu PLA Matte (tiles carry no load, so the weak layer bonding does not matter) in Scarlet Red, Lemon Yellow, Marine Blue, Charcoal and Ivory White; PETG HF white or black if a satin rather than matte face is wanted. Muted: Polymaker Panchroma Matte (ex-PolyTerra) in the nearest brick, ochre / mustard, slate grey and cream; walnut and marble stand in for black and white on the frame-based variants (Breuer, Seal, Stijl).</p>
+    </div>
+    <div>
+      <h3>Contact sheet</h3>
+      <div class="contact" id="contact"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 1 TRIO -->
+<section class="pat" id="p-trio">
+  <div class="eyebrow">01 &middot; kandinsky, point and line to plane (1926)</div>
+  <h2>Trio<small>Blue circle, red square, yellow triangle; the bottle is the circle</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="trio" data-view="grid" role="img" aria-label="Kandinsky trio on the full 3 by 3 front"></svg><figcaption>Full front, H2C. Every bore wears the blue ring; a quarter red square and a yellow triangle sit in opposite lobes, and the tiles rotate in turn so each node collects a different set of quarters.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="trio" data-view="tile" role="img" aria-label="Trio, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Source</dt><dd>Kandinsky's colour-form correspondence (Bauhaus questionnaire 1923): yellow triangle, red square, blue circle.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down.</dd>
+        <dt>Colours</dt><dd>4 per tile (H2C). Rack: 4. For the H2D see Rotation, which is this idea split one accent per tile.</dd>
+        <dt>Filament</dt><dd>PLA Matte Ivory White body, Marine Blue ring, Scarlet Red square, Lemon Yellow triangle.</dd>
+        <dt>Bore</dt><dd>Blue ring 3.5 mm at r 50.75 to 54.25: the ring is the circle, the bottle fills it.</dd>
+        <dt>Seams</dt><dd>Square quarters (14 mm) are node-centred; with rotation the node shows one to four red quarters. Triangles stop 1.5 mm from the edges.</dd>
+        <dt>Min feature</dt><dd>3.5 mm ring; triangle tip 1.5 mm from edge, 90 degree corner.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +6 min (four colours on the first two layers).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The literal reading of the brief, and the one most people will recognise as Bauhaus from across the room. Rotating identical tiles turns one composition into nine: at some nodes four red quarters close into a full 28 mm square, at others a single quarter faces a triangle. The seams run through the squares, which Kandinsky's own grids also do, but they are visible.</p>
+</section>
+
+<!-- 2 ROTATION -->
+<section class="pat" id="p-rotation">
+  <div class="eyebrow">02 &middot; layout: 3 x 3 colour rotation (H2D)</div>
+  <h2>Rotation<small>Each tile one accent; red, yellow and blue cycle along the diagonals</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="rotation" data-view="grid" role="img" aria-label="Rotation layout on the full 3 by 3 front"></svg><figcaption>Full front, H2D. Accent colour by (row + column) mod 3: red squares, yellow triangles, blue rings. Every tile is two colours; the rack is four.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="rotation" data-view="tile" role="img" aria-label="Rotation, one tile (red)"></svg></figure>
+      <dl class="spec">
+        <dt>Source</dt><dd>Kandinsky's trio distributed by Itten's colour-contrast exercises: one hue per tile, diagonal repetition.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down; three tile files (red, yellow, blue), three plates of three.</dd>
+        <dt>Colours</dt><dd>2 per tile. Rack: 4. H2D native, zero purge.</dd>
+        <dt>Filament</dt><dd>Ivory White body on all nine; one accent spool per plate.</dd>
+        <dt>Bore</dt><dd>Blue tiles: ring 3.5 mm. Red and yellow tiles: no ring, the bore is a plain hole with a 1 mm clearance band.</dd>
+        <dt>Seams</dt><dd>Red quarter squares and yellow triangles sit in opposite corners of their tiles so that, along each diagonal, like meets like at the node and the figures complete.</dd>
+        <dt>Min feature</dt><dd>14 mm squares, 24 mm triangles, 3.5 mm ring.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +3 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>This is the H2D's answer to Trio. The rack reads as a four-colour composition, every print is a two-colour print with one nozzle per colour, and three plates of three identical tiles is the simplest possible production. The only compromise is that six of nine bottles get no ring.</p>
+</section>
+
+<!-- 3 HOMAGE -->
+<section class="pat" id="p-homage">
+  <div class="eyebrow">03 &middot; albers, homage to the square (1950 onward)</div>
+  <h2>Homage<small>Nested squares on every node, offset downward as Albers set them</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="homage" data-view="grid" role="img" aria-label="Albers nested squares on the full 3 by 3 front"></svg><figcaption>Full front, H2C. Squares of 30, 21 and 12 mm centred on each node, the inner ones stepped 1.5 and 3 mm down; sixteen Homages, each shared by four tiles.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="homage" data-view="tile" role="img" aria-label="Homage, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Source</dt><dd>Josef Albers, Homage to the Square: three or four nested squares, bottom-weighted, tonal families.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down.</dd>
+        <dt>Colours</dt><dd>4 per tile (H2C). H2D fallback: outer and inner square in the accent, middle square in the body colour (a square ring and a dot), 2 per tile.</dd>
+        <dt>Filament</dt><dd>Ivory White body; yellow, red, black squares. In the muted set: cream, ochre, brick, slate, which is closer to Albers' own tonal sets.</dd>
+        <dt>Bore</dt><dd>Black ring 2.5 mm at r 52.5; the outer square's corner is 3.4 mm clear of it.</dd>
+        <dt>Seams</dt><dd>Both seams cross every Homage through its centre; the downward offset makes the lower tiles carry more of each figure.</dd>
+        <dt>Min feature</dt><dd>Inner square 12 mm; 1.5 mm steps between squares.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +6 min (H2C) / +3 min (H2D fallback).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Albers is the quietest Bauhaus voice and the one that works best in the muted palette: the three tones only need to be close, and matte filaments in cream, ochre and brick give exactly the dry surface his paintings have. The seams through the centre of every square are the cost; Albers' squares are painted edge to edge and a cross through them is not in the source.</p>
+</section>
+
+<!-- 4 BAYER -->
+<section class="pat" id="p-bayer">
+  <div class="eyebrow">04 &middot; bayer, quarter-circles and discs; layout: single diagonal accent</div>
+  <h2>Bayer<small>A large and a small quarter-disc per tile, red on the diagonal, black elsewhere</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="bayer" data-view="grid" role="img" aria-label="Bayer quarter-disc composition on the full 3 by 3 front"></svg><figcaption>Full front, H2D. Tiles rotate in turn; the three diagonal tiles are printed in red, the six others in black. Every tile is two colours.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="bayer" data-view="tile" role="img" aria-label="Bayer, one tile (red)"></svg></figure>
+      <dl class="spec">
+        <dt>Source</dt><dd>Herbert Bayer's 1920s poster and cover geometry (Bauhaus Dessau, Kandinsky exhibition poster 1926): quarter-circles, half-discs and a ring, asymmetrically placed.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down; two tile files (red, black), identical geometry.</dd>
+        <dt>Colours</dt><dd>2 per tile. Rack: 3. H2D native.</dd>
+        <dt>Filament</dt><dd>Ivory White body; Scarlet Red or Charcoal accent. Muted: cream with brick / slate.</dd>
+        <dt>Bore</dt><dd>Ring 2.5 mm at r 52.5 in the tile's accent; the big quarter-disc (r 24) is 0.7 mm clear of the clearance band on the diagonal.</dd>
+        <dt>Seams</dt><dd>Quarter-discs are node-centred; rotation makes each node a different Bayer corner (two discs of different radii, a disc and a gap, and so on).</dd>
+        <dt>Min feature</dt><dd>13 mm small disc, 2.5 mm ring.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +3 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Bayer's compositions are built from exactly the pieces this tile has room for, and the single diagonal of red is the most economical colour statement on the page: three red tiles, six black, one body spool. Where quarter-discs of different sizes meet at a node the result looks designed, not tiled, and the bores read as the largest discs in the set.</p>
+</section>
+
+<!-- 5 MOHOLY -->
+<section class="pat" id="p-moholy">
+  <div class="eyebrow">05 &middot; moholy-nagy, diagonals and overlapping discs</div>
+  <h2>Moholy<small>Diagonal bars that close into diamonds around every node; two discs overlapping in a third tone</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="moholy" data-view="grid" role="img" aria-label="Moholy-Nagy composition on the full 3 by 3 front"></svg><figcaption>Full front, H2C. A 3 mm black bar cuts each lobe at 45 degrees; four bars make a diamond on each node. A red and a yellow disc overlap in orange, as if translucent.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="moholy" data-view="tile" role="img" aria-label="Moholy, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Source</dt><dd>Moholy-Nagy's paintings and photograms of the 1920s (A XX, Composition A II): diagonals, transparent overlapping discs, black bars.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down. The overlap is a fourth colour (orange) printed as its own region. On the H2D: bar and disc in one accent, the small disc as a body-coloured hole in the large one.</dd>
+        <dt>Colours</dt><dd>5 per tile (H2C); 2 per tile on the H2D (loses the overlap).</dd>
+        <dt>Filament</dt><dd>Ivory White, Charcoal bars, Scarlet Red and Lemon Yellow discs, an orange matte for the lens. Translucent PETG discs are the literal option on a lit rack.</dd>
+        <dt>Bore</dt><dd>Black ring 2.5 mm at r 52.5; the bars pass 1.9 mm outside the clearance band.</dd>
+        <dt>Seams</dt><dd>Bars leave each tile at 30 mm from the corner on both edges and continue on the neighbour, so the seams are crossed by a bar at every node; the diamonds hide them.</dd>
+        <dt>Min feature</dt><dd>3 mm bar; the orange lens is 4.6 mm wide at its widest.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +7 min (H2C) / +3 min (H2D).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The diagonal is the one Bauhaus move that the square grid of tiles resists, so it is used where the grid allows it: across the lobes, where four tiles' bars close into a diamond that frames each node. The overlapping discs are the Moholy signature; printing the overlap as a mixed colour is honest about the medium (filament is not translucent) and reads correctly from a metre away.</p>
+</section>
+
+<!-- 6 STOLZL -->
+<section class="pat" id="p-stolzl">
+  <div class="eyebrow">06 &middot; stolzl, woven stripe blocks</div>
+  <h2>Stolzl<small>Horizontal stripe sets with a shifted block, the way a wall hanging steps</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="stolzl" data-view="grid" role="img" aria-label="Stolzl stripe blocks on the full 3 by 3 front"></svg><figcaption>Full front, H2C. The stripe set repeats twice per pitch; in the left 32 mm of every tile the colours swap and the set shifts 10 mm, so a block boundary stands 32 mm right of each column seam.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="stolzl" data-view="tile" role="img" aria-label="Stolzl, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Source</dt><dd>Gunta Stolzl's weaving workshop pieces (Schlitzgobelin 1927-28, the 5 Choere hangings): stripe bands of unequal width, colour-swapped blocks, slit boundaries.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down.</dd>
+        <dt>Colours</dt><dd>3 per tile (H2C); 2 on the H2D (the second stripe colour becomes the body, so the block reads as a slit).</dd>
+        <dt>Filament</dt><dd>Ivory White body, Scarlet Red and Marine Blue stripes. Muted: cream with brick and slate, or walnut with marble and ochre, which is closest to the original wool.</dd>
+        <dt>Bore</dt><dd>Clearance disc r 54 in the body colour, black ring 2.5 mm at r 52.5: the bottle interrupts the weave like a hole cut in cloth.</dd>
+        <dt>Seams</dt><dd>Stripes run through the column seams; the stripe set has period P/2, so the row seams fall on a stripe boundary.</dd>
+        <dt>Min feature</dt><dd>2 mm stripes; 10 mm block shift.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +5 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The weaving workshop was the Bauhaus's most commercially successful, and its stripe language sits better in a kitchen than the painters' primaries do. The stripes carry the eye across the column seams and the block boundaries give the front a rhythm the bores do not break. In walnut and marble with an ochre third stripe it is the warmest front on the page.</p>
+</section>
+
+<!-- 7 SCHLEMMER -->
+<section class="pat" id="p-schlemmer">
+  <div class="eyebrow">07 &middot; schlemmer, figure abstractions</div>
+  <h2>Schlemmer<small>Four dancers to a node: a head, a cone, a foot</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="schlemmer" data-view="grid" role="img" aria-label="Schlemmer figures on the full 3 by 3 front"></svg><figcaption>Full front, H2C. Each lobe holds a 20 mm figure on the diagonal; four meet at every node, heads outward, like the Triadic Ballet's circle dances.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="schlemmer" data-view="tile" role="img" aria-label="Schlemmer, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Source</dt><dd>Oskar Schlemmer's Triadic Ballet costumes and the Bauhaus Stairway: the figure as disc, cone and bar.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down.</dd>
+        <dt>Colours</dt><dd>3 per tile (H2C); 2 on the H2D (head, cone and foot all in one accent).</dd>
+        <dt>Filament</dt><dd>Ivory White body, Charcoal head and foot, Scarlet Red cone.</dd>
+        <dt>Bore</dt><dd>Black ring 2.5 mm at r 52.5; the head (r 3.5 at 21 mm) is 0.2 mm clear of the clearance band.</dd>
+        <dt>Seams</dt><dd>Figures stay inside their lobes; the seams pass between dancers, 1.4 mm from the nearest foot.</dd>
+        <dt>Min feature</dt><dd>Cone apex 1.6 mm; foot bar 3 x 2 mm.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +5 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9675;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9675;&#9675;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>Included because Schlemmer is the Bauhaus and because a lobe is the shape of a cone. At 20 mm the figures are small, and from a distance the front reads as a lattice of pinwheels rather than dancers; it is the most literal and the least architectural variant, better as a single accent tile in another layout than as all nine.</p>
+</section>
+
+<!-- 8 BREUER -->
+<section class="pat" id="p-breuer">
+  <div class="eyebrow">08 &middot; breuer, tubular steel; layout: one odd tile</div>
+  <h2>Breuer<small>A bent-tube frame around each tile, a cantilever arc in one corner, the centre tile inverted</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="breuer" data-view="grid" role="img" aria-label="Breuer tube frames on the full 3 by 3 front"></svg><figcaption>Full front. Each tile is framed by a 2.6 mm tube with 10 mm bends, 2 mm inside its edge; the centre tile is printed black with a white tube. Red arcs are the H2C extra.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="breuer" data-view="tile" role="img" aria-label="Breuer, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Source</dt><dd>Marcel Breuer's B3 (Wassily) and B33 cantilever: a continuous bent tube drawn as a rounded rectangle, with a circle (the seat) inside it.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down; or the tube as a 1 mm half-round relief, which is closest to the source.</dd>
+        <dt>Colours</dt><dd>2 per tile (frame only) on the H2D; 3 with the red arc (H2C). Rack: 3 with the inverted centre tile.</dd>
+        <dt>Filament</dt><dd>Ivory White body with Charcoal tube (centre tile reversed); PETG HF black has the satin of chromed steel. Muted: walnut body, marble tube.</dd>
+        <dt>Bore</dt><dd>No separate ring: the tube passes 2 mm outside the face opening at mid-side, so the bore is the circle inside the frame, as the seat is inside the B3.</dd>
+        <dt>Seams</dt><dd>Framed deliberately: two tubes and the gap make a 4.3 mm double line along every seam. The seam is part of the drawing.</dd>
+        <dt>Min feature</dt><dd>2.6 mm tube; 2 mm body margin to the flare at mid-side.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +3 min (inlay); +1.4 g, +5 min (relief tube).</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The furniture answer. A tube frame per tile turns the nine-piece front into nine framed objects, which is how Breuer's chairs sit in a room anyway, and the one black tile in the middle is the simplest odd-tile layout: it costs nothing and gives the rack a centre. If the relief option is chosen, a half-round tube catches light along its length and looks like steel from any angle.</p>
+</section>
+
+<!-- 9 SEAL -->
+<section class="pat" id="p-seal">
+  <div class="eyebrow">09 &middot; schlemmer's bauhaus seal (1922)</div>
+  <h2>Seal<small>Circle in square: the seal's construction, with a red disc at every node</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="seal" data-view="grid" role="img" aria-label="Bauhaus seal geometry on the full 3 by 3 front"></svg><figcaption>Full front, H2C. A 1.5 mm square frame touches a 2 mm ring at the four mid-sides on every tile; four red quarter-discs make an 18 mm disc on every node.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="seal" data-view="tile" role="img" aria-label="Seal, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Source</dt><dd>The 1922 Bauhaus seal by Oskar Schlemmer: a circle inscribed in a square, a stepped profile, the red disc of the eye; the earlier Rohl seal's star of points is not used.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down.</dd>
+        <dt>Colours</dt><dd>3 per tile (H2C). H2D: frame and ring in the accent, drop the disc or print it in the same colour (2 per tile).</dd>
+        <dt>Filament</dt><dd>Ivory White body, Charcoal frame and ring, Scarlet Red discs. Muted: cream, slate, brick; or marble body with walnut lines.</dd>
+        <dt>Bore</dt><dd>Ring 2 mm at r 51.5 kisses the frame at the mid-sides (0.5 mm gap): the circle-in-square of the seal, with the bottle as the circle.</dd>
+        <dt>Seams</dt><dd>Framed deliberately: the 1.5 mm frames flank each seam (gap 3.3 mm); the node disc is node-centred and crossed by both seams.</dd>
+        <dt>Min feature</dt><dd>1.5 mm frame, 0.5 mm gap between ring and frame (reads as a kiss, prints as a merge at 0.4 mm nozzle, acceptable).</dd>
+        <dt>Extra per tile</dt><dd>0 g, +5 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9675;</span></div></div>
+    </div>
+  </div>
+  <p>The seal is a circle inscribed in a square, and a 100 mm bore in a 110 mm tile is almost exactly that. Drawn as line work it is the most restrained variant on the page and the one a visitor is least likely to call "colourful"; the red disc at each node is the single accent that makes it Bauhaus rather than architectural.</p>
+</section>
+
+<!-- 10 STIJL -->
+<section class="pat" id="p-stijl">
+  <div class="eyebrow">10 &middot; de stijl contrast; layout: colour fields</div>
+  <h2>Stijl<small>Black bars along every seam, tile bodies as the colour fields</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="stijl" data-view="grid" role="img" aria-label="De Stijl bars and fields on the full 3 by 3 front"></svg><figcaption>Full front, H2D. Each tile carries a 3 mm black bar along its top and left edge, so every seam lies under a bar; the tile body is the field colour: red, blue and yellow once each, off-white six times.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="stijl" data-view="tile" role="img" aria-label="Stijl, one tile (red field)"></svg></figure>
+      <dl class="spec">
+        <dt>Source</dt><dd>Mondrian and van Doesburg: black bars on a white ground with primary fields. Included as the strict grid against which the Bauhaus variants read as composed.</dd>
+        <dt>Made</dt><dd>Flat inlay, face-down. Four tile files that differ only in body colour; bars and ring in black on all.</dd>
+        <dt>Colours</dt><dd>2 per tile. Rack: 5. H2D native, zero purge.</dd>
+        <dt>Filament</dt><dd>Charcoal bars and rings; bodies in Ivory White, Scarlet Red, Marine Blue, Lemon Yellow. Muted: cream, brick, slate, ochre with walnut bars.</dd>
+        <dt>Bore</dt><dd>Black ring 2.5 mm at r 52.5 merges with the bar at mid-side: the line touches the circle, as Mondrian's lines meet.</dd>
+        <dt>Seams</dt><dd>Every seam sits inside a 3 mm bar (the bar is on one side only, the gap on the bar's edge). The outer right and bottom edges of the rack get bars too, from the last column and row.</dd>
+        <dt>Min feature</dt><dd>3 mm bars; 2.3 mm body between bar and flare at mid-side.</dd>
+        <dt>Extra per tile</dt><dd>0 g, +3 min.</dd>
+      </dl>
+      <div class="rate"><div><b>Looks</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Printability</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div><div><b>Hides seams</b><span class="dots">&#9679;&#9679;&#9679;&#9679;&#9679;</span></div></div>
+    </div>
+  </div>
+  <p>The one variant where the seams disappear completely: each sits under a black bar, and the bars are the design. Using the tile body as the colour field is the cleanest use of nine separate prints, because a red tile is just the same file with a different spool in nozzle one. It is De Stijl rather than Bauhaus strictly, which is why it is last; it is also the highest-scoring front on the page.</p>
+</section>
+
+<section id="compare">
+  <div class="eyebrow">11 &middot; Comparison</div>
+  <h2>Side by side</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>#</th><th>Variant</th><th>Source</th><th>Layout</th><th class="n">Col / tile</th><th class="n">Col / rack</th><th>Printer</th><th class="n">Min mm</th><th class="n">+min</th><th class="n">Looks</th><th class="n">Print</th><th class="n">Hides</th><th class="n">Total</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Trio</td><td>Kandinsky</td><td>rotation of identical tiles</td><td class="n">4</td><td class="n">4</td><td>H2C</td><td class="n">3.5</td><td class="n">6</td><td class="n">5</td><td class="n">4</td><td class="n">3</td><td class="n">12</td></tr>
+      <tr><td class="n">2</td><td>Rotation</td><td>Kandinsky / Itten</td><td>3 x 3 colour rotation</td><td class="n">2</td><td class="n">4</td><td>H2D</td><td class="n">3.5</td><td class="n">3</td><td class="n">4</td><td class="n">5</td><td class="n">3</td><td class="n">12</td></tr>
+      <tr><td class="n">3</td><td>Homage</td><td>Albers</td><td>uniform</td><td class="n">4 (2)</td><td class="n">4 (2)</td><td>H2C (H2D fallback)</td><td class="n">12</td><td class="n">6 (3)</td><td class="n">4</td><td class="n">4</td><td class="n">3</td><td class="n">11</td></tr>
+      <tr><td class="n">4</td><td>Bayer</td><td>Bayer</td><td>single diagonal accent + rotation</td><td class="n">2</td><td class="n">3</td><td>H2D</td><td class="n">2.5</td><td class="n">3</td><td class="n">5</td><td class="n">5</td><td class="n">3</td><td class="n">13</td></tr>
+      <tr><td class="n">5</td><td>Moholy</td><td>Moholy-Nagy</td><td>rotation</td><td class="n">5 (2)</td><td class="n">5 (2)</td><td>H2C (H2D loses overlap)</td><td class="n">3.0</td><td class="n">7 (3)</td><td class="n">4</td><td class="n">3</td><td class="n">4</td><td class="n">11</td></tr>
+      <tr><td class="n">6</td><td>Stolzl</td><td>Stolzl</td><td>uniform</td><td class="n">3 (2)</td><td class="n">3 (2)</td><td>H2C (H2D slit version)</td><td class="n">2.0</td><td class="n">5</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">12</td></tr>
+      <tr><td class="n">7</td><td>Schlemmer</td><td>Schlemmer</td><td>uniform</td><td class="n">3 (2)</td><td class="n">3 (2)</td><td>H2C (H2D one accent)</td><td class="n">1.6</td><td class="n">5</td><td class="n">3</td><td class="n">4</td><td class="n">2</td><td class="n">9</td></tr>
+      <tr><td class="n">8</td><td>Breuer</td><td>Breuer</td><td>one odd tile</td><td class="n">2 (3)</td><td class="n">3 (4)</td><td>H2D (arc needs H2C)</td><td class="n">2.6</td><td class="n">3</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">13</td></tr>
+      <tr><td class="n">9</td><td>Seal</td><td>Schlemmer seal</td><td>uniform</td><td class="n">3 (2)</td><td class="n">3 (2)</td><td>H2C (H2D no disc)</td><td class="n">1.5</td><td class="n">5</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">12</td></tr>
+      <tr><td class="n">10</td><td>Stijl</td><td>De Stijl</td><td>colour fields</td><td class="n">2</td><td class="n">5</td><td>H2D</td><td class="n">3.0</td><td class="n">3</td><td class="n">5</td><td class="n">5</td><td class="n">5</td><td class="n">15</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14px;color:var(--fg-2)">All variants are flat inlays: 0 g extra per tile; minutes are colour-change overhead on the first two layers against the 38 g, 48 min base tile (H2C swaps 8 s each; H2D is two nozzles, so two colours cost nothing beyond the prime line). Bracketed values are the H2D version. Col / rack counts the body colours too. Nothing has been printed; ratings are a designer's estimate.</p>
+  <h3>Which layouts need an H2C</h3>
+  <ul>
+    <li><b>H2D, zero purge:</b> Rotation, Bayer, Stijl, Breuer without the red arc. Any layout where each tile is body + one accent, including nine tiles in nine different pairs.</li>
+    <li><b>H2C only:</b> Trio (four colours on one tile), Moholy's orange overlap, Stolzl's two stripe colours, Schlemmer's two-colour figure, Seal's red disc, Homage in three tones. Each has a stated two-colour fallback.</li>
+    <li><b>H2D with AMS purge (not recommended):</b> any of the H2C variants at three colours costs roughly 5 g and 4 min per colour change per tile; on nine tiles that is an extra spool's worth of waste for a first-layer effect.</li>
+  </ul>
+</section>
+
+<section id="pick">
+  <div class="eyebrow">12 &middot; Recommendation</div>
+  <h2>Top three</h2>
+  <div class="pick">
+    <div><b>1. Stijl</b><p>Seams gone under the bars, five colours on the rack from two-colour prints, four files that differ only by spool. The strictest grid on the page and the one that uses the nine separate tiles most honestly. Switch to the muted set and walnut bars if primaries are too loud.</p></div>
+    <div><b>2. Bayer</b><p>The most Bauhaus-looking front that the H2D prints natively: quarter-discs that compose differently at every node, a ring on every bottle, and one red diagonal as the whole colour budget. Three red tiles, six black, done.</p></div>
+    <div><b>3. Breuer</b><p>The furniture reading. A tube frame per tile makes the seams a drawn double line, the inverted centre tile gives the rack a focus for free, and as a half-round relief it is the only variant that looks like a material rather than a print.</p></div>
+  </div>
+  <p>If the H2C is available, <b>Trio</b> is the literal brief and <b>Stolzl</b> the warmest; <b>Seal</b> is the quiet one for a room that must stay calm. <b>Rotation</b> is Trio for the H2D and the easiest production run on the page.</p>
+  <div class="note"><p style="margin:0"><b>Before modelling:</b> print one Ivory White tile with Charcoal bars (the Stijl file) and one with a Scarlet Red quarter-disc (the Bayer file), face-down, and look at the textured-PEI finish on the matte filaments in the room. Every variant on this page lives or dies on that one surface.</p></div>
+</section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  // ---- shared geometry (mm) ----
+  var P = 110.8333, TG = 0.3, TW = P - TG, H = TW / 2, GAP = 1.25, RB = 46, RF = 50;
+  var D2 = Math.PI / 180, uid = 0;
+  var CORNERS = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+  function f2(v) { return (Math.round(v * 100) / 100).toString(); }
+  function pt(r, a) { return [r * Math.cos(a * D2), r * Math.sin(a * D2)]; }
+  function polyEl(g, pts, attrs) { attrs.points = pts.map(function (p) { return f2(p[0]) + "," + f2(p[1]); }).join(" "); return el("polygon", attrs, g); }
+  function ring(g, r, w, col) { return el("circle", {cx: 0, cy: 0, r: r, fill: "none", stroke: col, "stroke-width": w}, g); }
+  function disc(g, r, col) { return el("circle", {cx: 0, cy: 0, r: r, fill: col}, g); }
+  function arc(g, cx, cy, r, a1, a2, attrs) {
+    var p1 = pt(r, a1), p2 = pt(r, a2), large = (a2 - a1) > 180 ? 1 : 0;
+    attrs.d = "M" + f2(cx + p1[0]) + " " + f2(cy + p1[1]) + "A" + f2(r) + " " + f2(r) + " 0 " + large + " 1 " + f2(cx + p2[0]) + " " + f2(cy + p2[1]);
+    attrs.fill = "none";
+    return el("path", attrs, g);
+  }
+  var C = {red: "var(--bh-red)", yellow: "var(--bh-yellow)", blue: "var(--bh-blue)", black: "var(--bh-black)", white: "var(--bh-white)", orange: "var(--bh-orange)"};
+  function rc(idx) { return [Math.floor(idx / 3), idx % 3]; }
+  function cf(c) { return function (p) { return [c[0] * (H - p[0]), c[1] * (H - p[1])]; }; } // corner frame: u along x from the corner, v along y
+  function qSquare(g, c, s, col) { el("rect", {x: f2(c[0] > 0 ? H - s : -H), y: f2(c[1] > 0 ? H - s : -H), width: s, height: s, fill: col}, g); }
+  function qDisc(g, c, r, col) { el("circle", {cx: f2(c[0] * H), cy: f2(c[1] * H), r: r, fill: col}, g); }
+  function tri(g, c, leg, inset, col) { var M = cf(c); polyEl(g, [M([inset, inset]), M([inset + leg, inset]), M([inset, inset + leg])], {fill: col}); }
+
+  function drawTile(parent, spec, idx, rot) {
+    var body = (typeof spec.body === "function") ? spec.body(idx) : spec.body;
+    var g = el("g", {}, parent);
+    var id = "clip" + (uid++);
+    var cp = el("clipPath", {id: id}, g);
+    el("rect", {x: -H, y: -H, width: TW, height: TW}, cp);
+    var gi = el("g", {"clip-path": "url(#" + id + ")"}, g);
+    el("rect", {x: -H - 1, y: -H - 1, width: TW + 2, height: TW + 2, fill: body}, gi);
+    var gp = el("g", {transform: "rotate(" + (rot || 0) + ")"}, gi);
+    spec.draw(gp, idx, body);
+    el("circle", {cx: 0, cy: 0, r: RF, fill: body}, gi);
+    el("circle", {cx: 0, cy: 0, r: (RF + RB) / 2, fill: "none", stroke: "var(--shade)", "stroke-width": RF - RB}, gi);
+    el("circle", {cx: 0, cy: 0, r: RB, fill: "var(--bore)"}, gi);
+    return g;
+  }
+  function renderGrid(svg, spec) {
+    svg.setAttribute("viewBox", "-1 -1 337 337");
+    el("rect", {x: -1, y: -1, width: 337, height: 337, fill: "var(--seam)"}, svg);
+    for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) {
+      var idx = r * 3 + c;
+      var g = el("g", {transform: "translate(" + f2(GAP + P * (c + 0.5)) + " " + f2(GAP + P * (r + 0.5)) + ")"}, svg);
+      drawTile(g, spec, idx, spec.rotate ? spec.rotate(idx) : 0);
+    }
+  }
+  function renderTile(svg, spec) {
+    svg.setAttribute("viewBox", "-59 -59 118 118");
+    el("rect", {x: -59, y: -59, width: 118, height: 118, fill: "var(--bg-2)"}, svg);
+    el("rect", {x: -H - TG, y: -H - TG, width: TW + 2 * TG, height: TW + 2 * TG, fill: "var(--seam)"}, svg);
+    drawTile(el("g", {}, svg), spec, spec.closeupIdx || 0, 0);
+  }
+  function rot90(i) { return (i * 90) % 360; }
+
+  // ---- 1 trio (H2C) ----
+  var trio = {body: C.white, rotate: rot90, draw: function (g) {
+    ring(g, 52.5, 3.5, C.blue);
+    qSquare(g, [1, 1], 14, C.red);
+    tri(g, [-1, -1], 24, 1.5, C.yellow);
+  }};
+
+  // ---- 2 rotation (H2D) ----
+  var rotation = {body: C.white, draw: function (g, idx) {
+    var p = rc(idx), k = (p[0] + p[1]) % 3;
+    if (k === 0) { qSquare(g, [1, 1], 14, C.red); qSquare(g, [-1, -1], 14, C.red); }
+    else if (k === 1) { tri(g, [1, -1], 24, 1.5, C.yellow); tri(g, [-1, 1], 24, 1.5, C.yellow); }
+    else ring(g, 52.5, 3.5, C.blue);
+  }};
+
+  // ---- 3 homage (Albers) ----
+  var homage = {body: C.white, draw: function (g) {
+    CORNERS.forEach(function (c) {
+      var cx = c[0] * H, cy = c[1] * H;
+      [[15, 0, C.yellow], [10.5, 1.5, C.red], [6, 3, C.black]].forEach(function (s) {
+        el("rect", {x: f2(cx - s[0]), y: f2(cy - s[0] + s[1]), width: 2 * s[0], height: 2 * s[0], fill: s[2]}, g);
+      });
+    });
+    ring(g, 52.5, 2.5, C.black);
+  }};
+
+  // ---- 4 bayer (diagonal accent, H2D) ----
+  var bayer = {body: C.white, rotate: rot90, draw: function (g, idx) {
+    var p = rc(idx), col = (p[0] === p[1]) ? C.red : C.black;
+    ring(g, 52.5, 2.5, col);
+    qDisc(g, [1, 1], 24, col);
+    qDisc(g, [-1, -1], 13, col);
+  }};
+
+  // ---- 5 moholy ----
+  var moholy = {body: C.white, rotate: rot90, draw: function (g) {
+    var M = cf([1, 1]), r1 = M([9, 9]), r2 = M([20, 5]);
+    el("circle", {cx: f2(r1[0]), cy: f2(r1[1]), r: 10, fill: C.red}, g);
+    el("circle", {cx: f2(r2[0]), cy: f2(r2[1]), r: 7, fill: C.yellow}, g);
+    var id = "lens" + (uid++), cp = el("clipPath", {id: id}, g);
+    el("circle", {cx: f2(r1[0]), cy: f2(r1[1]), r: 10}, cp);
+    el("circle", {cx: f2(r2[0]), cy: f2(r2[1]), r: 7, fill: C.orange, "clip-path": "url(#" + id + ")"}, g);
+    CORNERS.forEach(function (c) {
+      var Mc = cf(c), a = Mc([0, 30]), b = Mc([30, 0]);
+      el("line", {x1: f2(a[0]), y1: f2(a[1]), x2: f2(b[0]), y2: f2(b[1]), stroke: C.black, "stroke-width": 3}, g);
+    });
+    ring(g, 52.5, 2.5, C.black);
+  }};
+
+  // ---- 6 stolzl ----
+  var stolzl = {body: C.white, draw: function (g) {
+    var seq = [[0, 3, 0], [5, 2, 0], [9, 8, 0], [20, 3, 1], [25, 8, 0], [36, 2, 1], [40, 5, 0], [48, 3, 0]], per = P / 2, cols = [C.red, C.blue], bx = -H + 32;
+    for (var k = -1; k <= 1; k++) seq.forEach(function (s) {
+      var y = -P / 2 + k * per + s[0];
+      el("rect", {x: f2(bx), y: f2(y), width: f2(H + 1 - bx), height: s[1], fill: cols[s[2]]}, g);
+      el("rect", {x: -H - 1, y: f2(y + 10), width: f2(bx + H + 1), height: s[1], fill: cols[1 - s[2]]}, g);
+    });
+    disc(g, 54, C.white); ring(g, 52.5, 2.5, C.black);
+  }};
+
+  // ---- 7 schlemmer ----
+  var schlemmer = {body: C.white, draw: function (g) {
+    CORNERS.forEach(function (c) {
+      var ang = Math.atan2(-c[1], -c[0]) / D2;
+      var gg = el("g", {transform: "translate(" + f2(c[0] * H) + " " + f2(c[1] * H) + ") rotate(" + f2(ang) + ")"}, g);
+      el("circle", {cx: 21, cy: 0, r: 3.5, fill: C.black}, gg);
+      polyEl(gg, [[17, -0.8], [17, 0.8], [7, 4.2], [7, -4.2]], {fill: C.red});
+      el("rect", {x: 3, y: -1, width: 3, height: 2, fill: C.black}, gg);
+    });
+    ring(g, 52.5, 2.5, C.black);
+  }};
+
+  // ---- 8 breuer (odd centre tile) ----
+  var breuer = {body: function (idx) { return idx === 4 ? C.black : C.white; }, draw: function (g, idx) {
+    var tube = idx === 4 ? C.white : C.black, s = H - 2;
+    el("rect", {x: f2(-s), y: f2(-s), width: f2(2 * s), height: f2(2 * s), rx: 10, ry: 10, fill: "none", stroke: tube, "stroke-width": 2.6}, g);
+    arc(g, H, H, 20, 180, 270, {stroke: C.red, "stroke-width": 2.6});
+  }};
+
+  // ---- 9 seal ----
+  var seal = {body: C.white, draw: function (g) {
+    var s = H - 1.5;
+    el("rect", {x: f2(-s), y: f2(-s), width: f2(2 * s), height: f2(2 * s), fill: "none", stroke: C.black, "stroke-width": 1.5}, g);
+    ring(g, 51.5, 2, C.black);
+    CORNERS.forEach(function (c) { qDisc(g, c, 9, C.red); });
+  }};
+
+  // ---- 10 stijl (colour fields) ----
+  var fields = [C.red, C.white, C.white, C.white, C.white, C.blue, C.white, C.yellow, C.white];
+  var stijl = {body: function (idx) { return fields[idx]; }, draw: function (g, idx) {
+    var b = 3;
+    el("rect", {x: -H - 1, y: -H - 1, width: TW + 2, height: b + 1, fill: C.black}, g);
+    el("rect", {x: -H - 1, y: -H - 1, width: b + 1, height: TW + 2, fill: C.black}, g);
+    if (idx % 3 === 2) el("rect", {x: f2(H - b), y: -H - 1, width: b + 1, height: TW + 2, fill: C.black}, g);
+    if (idx >= 6) el("rect", {x: -H - 1, y: f2(H - b), width: TW + 2, height: b + 1, fill: C.black}, g);
+    ring(g, 52.5, 2.5, C.black);
+  }};
+
+  var specs = {trio: trio, rotation: rotation, homage: homage, bayer: bayer, moholy: moholy, stolzl: stolzl, schlemmer: schlemmer, breuer: breuer, seal: seal, stijl: stijl};
+  var order = [["trio", "01 Trio", "p-trio"], ["rotation", "02 Rotation", "p-rotation"], ["homage", "03 Homage", "p-homage"], ["bayer", "04 Bayer", "p-bayer"], ["moholy", "05 Moholy", "p-moholy"], ["stolzl", "06 Stolzl", "p-stolzl"], ["schlemmer", "07 Schlemmer", "p-schlemmer"], ["breuer", "08 Breuer", "p-breuer"], ["seal", "09 Seal", "p-seal"], ["stijl", "10 Stijl", "p-stijl"]];
+
+  var contact = document.getElementById("contact");
+  if (contact) order.forEach(function (o) {
+    var a = document.createElement("a"); a.href = "#" + o[2];
+    var s = el("svg", {role: "img", "aria-label": o[1]}, a);
+    renderGrid(s, specs[o[0]]);
+    var sp = document.createElement("span"); sp.textContent = o[1]; a.appendChild(sp);
+    contact.appendChild(a);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("svg[data-pat]"), function (svg) {
+    var spec = specs[svg.getAttribute("data-pat")];
+    if (!spec) return;
+    if (svg.getAttribute("data-view") === "tile") renderTile(svg, spec); else renderGrid(svg, spec);
+  });
+
+  // ---- palette toggle (a different spool set, not a theme) ----
+  var bp = document.getElementById("pal-primary"), bm = document.getElementById("pal-muted");
+  function setPal(muted) {
+    if (muted) document.documentElement.setAttribute("data-palette", "muted"); else document.documentElement.removeAttribute("data-palette");
+    bp.setAttribute("aria-pressed", muted ? "false" : "true");
+    bm.setAttribute("aria-pressed", muted ? "true" : "false");
+    try { localStorage.setItem("bloom-bauhaus-palette", muted ? "muted" : "primary"); } catch (e) {}
+  }
+  if (bp && bm) {
+    bp.addEventListener("click", function () { setPal(false); });
+    bm.addEventListener("click", function () { setPal(true); });
+    var saved = null;
+    try { saved = localStorage.getItem("bloom-bauhaus-palette"); } catch (e) {}
+    if (saved === "muted") setPal(true);
+  }
+})();
+</script>
