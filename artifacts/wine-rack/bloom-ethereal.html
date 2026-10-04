@@ -1,0 +1,713 @@
+<title>Bloom Ethereal Patterns</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400;1,6..96,500&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Fourth companion page to bloom.html: ethereal fronts made by form and light, never by colour fades.
+   Filament and light tokens (--fil-*, --night, --glow) are physical and stay identical in both themes;
+   lit renderings sit on the --night ground regardless of the page theme. */
+:root {
+  --bg: #edf0ea;
+  --bg-2: #e2e7df;
+  --fg: #1c211d;
+  --fg-2: #4a534c;
+  --line: #c3cbbf;
+  --accent: #5b3a22;
+  --accent-2: #8a6a1e;
+  --night: #0b0d12;
+  --tile-lit: #2b3340;
+  --glow: #ffd58a;
+  --fil-frost: #e9e4d6;
+  --ghost: #8d8a80;
+  --fil-sky: #c9d6e3;
+  --fil-cloud: #fbfaf6;
+  --fil-pearl: #f1ece6;
+  --fil-galaxy: #1e2440;
+  --fil-glow-day: #e3ecc4;
+  --fil-glow-night: #cff5b4;
+  --fil-matte: #bfc3c9;
+  --fil-ash: #8e918c;
+  --fil-ash-lit: #16181c;
+  --bore: #1d1f1d;
+  --seam: #2a2d2a;
+  --shade: rgba(0, 0, 0, 0.2);
+  --font-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --font-body: "Source Sans 3", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171a17; --bg-2: #1f241f; --fg: #e6e4dc; --fg-2: #a7ada5; --line: #39413a;
+    --accent: #c08a58; --accent-2: #d1ab52; --seam: #0d0f0d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171a17; --bg-2: #1f241f; --fg: #e6e4dc; --fg-2: #a7ada5; --line: #39413a;
+  --accent: #c08a58; --accent-2: #d1ab52; --seam: #0d0f0d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 17px; line-height: 1.5; margin: 0; padding-inline: 16px; padding-block: 0 64px; }
+.wrap { max-width: 1040px; margin: 0 auto; }
+header.masthead { padding-block: 40px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-2); }
+h1 { font-family: var(--font-display); font-weight: 400; font-style: italic; font-size: clamp(48px, 10vw, 104px); line-height: 0.95; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { font-style: normal; font-weight: 600; font-size: 0.4em; display: block; letter-spacing: 0.02em; margin-top: 6px; }
+.pitch { font-size: 20px; max-width: 52ch; color: var(--fg-2); margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.1; margin: 0 0 10px; text-wrap: balance; }
+h2 small { font-family: var(--font-body); font-weight: 400; font-size: 17px; color: var(--fg-2); display: block; margin-top: 4px; letter-spacing: 0; }
+h3 { font-family: var(--font-body); font-weight: 600; font-size: 17px; margin: 18px 0 6px; }
+section { padding-block: 34px; border-bottom: 1px solid var(--line); }
+section > p, section > ul, section > ol { max-width: 68ch; }
+section.pat > p { margin-top: 18px; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+li { margin-bottom: 4px; }
+figure { margin: 14px 0; min-width: 0; }
+figure svg { width: 100%; height: auto; display: block; max-width: 100%; }
+figcaption { font-size: 14px; color: var(--fg-2); margin-top: 8px; }
+.pat-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 8px 28px; align-items: start; }
+.pat-grid > * { min-width: 0; }
+@media (max-width: 760px) { .pat-grid { grid-template-columns: 1fr; } }
+.spec { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 12px; font-size: 14.5px; margin: 10px 0 0; }
+.spec dt { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); padding-top: 3px; }
+.spec dd { margin: 0; }
+@media (max-width: 460px) { .spec { grid-template-columns: 1fr; gap: 2px; } .spec dd { margin-bottom: 8px; } }
+.rate { display: grid; grid-template-columns: repeat(2, auto); gap: 6px 18px; margin: 12px 0 0; font-size: 14px; justify-content: start; }
+.rate b { display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); font-weight: 500; }
+.dots { font-family: var(--font-mono); letter-spacing: 0.12em; color: var(--accent-2); font-size: 15px; }
+.na { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-2); }
+.tag { display: inline-block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; background: var(--bg-2); color: var(--fg-2); margin: 4px 8px 0 0; vertical-align: middle; }
+.tag.warn { color: var(--accent); }
+.tags { display: block; margin-top: 4px; }
+.contact { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin: 18px 0 6px; }
+@media (max-width: 460px) { .contact { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+.contact a { display: block; text-decoration: none; color: var(--fg); border: 1px solid var(--line); padding: 8px; border-radius: 4px; background: var(--bg-2); min-width: 0; }
+.contact a:hover { border-color: var(--accent-2); }
+.contact a svg { width: 100%; height: auto; display: block; }
+.contact a span { display: block; font-family: var(--font-mono); font-size: 12px; margin-top: 6px; letter-spacing: 0.04em; }
+.contact a em { display: block; font-style: normal; font-size: 12px; color: var(--fg-2); }
+.scroll { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; margin: 10px 0 16px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); font-weight: 500; }
+td.n, th.n { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td code, p code, li code, dd code { font-family: var(--font-mono); font-size: 13.5px; background: var(--bg-2); padding: 1px 5px; border-radius: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--fg-2); margin-top: 6px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; border: 1px solid var(--line); }
+.note { border-left: 3px solid var(--accent); padding: 8px 14px; background: var(--bg-2); max-width: 72ch; }
+.note p:last-child, .note ol:last-child { margin-bottom: 0; }
+.pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin: 14px 0; }
+@media (max-width: 460px) { .pick { grid-template-columns: 1fr; } }
+.pick div { border-top: 3px solid var(--accent-2); padding-top: 10px; }
+.pick b { font-family: var(--font-display); font-size: 24px; font-weight: 600; display: block; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+<header class="masthead">
+  <div class="eyebrow">Bloom wine rack &middot; companion note 4 &middot; ethereal front-plate variants</div>
+  <h1>Made of light<span>nine soft fronts for the same tiles, in one or two filaments</span></h1>
+  <p class="pitch">Ethereal here is made from form and light, not from colour: translucent filament over the COB strips the rack already has, thickness that lets backlight draw a picture, hairline grooves and ridges, glow and sheen. Lit versions are drawn on a night ground with the same tile beside them, lights off. Three of them are honestly nothing without power, and the page says which.</p>
+  <div class="note" id="constraints">
+    <p><b>Constraints.</b> These tiles are 3D printed, so <b>there are no colour fades</b>: no gradient spools, no halftone or dithered tone, no blended filaments. A printer lays down a colour or it does not. Where a variant wants a softer edge it uses discrete stepped bands, or it lets the shape do it (thickness, grooves, ridges) and light the rest. Every tile is <b>one or two colours by default and never more than three</b>, because each colour beyond the two nozzles of an H2D means an AMS swap with a purge on every layer that carries it, which can double a tile's print time and waste more filament than the tile weighs; two colours print one per nozzle with near-zero purge. Every variant states its colours per tile and per rack.</p>
+    <p>This revision of the draft dropped <b>Breath</b> (a halftone fade from the bore) and <b>Aurora</b> (a gradient-spool body), reworked <b>Mist</b> into stepped bands, <b>Nimbus</b> into solid outlined clouds and <b>Pearl</b> into a single silk, removed the fading ring opacity from <b>Ripple</b>, and added <b>Lantern</b>.</p>
+  </div>
+</header>
+
+<section id="sheet">
+  <div class="eyebrow">Contact sheet</div>
+  <h2>All nine, full 3 x 3 front<small>Lit variants at night with LEDs on; the rest in daylight. Tap one to jump to it.</small></h2>
+  <div class="contact" id="contact"></div>
+</section>
+
+<section id="intro">
+  <div class="eyebrow">0 &middot; How light gets into a tile</div>
+  <h2>Three light paths, and what each can draw</h2>
+  <div class="pat-grid">
+    <div>
+      <p><b>Edge light (what the design has).</b> The tile's back carries an 11 x 3.2 mm rebate along its top and bottom edges for a 10 mm 24 V COB strip that runs along the two internal row seams. Light enters the tile through those edges and travels inside it as in a light guide. A translucent tile glows softly all over, brightest in a 20 mm band along the lit edges, and anything that interrupts the guide leaks light toward the viewer: the 33.7 degree flare (a bright ring around every bottle, for free) and any groove or dot cut into the back. Edge light draws <i>engraved</i> things, and it draws them in one filament.</p>
+      <p><b>Back light (needs one change).</b> A lithophane, where face thickness between 0.8 and 3 mm sets the brightness, only works with light behind it. Behind each lobe sits the solid PETG-CF front ring, so a true lithophane needs a pocket in the ring under each lobe with a short COB segment or LED filament in it. One variant asks for that; the rest use the existing strips or none.</p>
+      <p><b>No light.</b> Daylight ethereal comes from the surface and the material: fine relief and hairlines that catch a window, a frosted face from the textured plate or 0.08 mm layers, the mirror sheen of a single silk filament, glass-fleck sparkle, and phosphorescent PLA that holds a faint glow for half an hour after the room goes dark. Fuzzy skin works on walls only in Bambu Studio, so it frosts the bore and flare (a wall) but not the flat face.</p>
+      <p>Print rules as before: 0.8 mm minimum feature, shapes clear of r 53 from the bore centre or resolved by a collar ring, face-down for first-layer inlay (crisp two-colour edges, no layer lines), face-up at 0.08 to 0.12 mm where relief or silk sheen matters.</p>
+    </div>
+    <div>
+      <h3>Filaments used, and which are off-brief</h3>
+      <ul style="font-size:14.5px">
+        <li><b>Bambu PLA Translucent</b> (frosted, the diffuser) and <b>PETG Translucent</b> (clear): in the brief for the lit variant.</li>
+        <li><b>PLA Marble, Panchroma / Bambu PLA Matte, PETG HF white</b>: in the brief.</li>
+        <li><b>PLA Silk+ pearl</b> (one colour): off-brief because silk is brittle with weak layer bonding. Fine here because a tile carries no load: it is pinned to the front ring and nothing bears on it.</li>
+        <li><b>PLA Glow</b>: off-brief (abrasive, stiff). Fine on the stock hardened nozzle; keep it out of an AMS Lite. Charges under room light, glows green-white for 30 to 60 min.</li>
+        <li><b>PLA Galaxy</b>: off-brief only in that the brief did not list it; glass flecks, mildly abrasive, prints like PLA Basic. Loadless tile, so fine.</li>
+      </ul>
+      <div class="legend"><span><i style="background:var(--fil-frost)"></i>PLA Translucent, unlit</span><span><i style="background:var(--tile-lit)"></i>translucent tile, night</span><span><i style="background:var(--glow)"></i>COB light (simulated)</span><span><i style="background:var(--fil-ash)"></i>opaque matte grey</span><span><i style="background:var(--fil-sky)"></i>matte pale blue</span><span><i style="background:var(--fil-cloud)"></i>PETG HF white</span><span><i style="background:var(--fil-matte)"></i>matte pale grey</span><span><i style="background:var(--fil-pearl)"></i>Silk+ pearl</span><span><i style="background:var(--fil-galaxy)"></i>PLA Galaxy</span><span><i style="background:var(--fil-glow-night)"></i>PLA Glow, dark</span></div>
+      <p style="font-size:14px;color:var(--fg-2);margin-top:10px">Rendering note: glow and translucency are simulated with blur and opacity so the lit effect reads. Every filament is drawn as one flat colour; no drawing on this page shows a colour fade in the plastic.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 1 HALO -->
+<section class="pat" id="p-halo">
+  <div class="eyebrow">01 &middot; lithophane, back-lit &middot; 1 colour</div>
+  <h2>Halo<small>Face thickness thins toward the bottle so backlight draws a ring of light around each one</small><span class="tags"><span class="tag warn">nothing without power</span><span class="tag">needs ring pockets</span></span></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="halo" data-view="grid" role="img" aria-label="Halo lithophane, lit, full 3 by 3 front"></svg><figcaption>Full front, lit, night. The glow is light through thickness, not colour: face 0.8 mm at the collar thickening to 3.0 mm at the corners, so each bottle floats in a halo and the nodes stay dark.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="halo-day" data-view="tile" role="img" aria-label="Halo, one tile, lights off"></svg><figcaption>One tile, lights off: a plain frosted tile.</figcaption></figure>
+      <dl class="spec">
+        <dt>Make</dt><dd>Lithophane relief carved into the <i>back</i> of a face-down tile: face 0.8 mm thick from r 52 to 56, then thickening on a smooth curve to 3.0 mm by r 72 and the tile edges. Lobes solid (100 % infill) so no infill shadow shows. Face flat, textured plate.</dd>
+        <dt>Colours</dt><dd>1 per tile, 1 per rack: Bambu PLA Translucent (frosted). PETG Translucent gives a sharper, less milky halo.</dd>
+        <dt>LED</dt><dd><b>Not the existing strips.</b> A 6 mm deep pocket in the front ring under each corner lobe holding a 25 mm segment of 5 mm COB (24 V warm white) or 3 mm LED filament, wired through the post gap. Diffuser gap: at least 5 mm of air between LED and tile back, or the segment shows as a hot bar. Edge light alone makes this a plain Frost tile.</dd>
+        <dt>Min feature</dt><dd>0.8 mm face. Layers 0.1 mm on the lobes (variable layer height), 0.2 elsewhere.</dd>
+        <dt>Extra / tile</dt><dd>-2.4 g (carved back), +18 min (0.1 mm band).</dd>
+        <dt>Bore / seam</dt><dd>The thinnest, brightest band hugs the flare, so the bore gets the light. Seams run through the thick 3 mm corners, which stay dark lit and hide them.</dd>
+      </dl>
+      <div class="rate" data-r="5,1,3,4"></div>
+    </div>
+  </div>
+  <p>The purest version of the brief: nine bottles in nine haloes and nothing else. It is also the one variant that changes the skeleton, so it is costed honestly as a ring modification, not a tile swap. With the lights off it is blank.</p>
+</section>
+
+<!-- 2 DANDELION -->
+<section class="pat" id="p-dandelion">
+  <div class="eyebrow">02 &middot; edge-lit engraving &middot; 1 colour</div>
+  <h2>Dandelion<small>Seed heads engraved on the back of each lobe, lit by the strips the rack already has</small><span class="tags"><span class="tag warn">nothing without power</span></span></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="dandelion" data-view="grid" role="img" aria-label="Dandelion edge-lit engraving, full 3 by 3 front"></svg><figcaption>Full front, lit, night. Four quarter clocks make a seed head at every node; the two strips behind the row seams light the middle nodes hardest and the top and bottom rows fall off, as a real edge-lit tile does.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="dandelion-day" data-view="tile" role="img" aria-label="Dandelion, one tile, lights off"></svg><figcaption>One tile, lights off: grooves show through the frost as ghost lines.</figcaption></figure>
+      <dl class="spec">
+        <dt>Make</dt><dd>Face-down tile; 0.8 mm wide, 0.6 mm deep grooves engraved on the back: a 3 mm boss on the node, 14 radial stalks from r 6 to r 24 per lobe, each ending in a 1.2 mm seed dot. Grooves scatter the edge light forward.</dd>
+        <dt>Colours</dt><dd>1 per tile, 1 per rack: PLA Translucent (soft) or PETG Translucent (crisp bright lines).</dd>
+        <dt>LED</dt><dd>Existing 10 mm COB strips in the row-seam rebates, as designed; no diffuser gap, the tile is the diffuser. The rack's top and bottom edges have no strip; a third strip in the top rebate of the top row evens it out.</dd>
+        <dt>Min feature</dt><dd>0.8 mm grooves; 0.2 mm layers (grooves are on the top surface while printing, invisible from the front).</dd>
+        <dt>Extra / tile</dt><dd>0 g, +4 min.</dd>
+        <dt>Bore / seam</dt><dd>Stalks stop at r 24 from the node, well clear of the flare; the flare glows as a ring of its own. Seams pass through the seed heads where the eye expects a stalk, and the lit seams are where the heads are brightest.</dd>
+      </dl>
+      <div class="rate" data-r="5,2,4,3"></div>
+    </div>
+  </div>
+  <p>Edge-lit acrylic signs work exactly this way, and a printed translucent tile is a thick, slightly milky acrylic. Because the seed heads sit on the nodes and the inner nodes sit on the lit seams, the brightest part of the front is the pattern itself. By day the ghost lines are faint; call it nothing without power.</p>
+</section>
+
+<!-- 3 FROST -->
+<section class="pat" id="p-frost">
+  <div class="eyebrow">03 &middot; the lit variant as designed &middot; 1 colour</div>
+  <h2>Frost<small>A plain frosted tile with breath rings engraved around each bore</small><span class="tags"><span class="tag warn">nothing without power</span></span></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="frost" data-view="grid" role="img" aria-label="Frost edge-lit tile, full 3 by 3 front"></svg><figcaption>Full front, lit, night. The fuzzy-skinned flare glows on its own; four engraved rings at widening pitch sit round each bore. Seams show as faint bright lines, as on any edge-lit tile.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="frost-day" data-view="tile" role="img" aria-label="Frost, one tile, lights off"></svg><figcaption>One tile, lights off: blank frost, rings barely there.</figcaption></figure>
+      <dl class="spec">
+        <dt>Make</dt><dd>Face-down tile on the textured plate (the texture is the frost); rings 0.8 mm wide, 0.5 mm deep engraved on the back at r 53, 56, 59.5, 63.5. Fuzzy skin on the bore and flare walls (0.2 mm thickness) scatters more light into the bottle ring.</dd>
+        <dt>Colours</dt><dd>1 per tile, 1 per rack: PLA Translucent. PETG Translucent reads as glass and shows the skeleton behind it.</dd>
+        <dt>LED</dt><dd>Existing strips. No diffuser gap.</dd>
+        <dt>Min feature</dt><dd>0.8 mm grooves; 0.2 mm layers.</dd>
+        <dt>Extra / tile</dt><dd>0 g, +2 min.</dd>
+        <dt>Bore / seam</dt><dd>The bore is the feature: flare ring plus four rings. Seams are not hidden; they read as lit hairlines.</dd>
+      </dl>
+      <div class="rate" data-r="4,1,5,2"></div>
+    </div>
+  </div>
+  <p>The baseline for every lit variant and the cheapest: two minutes a tile over the plain design. In the dark it is nine soft windows with a ring of light around each bottle. In daylight it is a white frosted tile with nothing on it.</p>
+</section>
+
+<!-- 4 LANTERN -->
+<section class="pat" id="p-lantern">
+  <div class="eyebrow">04 &middot; opaque tracery on a translucent tile &middot; 2 colours</div>
+  <h2>Lantern<small>A paper-cut tracery inlaid in opaque grey: a quiet pattern by day, a silhouette against the glow by night</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="lantern" data-view="grid" role="img" aria-label="Lantern tracery, lit, full 3 by 3 front"></svg><figcaption>Full front, lit, night. The translucent body glows from the strips; the opaque tracery blocks it and reads as a dark lace, a rose window round each bottle and a rosette on each node.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="lantern-day" data-view="tile" role="img" aria-label="Lantern, one tile, lights off"></svg><figcaption>One tile, lights off: grey tracery on frost.</figcaption></figure>
+      <dl class="spec">
+        <dt>Make</dt><dd>Face-down two-colour inlay, 1.0 mm deep (5 layers) so the grey is fully opaque. Lines 1.0 mm: rings at r 53 and r 64 with 36 spokes between, and on each node rings of r 5 and r 12 with spokes, one quarter per tile.</dd>
+        <dt>Colours</dt><dd>2 per tile, 2 per rack: body PLA Translucent (nozzle 1), tracery Panchroma Matte grey or PLA Matte charcoal (nozzle 2). One per nozzle on the H2D, near-zero purge.</dd>
+        <dt>LED</dt><dd>Existing strips in the row-seam rebates; no diffuser gap.</dd>
+        <dt>Min feature</dt><dd>1.0 mm lines, 0.2 mm layers.</dd>
+        <dt>Extra / tile</dt><dd>0 g, +6 min (5 inlay layers with nozzle changes).</dd>
+        <dt>Bore / seam</dt><dd>The r 53 ring is the collar, so the flare ends on a line. Seams cut each node rosette into its four quarters, mirror-matched, so the cut sits on a spoke.</dd>
+      </dl>
+      <div class="rate" data-r="5,4,4,4"></div>
+    </div>
+  </div>
+  <p>Paper lanterns and pierced-tin shades: the pattern is in the dark parts, and light does the rest. It is the one lit variant that is still a finished object with the power off, and it stays at two colours because the second colour only has to block light, not make tone.</p>
+</section>
+
+<!-- 5 MIST -->
+<section class="pat" id="p-mist">
+  <div class="eyebrow">05 &middot; stepped bands, daylight &middot; 2 colours</div>
+  <h2>Mist<small>Three stepped white bands along every tile edge, so the seams sit inside the haze</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="mist" data-view="grid" role="img" aria-label="Mist stepped edge bands, full 3 by 3 front"></svg><figcaption>Full front, daylight. A solid 4 mm white band at each tile edge, then a 1.6 mm line, then a 0.8 mm hairline, with corner radii growing inward. Three discrete steps, no dither: the bores float in clear colour inside a lattice of haze.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="mist" data-view="tile" role="img" aria-label="Mist, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Make</dt><dd>Face-down two-colour inlay. From the tile edge: 4.0 mm solid white, 2.0 mm gap, 1.6 mm line, 2.4 mm gap, 0.8 mm line; corner radii 4 / 9 / 13 mm. 1.5 mm collar ring at r 52.</dd>
+        <dt>Colours</dt><dd>2 per tile, 2 per rack: body Panchroma Matte pale blue-grey (or Bambu PLA Matte Sky Blue), bands PETG HF white or PLA Marble.</dd>
+        <dt>LED</dt><dd>None.</dd>
+        <dt>Min feature</dt><dd>0.8 mm hairline; 0.2 mm layers.</dd>
+        <dt>Extra / tile</dt><dd>0 g, +4 min.</dd>
+        <dt>Bore / seam</dt><dd>At the seam two 4 mm white bands meet, so the 0.3 mm gap is a hairline inside an 8.3 mm white bar. The bore sits in clear blue with a white collar; at mid-side the band and the collar leave under 0.8 mm of blue, which is merged into one white band in CAD.</dd>
+      </dl>
+      <div class="rate" data-r="0,4,5,5"></div>
+    </div>
+  </div>
+  <p>The draft's Mist dissolved the seams with a dot screen whose dots grew toward the edge, which is a dithered fade. This version keeps the idea and does it in three hard steps, like a stepped mat around a print. It is still the best seam-hiding of the four studies by construction, and nothing on it is finer than 0.8 mm.</p>
+</section>
+
+<!-- 6 NIMBUS -->
+<section class="pat" id="p-nimbus">
+  <div class="eyebrow">06 &middot; outlined clouds, daylight &middot; 2 colours</div>
+  <h2>Nimbus<small>Solid white clouds, each traced by a hairline, drifting across all nine tiles unbroken</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="nimbus" data-view="grid" role="img" aria-label="Nimbus outlined clouds, full 3 by 3 front"></svg><figcaption>Full front, daylight. Clouds are unions of discs placed on a seed wrapped to the pitch, so every tile is the same file and clouds cross every seam without a step. Each cloud is solid white with a 0.8 mm white outline 0.8 mm outside it: two flat colours, one stepped edge.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="nimbus" data-view="tile" role="img" aria-label="Nimbus, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Make</dt><dd>Face-down two-colour inlay. Seven clouds per pitch, each 4 to 6 discs of r 3.5 to 7 mm; outline 0.8 mm at 0.8 mm offset (the Japanese <i>kumo</i> cloud). Gaps under 0.8 mm closed in CAD.</dd>
+        <dt>Colours</dt><dd>2 per tile, 2 per rack: body PLA Matte pale blue, clouds PETG HF white.</dd>
+        <dt>LED</dt><dd>None.</dd>
+        <dt>Min feature</dt><dd>0.8 mm outline and gap; 0.2 mm layers.</dd>
+        <dt>Extra / tile</dt><dd>0 g, +5 min.</dd>
+        <dt>Bore / seam</dt><dd>Clouds pass behind the bore, cleared to r 54 and closed with a 1.5 mm white collar, so the bottle sits in front of the sky. Seams cross clouds at random points and vanish in the white.</dd>
+      </dl>
+      <div class="rate" data-r="0,4,4,4"></div>
+    </div>
+  </div>
+  <p>The draft dithered a cloud field into dots of varying size, which is a halftone fade. Drawn as flat clouds with a traced edge it becomes a picture rather than a tone, it prints as two clean regions per layer, and it is calmer at a metre.</p>
+</section>
+
+<!-- 7 CONSTELLATION -->
+<section class="pat" id="p-constellation">
+  <div class="eyebrow">07 &middot; glow-in-the-dark points &middot; 2 colours</div>
+  <h2>Constellation<small>Seeded stars in phosphorescent PLA on a sparkle body: sparkle by day, a faint sky by night, no wiring</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="constellation" data-view="grid" role="img" aria-label="Constellation field at night, full 3 by 3 front"></svg><figcaption>Full front, night, no LEDs: PLA Glow stars and collar shortly after the lights go out. The halo round each star is the phosphorescence, simulated; the filament itself is one flat colour.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="constellation-day" data-view="tile" role="img" aria-label="Constellation, one tile, daylight"></svg><figcaption>One tile, daylight: dark glass-fleck field, pale points.</figcaption></figure>
+      <dl class="spec">
+        <dt>Make</dt><dd>Face-down two-colour inlay. 46 seeded points per tile (1.0 to 1.8 mm) on a seed wrapped to the pitch so density does not change at the seams; three short 0.8 mm connecting lines; a 2 mm collar.</dd>
+        <dt>Colours</dt><dd>2 per tile, 2 per rack: body Bambu PLA Galaxy dark blue, stars and collar Bambu PLA Glow. Both off-brief, both fine for a loadless tile on the hardened nozzle.</dd>
+        <dt>LED</dt><dd>None. The glow charges from room light; a UV strip in the existing rebates would recharge it on demand.</dd>
+        <dt>Min feature</dt><dd>1.0 mm dots, 0.8 mm lines; 0.2 mm layers. Glow PLA prefers a slow first layer.</dd>
+        <dt>Extra / tile</dt><dd>0 g, +4 min.</dd>
+        <dt>Bore / seam</dt><dd>Stars kept outside r 54 with the collar as the bore's edge. Random points hide seams completely.</dd>
+      </dl>
+      <div class="rate" data-r="4,4,4,5" data-lit="Looks at night (glow)"></div>
+    </div>
+  </div>
+  <p>Two faces and no power: a dark sparkling field by day and a fading star map at night, with every bottle ringed in the same glow. The glow is soft and short-lived; that is phosphorescence, and it is part of the charm.</p>
+</section>
+
+<!-- 8 RIPPLE -->
+<section class="pat" id="p-ripple">
+  <div class="eyebrow">08 &middot; relief hairlines, daylight &middot; 2 colours (or 1)</div>
+  <h2>Ripple<small>Rings spreading from every bottle at widening pitch, meeting their neighbours' rings at the seams</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="ripple" data-view="grid" role="img" aria-label="Ripple relief rings, full 3 by 3 front"></svg><figcaption>Full front, daylight. 1.0 mm pearl rings raised 0.5 mm, pitch growing from 2.4 to 4.5 mm; the thin dark line under each ring is its shadow, not a second colour. Where rings from two bores cross at the mid-sides they interfere as real ripples do.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="ripple" data-view="tile" role="img" aria-label="Ripple, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Make</dt><dd>Relief up, face-up: 1.0 mm rings 0.5 mm high (4 layers at 0.12) on an ironed matte face, r 53 to the corners. Single-colour version: rings in the body filament, shadow does the drawing.</dd>
+        <dt>Colours</dt><dd>2 per tile, 2 per rack: body Panchroma Matte pale grey, rings PLA Silk+ pearl or PLA Marble. Or 1 (all grey, or all pearl).</dd>
+        <dt>LED</dt><dd>None. Option: the same rings engraved on the back of a PLA Translucent tile, edge-lit from the existing strips (then 1 colour, and nothing without power).</dd>
+        <dt>Min feature</dt><dd>1.0 mm rings; 0.12 mm layers on the relief band.</dd>
+        <dt>Extra / tile</dt><dd>+0.9 g, +8 min.</dd>
+        <dt>Bore / seam</dt><dd>The first ring at r 53 is the collar. Seams cross rings where they fall; only at the mid-sides do they become part of the picture, where two ring systems meet.</dd>
+      </dl>
+      <div class="rate" data-r="0,4,3,3"></div>
+    </div>
+  </div>
+  <p>Fine relief is what catches a window: at 0.5 mm the rings throw hairline shadows that move as you walk past. The draft drew the outer rings fading out; a printed ring does not fade, so every ring is now drawn the same and only the widening pitch makes them thin out.</p>
+</section>
+
+<!-- 9 PEARL -->
+<section class="pat" id="p-pearl">
+  <div class="eyebrow">09 &middot; silk radial flutes, daylight &middot; 1 colour</div>
+  <h2>Pearl<small>Radial hairline flutes in one pearl silk, so each ridge catches the light at its own angle</small></h2>
+  <div class="pat-grid">
+    <figure><svg data-pat="pearl" data-view="grid" role="img" aria-label="Pearl silk radial flutes, full 3 by 3 front"></svg><figcaption>Full front, daylight, light from the upper left. One filament throughout; the bright and dark edges on each ridge are sheen and shadow from its angle to the light, which is what silk does.</figcaption></figure>
+    <div>
+      <figure><svg data-pat="pearl" data-view="tile" role="img" aria-label="Pearl, one tile"></svg></figure>
+      <dl class="spec">
+        <dt>Make</dt><dd>Relief up, face-up at 0.08 mm: 1.0 mm ridges 0.4 mm high every 4 degrees from r 53.5 to the tile edge, body and ridges one filament, single nozzle, no colour change.</dd>
+        <dt>Colours</dt><dd>1 per tile, 1 per rack: Bambu PLA Silk+ pearl white. Optional 2: body in a matching PLA Matte so only the ridges shine. Off-brief silk is fine: no load.</dd>
+        <dt>LED</dt><dd>None.</dd>
+        <dt>Min feature</dt><dd>1.0 mm ridges, 2.7 mm apart at the collar; 0.08 mm layers on the relief band.</dd>
+        <dt>Extra / tile</dt><dd>+1.6 g, +12 min.</dd>
+        <dt>Bore / seam</dt><dd>Ridges radiate from the bore and start at a 1.5 mm collar. Seams cut ridges at an angle; four fans meet at each node like a starburst.</dd>
+      </dl>
+      <div class="rate" data-r="0,5,3,3"></div>
+    </div>
+  </div>
+  <p>The draft used a dual-colour silk whose hue shifts ridge to ridge, which puts two or more colours in every strand and reads as a colour blend. A single pearl silk keeps the effect that matters, a field of tiny mirrors turned at ninety angles, and drops to one filament. Silk needs the slow 0.08 mm band and strings; it is the most demanding print here.</p>
+</section>
+
+<section id="compare">
+  <div class="eyebrow">10 &middot; Comparison</div>
+  <h2>Side by side</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>#</th><th>Variant</th><th>Make</th><th>Light</th><th>Filaments</th><th class="n">Col / tile</th><th class="n">Col / rack</th><th class="n">Min mm</th><th class="n">Layer</th><th class="n">+g</th><th class="n">+min</th><th class="n">Lit</th><th class="n">Unlit</th><th class="n">Print</th><th class="n">Hides</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Halo</td><td>back lithophane</td><td>back-lit, ring pockets, 5 mm gap</td><td>PLA Translucent</td><td class="n">1</td><td class="n">1</td><td class="n">0.8</td><td class="n">0.1</td><td class="n">-2.4</td><td class="n">18</td><td class="n">5</td><td class="n">1</td><td class="n">3</td><td class="n">4</td></tr>
+      <tr><td class="n">2</td><td>Dandelion</td><td>back engraving</td><td>edge-lit, existing strips</td><td>PLA Translucent</td><td class="n">1</td><td class="n">1</td><td class="n">0.8</td><td class="n">0.2</td><td class="n">0</td><td class="n">4</td><td class="n">5</td><td class="n">2</td><td class="n">4</td><td class="n">3</td></tr>
+      <tr><td class="n">3</td><td>Frost</td><td>back engraving</td><td>edge-lit, existing strips</td><td>PLA Translucent</td><td class="n">1</td><td class="n">1</td><td class="n">0.8</td><td class="n">0.2</td><td class="n">0</td><td class="n">2</td><td class="n">4</td><td class="n">1</td><td class="n">5</td><td class="n">2</td></tr>
+      <tr><td class="n">4</td><td>Lantern</td><td>opaque inlay on translucent</td><td>edge-lit, existing strips</td><td>PLA Translucent + Matte grey</td><td class="n">2</td><td class="n">2</td><td class="n">1.0</td><td class="n">0.2</td><td class="n">0</td><td class="n">6</td><td class="n">5</td><td class="n">4</td><td class="n">4</td><td class="n">4</td></tr>
+      <tr><td class="n">5</td><td>Mist</td><td>stepped-band inlay</td><td>none</td><td>Matte blue + PETG HF white</td><td class="n">2</td><td class="n">2</td><td class="n">0.8</td><td class="n">0.2</td><td class="n">0</td><td class="n">4</td><td class="n">-</td><td class="n">4</td><td class="n">5</td><td class="n">5</td></tr>
+      <tr><td class="n">6</td><td>Nimbus</td><td>outlined-cloud inlay</td><td>none</td><td>Matte blue + PETG HF white</td><td class="n">2</td><td class="n">2</td><td class="n">0.8</td><td class="n">0.2</td><td class="n">0</td><td class="n">5</td><td class="n">-</td><td class="n">4</td><td class="n">4</td><td class="n">4</td></tr>
+      <tr><td class="n">7</td><td>Constellation</td><td>point inlay</td><td>phosphorescent, no wiring</td><td>PLA Galaxy + PLA Glow</td><td class="n">2</td><td class="n">2</td><td class="n">0.8</td><td class="n">0.2</td><td class="n">0</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">5</td></tr>
+      <tr><td class="n">8</td><td>Ripple</td><td>relief hairlines</td><td>none (edge-lit option)</td><td>Matte grey + Silk+ pearl</td><td class="n">2 (1)</td><td class="n">2 (1)</td><td class="n">1.0</td><td class="n">0.12</td><td class="n">0.9</td><td class="n">8</td><td class="n">-</td><td class="n">4</td><td class="n">3</td><td class="n">3</td></tr>
+      <tr><td class="n">9</td><td>Pearl</td><td>relief flutes, silk</td><td>none</td><td>Silk+ pearl</td><td class="n">1 (2)</td><td class="n">1 (2)</td><td class="n">1.0</td><td class="n">0.08</td><td class="n">1.6</td><td class="n">12</td><td class="n">-</td><td class="n">5</td><td class="n">3</td><td class="n">3</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14px;color:var(--fg-2)">All nine tiles of a rack are the same file, so colours per rack equal colours per tile; no variant needs a third colour. Bracketed values are the alternative make. Grams are carved or relief volume at 1.24 g/cm3; minutes are extra layers, finer layers and nozzle changes on an H2D at 0.4 mm against the 38 g, 48 min base tile. Lit / Unlit are looks ratings in each state; - means the variant has no light source (a daylight tile that simply goes dark at night). Constellation's lit score is its own glow. Nothing has been printed; ratings are a designer's estimate. Rendered glow is a simulation: real edge-lit brightness falls off faster than drawn, about half by 30 mm from the strip in frosted PLA.</p>
+  <h3>Lit versus unlit, honestly</h3>
+  <ul>
+    <li><b>Nothing without power:</b> Halo (a blank frosted tile by day), Frost (blank, rings barely visible) and Dandelion (faint ghost lines only). Choose these only if the rack is lit whenever it is looked at.</li>
+    <li><b>Ethereal with the lights off:</b> Mist, Nimbus, Ripple and Pearl (daylight tiles that go dark at night like any shelf), Constellation (sparkle by day, its own glow by night) and Lantern (grey tracery on frost).</li>
+    <li><b>Both states well:</b> Lantern and Constellation. Ripple engraved on a translucent tile is a third, but then it is single-colour and blank by day.</li>
+    <li><b>LED layout:</b> Dandelion, Frost and Lantern use the two 10 mm COB strips in the existing row-seam rebates with no diffuser gap; the tile is the diffuser. The rack's top and bottom edges have no strip; a third strip in the top rebate of the top row (and the bottom of the bottom row) evens the glow for one more 335 mm length. Halo needs ring pockets with short COB segments and at least 5 mm of air behind the tile. The rest need no wiring.</li>
+  </ul>
+</section>
+
+<section id="pick">
+  <div class="eyebrow">11 &middot; Recommendation</div>
+  <h2>Top three</h2>
+  <div class="pick">
+    <div><b>1. Lantern</b><p>The only lit variant that is still finished with the power off: grey tracery on frost by day, a dark lace against the glow by night. Two colours, one per nozzle, existing strips, no diffuser gap, zero extra grams, 1.0 mm lines.</p></div>
+    <div><b>2. Dandelion</b><p>The lit showpiece in a single filament: the strips are already there, the seed heads sit on the lit seams, and it costs four minutes a tile. Pick it if the rack will be lit in the evenings; by day it is a near-blank frosted tile.</p></div>
+    <div><b>3. Mist</b><p>The daylight answer: the best seam-hiding of all four studies, two on-brief filaments, three hard steps instead of a fade, nothing under 0.8 mm, and the easiest print on the page after Frost.</p></div>
+  </div>
+  <p>Also: <b>Constellation</b> for two faces and no wiring (two off-brief but harmless spools); <b>Halo</b> if the front ring will be pocketed, because lit it is the most beautiful thing on the page; <b>Pearl</b> for a window-lit room, where one silk spool earns its trouble.</p>
+  <div class="note">
+    <p><b>Test prints before modelling (one plate, about an hour):</b></p>
+    <ol>
+      <li><b>Lithophane thickness calibration strip</b>, PLA Translucent, 0.6 to 3.2 mm in 0.2 mm steps at 0.1 mm layers, 100 % infill, held over a COB offcut at 3, 5 and 8 mm: sets the Halo curve and the diffuser gap.</li>
+      <li><b>Translucency sample</b>, 40 x 40 x 8 mm in PLA Translucent and PETG Translucent, edge-lit from one side, with 0.8 mm back grooves at 5, 15, 30 and 45 mm: real brightness fall-off, and frost versus glass for Dandelion and Frost.</li>
+      <li><b>Lantern opacity card</b>, face-down, grey inlay 0.4, 0.6, 1.0 and 1.4 mm deep on PLA Translucent, over the same COB: the shallowest inlay that reads as a solid silhouette.</li>
+      <li><b>Hairline card</b>, face-down, 0.6 / 0.8 / 1.0 mm lines and dots in matte blue + white and Galaxy + Glow: smallest feature that sticks, and how long the Glow lasts.</li>
+      <li><b>Silk swatch</b> face-up at 0.08 mm with ten ridges: confirms Pearl's sheen and stringing.</li>
+    </ol>
+  </div>
+</section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function rng(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  // ---- shared geometry (mm): one routine draws every tile, grid and close-up ----
+  var P = 110.8333, TG = 0.3, TW = P - TG, H = TW / 2, GAP = 1.25, OPEN = 335, RB = 46, RF = 50;
+  var D2 = Math.PI / 180, uid = 0;
+  var CORNERS = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+  function f2(v) { return (Math.round(v * 100) / 100).toString(); }
+  function pt(r, a) { return [r * Math.cos(a * D2), r * Math.sin(a * D2)]; }
+  function ring(g, r, w, col, extra, cx, cy) { var a = {cx: f2(cx || 0), cy: f2(cy || 0), r: f2(r), fill: "none", stroke: col, "stroke-width": w}; if (extra) for (var k in extra) a[k] = extra[k]; return el("circle", a, g); }
+  function line(g, p1, p2, col, w, extra) { var a = {x1: f2(p1[0]), y1: f2(p1[1]), x2: f2(p2[0]), y2: f2(p2[1]), stroke: col, "stroke-width": w, "stroke-linecap": "round"}; if (extra) for (var k in extra) a[k] = extra[k]; return el("line", a, g); }
+  function stop(grad, off, col, op) { el("stop", {offset: off, style: "stop-color:" + col + ";stop-opacity:" + op}, grad); }
+
+  // ctx: {dark, blur, blurWide, defs, svg, mode}
+  function drawTile(parent, spec, idx, ctx) {
+    var g = el("g", {}, parent);
+    var id = "clip" + (uid++);
+    var cp = el("clipPath", {id: id}, g);
+    el("rect", {x: f2(-H), y: f2(-H), width: f2(TW), height: f2(TW)}, cp);
+    var gi = el("g", {"clip-path": "url(#" + id + ")"}, g);
+    el("rect", {x: f2(-H - 1), y: f2(-H - 1), width: f2(TW + 2), height: f2(TW + 2), fill: spec.body}, gi);
+    spec.draw(el("g", {}, gi), idx, ctx);
+    el("circle", {cx: 0, cy: 0, r: RF, fill: spec.flare || spec.body}, gi);
+    if (spec.dark && spec.led) {
+      // the 33.7 degree flare scatters edge light toward the viewer: a bright ring around every bottle
+      ring(gi, (RF + RB) / 2, RF - RB, "var(--glow)", {"stroke-opacity": 0.55, filter: ctx.blur});
+      ring(gi, (RF + RB) / 2, RF - RB, "var(--glow)", {"stroke-opacity": 0.35});
+    } else {
+      ring(gi, (RF + RB) / 2, RF - RB, "var(--shade)");
+    }
+    el("circle", {cx: 0, cy: 0, r: RB, fill: "var(--bore)"}, gi);
+    return g;
+  }
+  function makeCtx(svg, spec, mode) {
+    var defs = el("defs", {}, svg);
+    var fid = "blur" + (uid++);
+    var f = el("filter", {id: fid, x: "-30%", y: "-30%", width: "160%", height: "160%"}, defs);
+    el("feGaussianBlur", {stdDeviation: 2.2}, f);
+    var fid2 = "blurw" + (uid++);
+    var fw = el("filter", {id: fid2, x: "-50%", y: "-50%", width: "200%", height: "200%"}, defs);
+    el("feGaussianBlur", {stdDeviation: 7}, fw);
+    return {dark: !!spec.dark, blur: "url(#" + fid + ")", blurWide: "url(#" + fid2 + ")", defs: defs, svg: svg, mode: mode};
+  }
+  function renderGrid(svg, spec) {
+    svg.setAttribute("viewBox", "-1 -1 337 337");
+    var ctx = makeCtx(svg, spec, "grid");
+    el("rect", {x: -1, y: -1, width: 337, height: 337, fill: spec.dark ? "var(--night)" : "var(--seam)"}, svg);
+    for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) {
+      var g = el("g", {transform: "translate(" + f2(GAP + P * (c + 0.5)) + " " + f2(GAP + P * (r + 0.5)) + ")"}, svg);
+      drawTile(g, spec, r * 3 + c, ctx);
+    }
+    if (spec.after) spec.after(svg, ctx);
+  }
+  function renderTile(svg, spec) {
+    svg.setAttribute("viewBox", "-59 -59 118 118");
+    var ctx = makeCtx(svg, spec, "tile");
+    el("rect", {x: -59, y: -59, width: 118, height: 118, fill: spec.dark ? "var(--night)" : "var(--bg-2)"}, svg);
+    el("rect", {x: f2(-H - TG), y: f2(-H - TG), width: f2(TW + 2 * TG), height: f2(TW + 2 * TG), fill: spec.dark ? "var(--night)" : "var(--seam)"}, svg);
+    drawTile(el("g", {}, svg), spec, 4, ctx);
+    if (spec.after) spec.after(svg, ctx);
+  }
+
+  // Edge-lit fall-off. This gradient is LIGHT (distance from the strip), never filament colour.
+  function edgeLitOverlay(svg, ctx) {
+    var gid = "fall" + (uid++);
+    var lg = el("linearGradient", {id: gid, x1: 0, y1: 0, x2: 0, y2: 1}, ctx.defs);
+    if (ctx.mode === "grid") {
+      stop(lg, 0, "var(--night)", 0.62); stop(lg, 0.333, "var(--night)", 0); stop(lg, 0.5, "var(--night)", 0.22);
+      stop(lg, 0.667, "var(--night)", 0); stop(lg, 1, "var(--night)", 0.62);
+      el("rect", {x: 0, y: 0, width: OPEN, height: OPEN, fill: "url(#" + gid + ")"}, svg);
+      [1, 2].forEach(function (k) {
+        var y = GAP + P * k;
+        el("rect", {x: 0, y: f2(y - 9), width: OPEN, height: 18, fill: "var(--glow)", "fill-opacity": 0.22, filter: ctx.blurWide}, svg);
+        el("rect", {x: 0, y: f2(y - 0.6), width: OPEN, height: 1.2, fill: "var(--glow)", "fill-opacity": 0.5}, svg);
+      });
+    } else {
+      stop(lg, 0, "var(--night)", 0); stop(lg, 0.5, "var(--night)", 0.28); stop(lg, 1, "var(--night)", 0);
+      el("rect", {x: f2(-H), y: f2(-H), width: f2(TW), height: f2(TW), fill: "url(#" + gid + ")"}, svg);
+      [-H, H].forEach(function (y) { el("rect", {x: f2(-H), y: f2(y - 7), width: f2(TW), height: 14, fill: "var(--glow)", "fill-opacity": 0.22, filter: ctx.blurWide}, svg); });
+    }
+  }
+  // a back groove: lit = blurred halo then crisp line of light; unlit = faint ghost seen through the frost
+  function groove(g, ctx, lit, makeEl, w) {
+    if (lit) {
+      var a = makeEl("var(--glow)"); a.setAttribute("stroke-width", w * 2.2); a.setAttribute("stroke-opacity", 0.55); a.setAttribute("filter", ctx.blur); g.appendChild(a);
+      var b = makeEl("var(--glow)"); b.setAttribute("stroke-width", w); g.appendChild(b);
+    } else {
+      var c = makeEl("var(--ghost)"); c.setAttribute("stroke-width", w); c.setAttribute("stroke-opacity", 0.3); g.appendChild(c);
+    }
+  }
+  function litPair(drawFn, overlay) { // the same geometry: lit at night, and lights-off by day
+    return [
+      {dark: true, led: true, body: "var(--tile-lit)", draw: function (g, i, ctx) { drawFn(g, i, ctx, true); }, after: overlay},
+      {dark: false, body: "var(--fil-frost)", draw: function (g, i, ctx) { drawFn(g, i, ctx, false); }}
+    ];
+  }
+
+  // ---- 1 halo (back-lit lithophane: light through thickness) ----
+  var halo = litPair(function (g, idx, ctx, lit) {
+    if (!lit) return; // lights off: a blank frosted tile
+    var gid = "halo" + (uid++);
+    var rg = el("radialGradient", {id: gid, cx: 0, cy: 0, r: 80, gradientUnits: "userSpaceOnUse"}, ctx.defs);
+    stop(rg, 0.62, "var(--glow)", 0.95); stop(rg, 0.70, "var(--glow)", 0.85); stop(rg, 0.84, "var(--glow)", 0.25); stop(rg, 1, "var(--glow)", 0.03);
+    el("rect", {x: f2(-H - 1), y: f2(-H - 1), width: f2(TW + 2), height: f2(TW + 2), fill: "url(#" + gid + ")"}, g);
+  }, null);
+
+  // ---- 2 dandelion (edge-lit engraving) ----
+  var dandelion = litPair(function (g, idx, ctx, lit) {
+    CORNERS.forEach(function (c) {
+      var cx = c[0] * H, cy = c[1] * H, base = Math.atan2(-c[1], -c[0]) / D2;
+      for (var k = 0; k < 14; k++) {
+        var a = base - 42 + k * (84 / 13), p1 = pt(6, a), p2 = pt(24, a), p3 = pt(25.3, a);
+        groove(g, ctx, lit, function (col) { return line(null, [cx + p1[0], cy + p1[1]], [cx + p2[0], cy + p2[1]], col, 0.8); }, 0.8);
+        if (lit) {
+          el("circle", {cx: f2(cx + p3[0]), cy: f2(cy + p3[1]), r: 2.4, fill: "var(--glow)", "fill-opacity": 0.5, filter: ctx.blur}, g);
+          el("circle", {cx: f2(cx + p3[0]), cy: f2(cy + p3[1]), r: 1.2, fill: "var(--glow)"}, g);
+        } else {
+          el("circle", {cx: f2(cx + p3[0]), cy: f2(cy + p3[1]), r: 0.6, fill: "var(--ghost)", "fill-opacity": 0.3}, g);
+        }
+      }
+      if (lit) el("circle", {cx: f2(cx), cy: f2(cy), r: 6, fill: "var(--glow)", "fill-opacity": 0.5, filter: ctx.blur}, g);
+      el("circle", {cx: f2(cx), cy: f2(cy), r: lit ? 3 : 1.5, fill: lit ? "var(--glow)" : "var(--ghost)", "fill-opacity": lit ? 1 : 0.3}, g);
+    });
+  }, edgeLitOverlay);
+
+  // ---- 3 frost (edge-lit rings; every ring the same groove, brightness only from the light overlay) ----
+  var frost = litPair(function (g, idx, ctx, lit) {
+    [53, 56, 59.5, 63.5].forEach(function (r) {
+      groove(g, ctx, lit, function (col) { return ring(null, r, 0.8, col); }, 0.8);
+    });
+  }, edgeLitOverlay);
+
+  // ---- 4 lantern (opaque tracery inlaid in the face of a translucent tile) ----
+  function tracery(g, col) {
+    ring(g, 53, 1.0, col); ring(g, 64, 1.0, col);
+    for (var k = 0; k < 36; k++) line(g, pt(53, k * 10 + 5), pt(64, k * 10 + 5), col, 1.0);
+    CORNERS.forEach(function (c) {
+      var cx = c[0] * H, cy = c[1] * H;
+      ring(g, 5, 1.0, col, null, cx, cy); ring(g, 12, 1.0, col, null, cx, cy);
+      for (var j = 0; j < 24; j++) { var p1 = pt(5, j * 15), p2 = pt(12, j * 15); line(g, [cx + p1[0], cy + p1[1]], [cx + p2[0], cy + p2[1]], col, 1.0); }
+    });
+  }
+  var lantern = [
+    {dark: true, led: true, body: "var(--tile-lit)", draw: function (g, idx, ctx) {
+      // light in the body first (strips under the internal row seams only), then the opaque tracery over it
+      var row = Math.floor(idx / 3), edges = ctx.mode === "tile" ? [-H, H] : (row === 0 ? [H] : row === 2 ? [-H] : [-H, H]);
+      el("rect", {x: f2(-H - 1), y: f2(-H - 1), width: f2(TW + 2), height: f2(TW + 2), fill: "var(--glow)", "fill-opacity": 0.16}, g);
+      edges.forEach(function (y) { el("rect", {x: f2(-H - 8), y: f2(y - 16), width: f2(TW + 16), height: 32, fill: "var(--glow)", "fill-opacity": 0.42, filter: ctx.blurWide}, g); });
+      tracery(g, "var(--fil-ash-lit)");
+    }},
+    {dark: false, body: "var(--fil-frost)", draw: function (g) { tracery(g, "var(--fil-ash)"); }}
+  ];
+
+  // ---- 5 mist (three stepped bands along the tile edge; discrete, no dither) ----
+  function roundRect(h, r) { // closed path of a centred square, half-size h, corner radius r
+    var a = f2(h - r), b = f2(h), c = f2(r);
+    return "M -" + a + " -" + b + " H " + a + " A " + c + " " + c + " 0 0 1 " + b + " -" + a + " V " + a + " A " + c + " " + c + " 0 0 1 " + a + " " + b +
+      " H -" + a + " A " + c + " " + c + " 0 0 1 -" + b + " " + a + " V -" + a + " A " + c + " " + c + " 0 0 1 -" + a + " -" + b + " Z";
+  }
+  var mist = {body: "var(--fil-sky)", draw: function (g) {
+    [[6.8, 1.6, 9], [9.6, 0.8, 13]].forEach(function (b) { // the two inner steps: centre-line inset from the edge, width, corner radius
+      var i = H - b[0];
+      el("rect", {x: f2(-i), y: f2(-i), width: f2(2 * i), height: f2(2 * i), rx: b[2], fill: "none", stroke: "var(--fil-cloud)", "stroke-width": b[1]}, g);
+    });
+    el("circle", {cx: 0, cy: 0, r: 54, fill: "var(--fil-sky)"}, g); // clear round the bore
+    // solid 4 mm edge band (outer square minus a rounded inner square); at mid-side it meets the collar and merges
+    var o = f2(H + 1);
+    el("path", {d: "M -" + o + " -" + o + " H " + o + " V " + o + " H -" + o + " Z " + roundRect(H - 4, 4), "fill-rule": "evenodd", fill: "var(--fil-cloud)"}, g);
+    ring(g, 52, 1.5, "var(--fil-cloud)");
+  }};
+
+  // ---- 6 nimbus (solid clouds with a traced outline; seed wrapped to the pitch) ----
+  var clouds = (function () {
+    var R = rng(31), out = [];
+    for (var c = 0; c < 7; c++) {
+      var x0 = -P / 2 + R() * P, y0 = -P / 2 + R() * P, n = 4 + Math.floor(R() * 3);
+      for (var k = 0; k < n; k++) out.push([x0 + (k - (n - 1) / 2) * 6.5 + (R() - 0.5) * 3, y0 + (R() - 0.5) * 5 - (k > 0 && k < n - 1 ? 2.5 : 0), 3.5 + R() * 3.5]);
+    }
+    return out;
+  })();
+  var nimbus = {body: "var(--fil-sky)", draw: function (g) {
+    var puffs = [];
+    clouds.forEach(function (p) {
+      for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) {
+        var x = p[0] + dx * P, y = p[1] + dy * P;
+        if (Math.abs(x) < H + 10 && Math.abs(y) < H + 10) puffs.push([x, y, p[2]]);
+      }
+    });
+    // union outline by layering: all outer discs white, all middle discs body colour, all inner discs white
+    [[1.6, "var(--fil-cloud)"], [0.8, "var(--fil-sky)"], [0, "var(--fil-cloud)"]].forEach(function (L) {
+      puffs.forEach(function (p) { el("circle", {cx: f2(p[0]), cy: f2(p[1]), r: f2(p[2] + L[0]), fill: L[1]}, g); });
+    });
+    el("circle", {cx: 0, cy: 0, r: 54, fill: "var(--fil-sky)"}, g);
+    ring(g, 52, 1.5, "var(--fil-cloud)");
+  }};
+
+  // ---- 7 constellation (night glow, and its daylight face) ----
+  var starSeeds = (function () {
+    var R = rng(77), s = [], tries = 0;
+    while (s.length < 46 && tries < 6000) {
+      tries++;
+      var x = -H + R() * TW, y = -H + R() * TW;
+      if (Math.hypot(x, y) < RF + 4) continue;
+      var ok = true;
+      for (var i = 0; i < s.length && ok; i++) for (var dx = -1; dx <= 1 && ok; dx++) for (var dy = -1; dy <= 1 && ok; dy++) {
+        if (Math.hypot(s[i][0] + dx * P - x, s[i][1] + dy * P - y) < 7) ok = false;
+      }
+      if (ok) s.push([x, y, 1.0 + R() * 0.8]);
+    }
+    return s;
+  })();
+  var starLinks = (function () {
+    var R = rng(5), out = [];
+    for (var k = 0; k < 3; k++) {
+      var a = starSeeds[Math.floor(R() * starSeeds.length)], best = null, bd = 28;
+      starSeeds.forEach(function (b) { var d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (d > 1 && d < bd) { bd = d; best = b; } });
+      if (best) out.push([a, best]);
+    }
+    return out;
+  })();
+  var flecks = (function () { var R = rng(9), o = []; for (var k = 0; k < 90; k++) o.push([-H + R() * TW, -H + R() * TW]); return o; })();
+  function stars(g, ctx, night) {
+    var col = night ? "var(--fil-glow-night)" : "var(--fil-glow-day)";
+    if (!night) flecks.forEach(function (f) { el("circle", {cx: f2(f[0]), cy: f2(f[1]), r: 0.25, fill: "#ffffff", "fill-opacity": 0.55}, g); });
+    starLinks.forEach(function (l) { line(g, l[0], l[1], col, 0.8, night ? {"stroke-opacity": 0.6} : null); });
+    starSeeds.forEach(function (s) {
+      if (night) el("circle", {cx: f2(s[0]), cy: f2(s[1]), r: f2(s[2] * 1.6), fill: col, "fill-opacity": 0.45, filter: ctx.blur}, g);
+      el("circle", {cx: f2(s[0]), cy: f2(s[1]), r: f2(s[2] / 2), fill: col}, g);
+    });
+    if (night) ring(g, 52.5, 5, col, {"stroke-opacity": 0.45, filter: ctx.blur});
+    ring(g, 52.5, 2, col);
+  }
+  var constellation = [
+    {dark: true, led: false, body: "var(--fil-galaxy)", draw: function (g, i, ctx) { stars(g, ctx, true); }},
+    {dark: false, body: "var(--fil-galaxy)", draw: function (g, i, ctx) { stars(g, ctx, false); }}
+  ];
+
+  // ---- 8 ripple (relief rings at widening pitch; a shadow line under each ring, all rings identical) ----
+  var ripple = {body: "var(--fil-matte)", draw: function (g) {
+    var r = 53, p = 2.4;
+    while (r < 82) {
+      ring(g, r, 1.0, "var(--shade)", {transform: "translate(0.35 0.35)"});
+      ring(g, r, 1.0, "var(--fil-pearl)");
+      p *= 1.055; r += p;
+    }
+  }};
+
+  // ---- 9 pearl (one silk; sheen on the flank facing the light, shadow on the other) ----
+  var pearl = {body: "var(--fil-pearl)", draw: function (g) {
+    for (var k = 0; k < 90; k++) {
+      var a = k * 4, n = a + 90, s = Math.cos((n - 225) * D2);
+      var o1 = pt(0.35, n), o2 = pt(-0.35, n), p1 = pt(53.5, a), p2 = pt(82, a);
+      line(g, [p1[0] + o2[0], p1[1] + o2[1]], [p2[0] + o2[0], p2[1] + o2[1]], "#000000", 0.45, {"stroke-opacity": f2(0.12 + 0.2 * Math.max(0, s))});
+      line(g, [p1[0] + o1[0], p1[1] + o1[1]], [p2[0] + o1[0], p2[1] + o1[1]], "#ffffff", 0.45, {"stroke-opacity": f2(0.35 + 0.6 * Math.max(0, s))});
+      line(g, [p1[0] - o1[0], p1[1] - o1[1]], [p2[0] - o1[0], p2[1] - o1[1]], "#000000", 0.3, {"stroke-opacity": f2(0.1 + 0.2 * Math.max(0, -s))});
+    }
+    ring(g, 52, 1.5, "#ffffff", {"stroke-opacity": 0.7});
+  }};
+
+  var specs = {
+    halo: halo[0], "halo-day": halo[1], dandelion: dandelion[0], "dandelion-day": dandelion[1],
+    frost: frost[0], "frost-day": frost[1], lantern: lantern[0], "lantern-day": lantern[1],
+    mist: mist, nimbus: nimbus, constellation: constellation[0], "constellation-day": constellation[1],
+    ripple: ripple, pearl: pearl
+  };
+  var order = [
+    ["halo", "01 Halo", "lit · 1 colour", "p-halo"], ["dandelion", "02 Dandelion", "lit · 1 colour", "p-dandelion"],
+    ["frost", "03 Frost", "lit · 1 colour", "p-frost"], ["lantern", "04 Lantern", "lit + day · 2 colours", "p-lantern"],
+    ["mist", "05 Mist", "day · 2 colours", "p-mist"], ["nimbus", "06 Nimbus", "day · 2 colours", "p-nimbus"],
+    ["constellation", "07 Constellation", "glow + day · 2 colours", "p-constellation"], ["ripple", "08 Ripple", "day · 2 (or 1) colours", "p-ripple"],
+    ["pearl", "09 Pearl", "day · 1 colour", "p-pearl"]
+  ];
+
+  var contact = document.getElementById("contact");
+  if (contact) order.forEach(function (o) {
+    var a = document.createElement("a"); a.href = "#" + o[3];
+    var s = el("svg", {role: "img", "aria-label": o[1] + ", full front"}, a);
+    renderGrid(s, specs[o[0]]);
+    var sp = document.createElement("span"); sp.textContent = o[1]; a.appendChild(sp);
+    var em = document.createElement("em"); em.textContent = o[2]; a.appendChild(em);
+    contact.appendChild(a);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("svg[data-pat]"), function (svg) {
+    var spec = specs[svg.getAttribute("data-pat")];
+    if (!spec) return;
+    if (svg.getAttribute("data-view") === "tile") renderTile(svg, spec); else renderGrid(svg, spec);
+  });
+  // ratings: data-r = looks lit, looks unlit, printability, seam-hiding (0 = no light source)
+  var LABELS = ["Looks lit", "Looks unlit", "Printability", "Hides seams"];
+  Array.prototype.forEach.call(document.querySelectorAll(".rate[data-r]"), function (box) {
+    var v = box.getAttribute("data-r").split(",").map(Number), litLabel = box.getAttribute("data-lit");
+    v.forEach(function (n, i) {
+      var d = document.createElement("div"), b = document.createElement("b"), s = document.createElement("span");
+      b.textContent = (i === 0 && litLabel) ? litLabel : LABELS[i];
+      if (n > 0) { s.className = "dots"; s.textContent = "●●●●●".slice(0, n) + "○○○○○".slice(0, 5 - n); s.setAttribute("aria-label", n + " of 5"); }
+      else { s.className = "na"; s.textContent = "n/a, no light source"; }
+      d.appendChild(b); d.appendChild(s); box.appendChild(d);
+    });
+  });
+})();
+</script>

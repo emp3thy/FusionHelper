@@ -1,0 +1,792 @@
+<title>Hex Eight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f1f0ea;
+  --fg: #141413;
+  --muted: #65655f;
+  --line: #141413;
+  --rule: #c9c8c0;
+  --ink: #171716;
+  --ink-soft: #3a3a38;
+  --paper: #f1f0ea;
+  --wine: #7a1f2b;
+  --wine-soft: #b7636d;
+  --key: #8a8a84;
+  --band: rgba(122, 31, 43, 0.18);
+  --hilite: #fff8c2;
+  --code-bg: #e7e6df;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131312;
+    --fg: #ebe9e2;
+    --muted: #9c9b93;
+    --line: #ebe9e2;
+    --rule: #3a3a37;
+    --ink: #e4e2da;
+    --ink-soft: #b9b7af;
+    --paper: #131312;
+    --wine: #c4515f;
+    --wine-soft: #7d2f39;
+    --key: #7c7b74;
+    --band: rgba(196, 81, 95, 0.22);
+    --hilite: #3c3a1f;
+    --code-bg: #232321;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131312;
+  --fg: #ebe9e2;
+  --muted: #9c9b93;
+  --line: #ebe9e2;
+  --rule: #3a3a37;
+  --ink: #e4e2da;
+  --ink-soft: #b9b7af;
+  --paper: #131312;
+  --wine: #c4515f;
+  --wine-soft: #7d2f39;
+  --key: #7c7b74;
+  --band: rgba(196, 81, 95, 0.22);
+  --hilite: #3c3a1f;
+  --code-bg: #232321;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 0 16px 96px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1080px; margin: 0 auto; }
+.mast {
+  border-bottom: 2px solid var(--line);
+  padding: 40px 0 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.mast .tag {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.mast h1 {
+  font-family: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  font-variation-settings: "wdth" 112, "wght" 900;
+  font-weight: 900;
+  font-size: clamp(56px, 12vw, 136px);
+  line-height: 0.86;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-transform: uppercase;
+}
+.mast .pitch {
+  font-size: clamp(18px, 2.4vw, 24px);
+  line-height: 1.3;
+  max-width: 44ch;
+  margin: 0;
+  font-weight: 500;
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin: 0 0 8px;
+}
+.facts div {
+  padding: 12px 12px 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.facts b {
+  display: block;
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.facts span { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+@media (min-width: 720px) {
+  .facts { grid-template-columns: repeat(6, 1fr); }
+  .facts div { border-bottom: 0; border-right: 1px solid var(--rule); padding-left: 12px; }
+  .facts div:first-child { padding-left: 0; }
+  .facts div:last-child { border-right: 0; }
+}
+section { padding: 36px 0 8px; border-bottom: 1px solid var(--rule); }
+section > h2 {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 18px;
+  font-variation-settings: "wdth" 100, "wght" 800;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+section > h2 .n {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+h3 {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 28px 0 10px;
+  font-weight: 700;
+}
+p { margin: 0 0 12px; max-width: 70ch; }
+.lede { font-size: 18px; max-width: 62ch; }
+.two { display: grid; grid-template-columns: 1fr; gap: 24px; }
+.two > * { min-width: 0; }
+@media (min-width: 820px) { .two { grid-template-columns: 1fr 1fr; } }
+.fig {
+  overflow-x: auto;
+  margin: 8px 0 20px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.fig svg { display: block; width: 100%; height: auto; }
+.fig .cap {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+.hero { border-top: 0; margin-top: 8px; }
+.tbl { overflow-x: auto; margin: 0 0 20px; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+  min-width: 560px;
+}
+th, td { text-align: left; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--line);
+}
+td.n, th.n { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 13px; white-space: nowrap; }
+td.yes { color: var(--fg); font-weight: 700; }
+td.tight { color: var(--wine); font-weight: 700; }
+td.no { color: var(--muted); }
+tfoot td { border-top: 1px solid var(--line); border-bottom: 0; font-weight: 700; }
+code, .mono {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+ol.steps { padding-left: 0; list-style: none; counter-reset: s; max-width: 72ch; margin: 0 0 16px; }
+ol.steps li {
+  counter-increment: s;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+ol.steps li::before {
+  content: counter(s, decimal-leading-zero);
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color: var(--muted);
+  font-size: 13px;
+  padding-top: 3px;
+}
+ul.tight { margin: 0 0 14px; padding-left: 18px; max-width: 72ch; }
+ul.tight li { margin-bottom: 6px; }
+.risk { border-left: 3px solid var(--wine); padding-left: 12px; margin: 0 0 14px; max-width: 70ch; }
+.risk b { display: block; }
+.foot { padding-top: 24px; font-size: 13px; color: var(--muted); font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+svg text { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="tag">Wine rack / modern direction / 335 x 335 cube opening / Bambu H2D</div>
+    <h1>Hex<br>Eight</h1>
+    <p class="pitch">One hexagonal ring, printed flat, sixteen times. Eight bottles in a 3-2-3 honeycomb, every cell a self-centring V-cradle, every joint the same hidden double-dovetail key, in one colour.</p>
+  </header>
+
+  <div class="facts">
+    <div><b>8</b><span>bottles</span></div>
+    <div><b>96</b><span>mm clear slot</span></div>
+    <div><b>110</b><span>mm pitch</span></div>
+    <div><b>3</b><span>part types</span></div>
+    <div><b>2.0 kg</b><span>PETG-CF black</span></div>
+    <div><b>~20 h</b><span>0.6 mm / 0.3 mm</span></div>
+  </div>
+
+  <div class="fig hero">
+    <div id="hero"></div>
+    <p class="cap">Front elevation in the 335 x 335 opening, 1:1 proportions. Bottles at real body diameters: Bordeaux 75-77, Alsace 78, Burgundy 85-88, Champagne 89-90. Rack envelope 330 x 323.5; 2.5 mm reveal each side, 11.5 mm above.</p>
+  </div>
+
+  <section>
+    <h2><span class="n">01</span>Concept</h2>
+    <p class="lede">The modern brief asks for a confident single idea. Hex Eight has one: a pointy-top hexagonal ring, 110 mm across the flats, 30 mm deep, printed lying on its show face. Repeat it sixteen times, lock the copies together with identical bow-tie keys, stand the lot on a plinth rail, and the rack exists.</p>
+    <p>It belongs to the WineHive and Torsten Johansson lineage, a repeated honeycomb cell rather than a cabinet with holes, and to the Koziol module in scale: the whole rack is a 330 x 323 x 180 mm block, almost exactly Koziol's 36 x 35 cm footprint. What makes it Bauhaus rather than decorative is that nothing is added: the chamfer that gives the show face a crisp edge is the same chamfer that becomes a 2 mm V reveal at every seam, the joint is invisible, and the base rail is the only line that is not a hexagon.</p>
+    <h3>Why hex and not a 3 x 3 square grid</h3>
+    <p>A square grid at the same 110 pitch holds nine bottles; the 3-2-3 honeycomb holds eight. That is the whole cost, one bottle (11 %). What it buys:</p>
+    <ul class="tight">
+      <li><b>Support geometry.</b> A pointy-top cell is a 120-degree V. Every diameter from 74 to 96 mm seats on two lines of contact and centres itself; nothing rolls and no separate saddle, peg or cradle is needed. A square cell needs a flat floor (bottles roll) or a cradle insert.</li>
+      <li><b>Load path.</b> The middle row sits in the Vs of the bottom row: its weight goes into the diagonal flats as bearing, through the hoop of a flat-printed ring (load in XY, the proven honeycomb architecture). Keys only stop the lattice spreading; no printed member is in bending across layers.</li>
+      <li><b>Looks.</b> One cell, one key, one rail. The 14 mm web between bottles is two 7 mm walls meeting under a V reveal, so the front face reads as a drawn honeycomb, not a block with holes; the open corners of the 3-2-3 are the honeycomb's honest edge against the cube.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="n">02</span>Views</h2>
+    <div class="two">
+      <div class="fig">
+        <div id="side"></div>
+        <p class="cap">Side section at a cell. Back ring 0-30, front ring 150-180 from the back face. Full-bottle centre of gravity at 130-145 mm sits between the two support bands; the front band catches the body under the shoulder, so a pushed-in bottle cannot slide forward. A 320 mm Bordeaux reaches 320 from the back of a ~390 mm cube.</p>
+      </div>
+      <div class="fig">
+        <div id="cell"></div>
+        <p class="cap">Cell detail, front. Outer 110, inner 96 across flats, 7 mm wall. A 76 mm Bordeaux seats 11.5 mm below the cell centre on two contact lines; a 96 mm bottle touches all four lower flats. Six blind dovetail grooves, one per flat; the show face gets a 2.5 mm flare inside and a 1 mm reveal chamfer outside.</p>
+      </div>
+    </div>
+    <div class="two">
+      <div class="fig">
+        <div id="joint"></div>
+        <p class="cap">Joint section through two ring walls. Bow-tie key: neck 10, base 12.9, 4 mm deep each side, 20-degree flanks. Groove = key + 0.25 mm per side, cut 27 mm from the mouth and blind 3 mm behind the show face.</p>
+      </div>
+      <div class="fig">
+        <div id="exploded"></div>
+        <p class="cap">Exploded along the bottle axis: back rail and 8 rings, 19 keys (13 ring-ring, 6 ring-rail) standing in the back grooves, front rail and 8 rings dropped on from the front. Every groove mouth faces the inside of the rack; no key end is visible.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">03</span>Bottle compatibility</h2>
+    <p>Clear slot 96 mm across flats (the inscribed circle). Anything up to 96 mm seats on the V; above 96 it rides up on the flats and the flare will not help it in. Length is unconstrained: the back of the cube is the stop.</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Bottle</th><th class="n">Body dia</th><th class="n">Length</th><th>Fit</th><th>Seated depth below cell centre</th></tr></thead>
+        <tbody>
+          <tr><td>Bordeaux (claret), typical</td><td class="n">74-81</td><td class="n">300-330</td><td class="yes">fits</td><td class="n">12.1-9.0 mm</td></tr>
+          <tr><td>Bordeaux, heavy château / 1855 mould</td><td class="n">82-85</td><td class="n">300-316</td><td class="yes">fits</td><td class="n">8.1-6.4 mm</td></tr>
+          <tr><td>Burgundy / Rhône, typical to premium</td><td class="n">82-89</td><td class="n">293-330</td><td class="yes">fits</td><td class="n">8.1-4.0 mm</td></tr>
+          <tr><td>Burgundy, 1859 deep-punt mould</td><td class="n">93</td><td class="n">~300</td><td class="yes">fits</td><td class="n">1.7 mm</td></tr>
+          <tr><td>Champagne / sparkling, standard</td><td class="n">88-91</td><td class="n">279-300</td><td class="yes">fits</td><td class="n">4.6-2.9 mm</td></tr>
+          <tr><td>Champagne, Vintage mould</td><td class="n">96.5</td><td class="n">300</td><td class="tight">tight</td><td class="n">rides 0.3 mm up the flats</td></tr>
+          <tr><td>Champagne, prestige (Krug, Comtes, Dom Ruinart)</td><td class="n">99-101</td><td class="n">300</td><td class="no">no</td><td class="n">&mdash;</td></tr>
+          <tr><td>Alsace / Mosel flute</td><td class="n">75-79</td><td class="n">329-357</td><td class="yes">fits</td><td class="n">12.1-9.8 mm (protrudes 177 past the front ring, inside a 390 cube)</td></tr>
+          <tr><td>Bordeaux magnum 1.5 L</td><td class="n">92-100</td><td class="n">356-404</td><td class="tight">tight / no</td><td class="n">92-95 seats; 98+ no</td></tr>
+          <tr><td>Champagne / Burgundy magnum</td><td class="n">110-117</td><td class="n">367-385</td><td class="no">no</td><td class="n">&mdash;</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>Capacity: 8 bottles.</b> Mixed full load 8 x 1.5-1.7 kg = 12-14 kg. Every cell takes every standard 750 ml shape, which the research says is what 76-85 mm racks fail at.</p>
+  </section>
+
+  <section>
+    <h2><span class="n">04</span>Modules and plate plan</h2>
+    <p>Three part types plus a coupon. Every part lies on its show face (textured PEI side out) with its dovetail grooves vertical, so the hoop of every ring and the flanks of every groove are XY perimeters. Rates: PETG-CF at 1.27 g/cm3; time at ~10 h/kg for a 0.6 mm nozzle at 0.3 mm layers (brief: 1.5-2 kg in 14-25 h). At 0.4/0.2 multiply hours by 1.5.</p>
+    <div class="fig">
+      <div id="plates"></div>
+      <p class="cap">Bed maps, 325 x 320 single-nozzle area (front 15 mm calibration strip hatched). Left: ring plate, 4 rings 110 x 127 at 6 mm gaps (226 x 260). Middle: key plate, 10 keys 174 x 12.9 at 6 mm gaps (174 x 184). Right: rail plate, two 330 x 37.8 rails on the diagonal, 40 mm apart.</p>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Part</th><th class="n">Size (mm)</th><th>Orientation</th><th class="n">Qty</th><th>Plate</th><th class="n">g each</th><th class="n">g plate</th><th class="n">h plate</th></tr></thead>
+        <tbody>
+          <tr><td>hex_ring (pointy-top ring, 6 blind grooves, flare + reveal chamfers)</td><td class="n">110 x 127 x 30</td><td>show face down, grooves up</td><td class="n">16</td><td>A, B, C, D (4 per plate)</td><td class="n">85</td><td class="n">340</td><td class="n">3.4</td></tr>
+          <tr><td>hex_key (bow-tie double dovetail)</td><td class="n">174 x 12.9 x 8</td><td>flat, wide base down, length along X</td><td class="n">19 + 1 spare</td><td>E (10), F (10)</td><td class="n">20</td><td class="n">203</td><td class="n">2.0</td></tr>
+          <tr><td>hex_rail (plinth, zig-zag top, 6 blind grooves)</td><td class="n">330 x 37.8 x 30</td><td>flat, on the bed diagonal, 5 mm brim</td><td class="n">2</td><td>G</td><td class="n">145</td><td class="n">290</td><td class="n">2.9</td></tr>
+          <tr><td>hex_coupon_block + hex_coupon_key (print first)</td><td class="n">30 x 20 x 30 / 40 x 12.9 x 8</td><td>as ring / as key</td><td class="n">1 + 1</td><td>with F</td><td class="n">23 + 5</td><td class="n">28</td><td class="n">0.3</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td></td><td></td><td class="n">40 parts</td><td>7 plates</td><td></td><td class="n">1,990 g</td><td class="n">~20 h</td></tr></tfoot>
+      </table>
+    </div>
+    <p>Per bottle position: 250 g and 2.5 h. Grams run above the brief's 100-150 g target because a 7 mm wall at 0.6 mm lines is solid perimeter; the time is well under the 4-8 h target. Dropping <code>wall_t</code> to 6 mm (groove depth 3.5) saves 200 g and keeps a 98 mm slot; the 7 mm default is the creep margin.</p>
+  </section>
+
+  <section>
+    <h2><span class="n">05</span>Joints and tolerances</h2>
+    <div class="two">
+      <div>
+        <h3>Double-dovetail key</h3>
+        <ul class="tight">
+          <li>Bow-tie section: neck 10 at the interface, base 12.9, 4.0 mm into each wall, flank 20 degrees from the depth axis. Derived: <code>dt_base = dt_neck + 2 dt_d tan(dt_ang)</code>.</li>
+          <li>Groove = key offset outward by <code>dt_gap</code> 0.25 mm per side (brief: sliding dovetail 0.20-0.30): opening 10.53, base 13.63, depth 4.25. Leaves 2.75 mm of wall behind the groove.</li>
+          <li>Engagement 27 mm per ring (30 ring minus 3 floor). Keys are 174 long (<code>rack_d - 2 floor_t</code>) and span the 120 mm between plates as the rack's only depth members: 19 of them, in a space frame.</li>
+          <li>Keyed, no backwards: the key is symmetric end to end and side to side, the ring is symmetric when flipped, so there is no wrong orientation. Grooves are blind at the show face, so a key can only enter from inside the rack and cannot leave once both plates are on.</li>
+          <li>Rings are the same part in both plates: back plate rings face the front, front plate rings face the back (flip the same print).</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Tolerance coupon</h3>
+        <p>The script builds <code>hex_coupon_block</code> (30 x 20 x 30 block with one blind groove on its long face) and <code>hex_coupon_key</code> (40 mm key). Print both first, on the ring profile.</p>
+        <div class="tbl">
+          <table>
+            <thead><tr><th>Result</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td>Key slides home by hand, no play when seated</td><td>Print the rack at <code>dt_gap</code> 0.25</td></tr>
+              <tr><td>Needs a mallet or will not enter</td><td>Set <code>dt_gap</code> 0.35, reprint coupon</td></tr>
+              <tr><td>Rattles when seated</td><td>Set <code>dt_gap</code> 0.15-0.20, reprint coupon</td></tr>
+              <tr><td>Enters, then binds 5-10 mm from the floor</td><td>Elephant foot on the key base: raise elephant-foot compensation to 0.2, or chamfer 0.4 mm on the key's bottom edges</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Never pull a seated key straight out; lift the ring off along the key axis. Keys are captive by design, so there is no disassembly once the front plate is on, short of lifting the whole front plate.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">06</span>Filament and print settings</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Role</th><th>Pick</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Primary, all parts</td><td>Bambu PETG-CF Black</td><td>Satin, hides the 0.3 mm layers; flex modulus 2910 MPa (40 % stiffer than PETG HF) so creep in the rings is lowest of the easy-print options; no chamber heat; stock hardened 0.6 HF nozzle. ~2 spools, ~GBP 58.</td></tr>
+          <tr><td>Alternative, white</td><td>Bambu PETG HF White (or ASA White, chamber 60 C)</td><td>Same geometry; PETG HF creeps "only slightly" at these stresses; ASA if the cube sits in sun or by an oven.</td></tr>
+          <tr><td>Optional accent, free</td><td>Rails in white, rings black (or vice versa)</td><td>Parts are separate, so a two-tone plinth costs nothing and needs no dual-nozzle run. Keys are hidden: use any leftover PETG.</td></tr>
+          <tr><td>Avoid</td><td>PLA family, silk</td><td>12-14 kg permanent load; PLA sags in months. PLA-CF only for nothing here.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Setting</th><th class="n">Value</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Nozzle / layer</td><td class="n">0.6 HF hardened / 0.30 mm</td><td>ring = 100 layers; 0.4 / 0.20 if you want a finer flare</td></tr>
+          <tr><td>Walls</td><td class="n">5 (3.0 mm)</td><td>7 mm ring wall becomes 10 solid perimeters: the load path is all wall. Arachne on.</td></tr>
+          <tr><td>Infill</td><td class="n">30 % gyroid</td><td>only the rails have any</td></tr>
+          <tr><td>Top / bottom</td><td class="n">6 / 6</td><td>bottom = show face on textured PEI</td></tr>
+          <tr><td>Temps</td><td class="n">255 C / bed 70 C</td><td>chamber closed, unheated; part fan per profile (low)</td></tr>
+          <tr><td>Plate / adhesion</td><td class="n">Textured PEI, glue stick as release</td><td>rings and keys: no brim (1 mm bed-side chamfer kills elephant foot); rails: 5 mm brim, 0 gap, diagonal placement</td></tr>
+          <tr><td>Elephant foot comp.</td><td class="n">0.15 mm</td><td>groove mouths face up so they are unaffected; key base edges are what the coupon checks</td></tr>
+          <tr><td>Seam</td><td class="n">Aligned, rear</td><td>on a hex the seam lands on a vertex and disappears</td></tr>
+          <tr><td>Drying</td><td class="n">65 C / 8 h</td><td>AMS 2 Pro or dryer; PETG-CF strings when damp</td></tr>
+          <tr><td>Supports</td><td class="n">None</td><td>only overhangs are the 45-degree show-face chamfers and the 20-degree dovetail flanks of the keys</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">07</span>Assembly and retention</h2>
+    <ol class="steps">
+      <li>Print and test the coupon (section 05). Then plates A-G. Deburr nothing; wipe the groove mouths.</li>
+      <li>Lay rail 1 show face down. Stand 6 keys in its grooves (each key half in the rail, half proud).</li>
+      <li>Drop the three bottom rings onto the rail keys, flares down. Stand 2 keys between neighbouring rings (vertical flats), 4 keys in the upper-inner flats.</li>
+      <li>Drop the two middle rings on; add 1 key between them and 4 keys in their upper flats. Drop the three top rings on. Back plate done: 8 rings, 19 keys standing 144 mm proud, all 13 ring-ring and 6 ring-rail joints made.</li>
+      <li>Place rail 2 and the eight front rings show face up over the key ends, one at a time, bottom row first. The tapered opening (0.25 mm clearance plus the flanks) self-centres; press down by hand until each seats on its 3 mm floor.</li>
+      <li>Stand the block up on its rails. Stick four rubber door bumpers under the rails if the cube floor is slick.</li>
+      <li>Slide the rack to the back of the cube. 332 envelope in a 335 opening: 1.5 mm each side, 11.5 mm above. It is retained by its own 2 kg and footprint (180 deep, 330 wide), the cube walls stop any tipping, and 12 kg of bottles pin it. Bottles go in base first; the flare takes a 101 mm entry down to the 96 mm slot.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="n">08</span>Parameters</h2>
+    <p>From <code>artifacts/wine-rack/hex_author.py</code>. Root values first; everything below the rule is a derived expression. Changing <code>space_w</code> rescales the honeycomb; changing <code>rack_d</code> lengthens the keys; the script refuses to build if the rack is taller than the envelope or the slot drops under 92 mm.</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Name</th><th class="n">Default</th><th>Drives</th></tr></thead>
+        <tbody>
+          <tr><td class="n">space_w</td><td class="n">335 mm</td><td>opening width and height</td></tr>
+          <tr><td class="n">fit_gap</td><td class="n">1.5 mm</td><td>clearance per side to the opening</td></tr>
+          <tr><td class="n">edge_gap</td><td class="n">1 mm</td><td>honeycomb-to-envelope reveal per side</td></tr>
+          <tr><td class="n">wall_t</td><td class="n">7 mm</td><td>ring wall; two rings meet as a 14 mm web</td></tr>
+          <tr><td class="n">ring_d</td><td class="n">30 mm</td><td>ring depth = print height; rail depth</td></tr>
+          <tr><td class="n">floor_t</td><td class="n">3 mm</td><td>blind groove floor behind the show face</td></tr>
+          <tr><td class="n">rack_d</td><td class="n">180 mm</td><td>overall depth, back face to front face</td></tr>
+          <tr><td class="n">dt_neck / dt_d / dt_ang</td><td class="n">10 mm / 4 mm / 20 deg</td><td>dovetail neck, depth per side, flank angle</td></tr>
+          <tr><td class="n">dt_gap</td><td class="n">0.25 mm</td><td>groove clearance per side (coupon tunes this)</td></tr>
+          <tr><td class="n">grv_over</td><td class="n">0.6 mm</td><td>groove profile overshoot outside the flat</td></tr>
+          <tr><td class="n">base_t</td><td class="n">6 mm</td><td>rail thickness under a ring vertex</td></tr>
+          <tr><td class="n">ch_reveal / ch_flare</td><td class="n">1 mm / 2.5 mm</td><td>show-face chamfers: seam reveal, cell entry flare</td></tr>
+          <tr><td class="n">cp_w / cp_h / cp_key_len</td><td class="n">30 / 20 / 40 mm</td><td>tolerance coupon</td></tr>
+          <tr><td class="n">lay_gap, lay_key_x, lay_rail_y, lay_cp_y</td><td class="n">6 / 220 / 250 / 250 mm</td><td>document layout only</td></tr>
+          <tr><td class="n" style="border-top:1px solid var(--line)">rack_w</td><td class="n" style="border-top:1px solid var(--line)">space_w - 2 fit_gap = 332</td><td style="border-top:1px solid var(--line)">envelope</td></tr>
+          <tr><td class="n">pitch</td><td class="n">(rack_w - 2 edge_gap) / 3 = 110</td><td>cell pitch = ring outer flat-to-flat</td></tr>
+          <tr><td class="n">slot_clear</td><td class="n">pitch - 2 wall_t = 96</td><td>clear slot across flats</td></tr>
+          <tr><td class="n">hex_r / hex_ri / hex_v</td><td class="n">63.5 / 55.4 / 127.0</td><td>outer, inner circumradius; vertex-to-vertex height</td></tr>
+          <tr><td class="n">notch_h</td><td class="n">hex_r / 2 = 31.75</td><td>rise of a lower flat; row spacing is 3 notch_h = 95.26</td></tr>
+          <tr><td class="n">rack_h</td><td class="n">6 notch_h + hex_v + base_t = 323.5</td><td>overall height; must be &lt; rack_w</td></tr>
+          <tr><td class="n">key_len</td><td class="n">rack_d - 2 floor_t = 174</td><td>key length</td></tr>
+          <tr><td class="n">dt_base</td><td class="n">dt_neck + 2 dt_d tan(dt_ang) = 12.91</td><td>dovetail base width</td></tr>
+          <tr><td class="n">grv_d / grv_neck / grv_base</td><td class="n">4.25 / 10.53 / 13.63</td><td>groove depth, opening, base (key + gap per side)</td></tr>
+          <tr><td class="n">grv_cut</td><td class="n">ring_d - floor_t = 27</td><td>groove depth from the mouth</td></tr>
+          <tr><td class="n">rail_w / rail_h</td><td class="n">3 pitch = 330 / base_t + notch_h = 37.75</td><td>base rail length and height at a notch</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Build: <code>python -m fusionhelper.bundle artifacts/wine-rack/hex_author.py</code>, then <code>python -m fusionhelper.preflight artifacts/wine-rack/hex_author.bundled.py</code> (PASS, exit 0). The document holds one plate of rings (4), one plate of keys (10), both rails and the coupon: 18 bodies. Execution in Fusion and the numeric verdict are pending.</p>
+  </section>
+
+  <section>
+    <h2><span class="n">09</span>Risks and open questions</h2>
+    <div class="risk"><b>Cube depth is unknown.</b> The 180 mm rack assumes a ~390 mm KALLAX-class cube so a 320 mm bottle ends near the front. In a shallower cube the necks protrude; set <code>rack_d</code> to (cube depth - 150) down to 150 mm minimum. Below 150 the front ring moves onto Burgundy shoulders and bottles tilt neck-down.</div>
+    <div class="risk"><b>Fit coupon first.</b> Nineteen keys at 0.25 mm per side: a 0.1 mm printer offset turns "slides home" into "mallet". Print the coupon on the ring profile before any ring, and retune <code>dt_gap</code>. The front plate must engage up to six keys at once; the groove opening and 20-degree flanks give 0.25 mm of lead-in, which is not much.</div>
+    <div class="risk"><b>Creep.</b> Bottle load is bearing on 7 mm walls over 30 mm (well under 0.1 MPa); the only slender members are the keys, which are unloaded in service. The risk is the rails: 12 kg on two 6 mm plinths at the ring vertices. PETG-CF at 5 walls is fine; in PETG HF raise <code>base_t</code> to 8.</div>
+    <div class="risk"><b>Chamfer features on hex edges.</b> Fusion chamfers on straight-edged loops are routine, but the 1 mm reveal meets 120-degree corners at the zig-zag rail; if the rail chamfer errors in the timeline, drop it to 0.6 mm (<code>ch_reveal</code> only on the rail is a 1-line change) or let elephant-foot compensation do the job.</div>
+    <div class="risk"><b>Pulled-forward bottles.</b> A bottle pulled 40 mm out of the cell moves its CoG past the front ring and tips. Push bottles home; the back wall of the cube is the stop.</div>
+    <div class="risk"><b>Rails print on the diagonal.</b> 330 mm at 37.8 wide is inside the 121 mm diagonal rule, but Bambu Studio's auto-arrange will not find it: rotate 45 degrees by hand and check the plate view, brim on, bed edge temperature is the least uniform.</div>
+  </section>
+
+  <p class="foot">HEX EIGHT / modern designer / hex_author.py, hex.html, hex-design.md / preflight PASS / Fusion execution pending.</p>
+</div>
+
+<script>
+(function () {
+  var SQ3 = Math.sqrt(3);
+  var P = 110, W = 7, CLR = P - 2 * W, R = P / SQ3, RI = CLR / SQ3, NH = R / 2, BASE_T = 6;
+  var RING_D = 30, RACK_D = 180, FLOOR = 3;
+  var ROW = 3 * NH;             // 95.26 row spacing
+  var OPEN = 335, FIT = 1.5, EDGE = 1;
+  var X0 = FIT + EDGE;          // honeycomb left edge in the opening
+  var RACK_W = 3 * P;           // 330
+  var RACK_H = 6 * NH + 2 * R + BASE_T;
+  var DT_NECK = 10, DT_D = 4, DT_ANG = 20 * Math.PI / 180, GAP = 0.25;
+  var DT_BASE = DT_NECK + 2 * DT_D * Math.tan(DT_ANG);
+  var GRV_D = DT_D + GAP, GRV_NECK = DT_NECK + 2 * GAP / Math.cos(DT_ANG);
+  var GRV_BASE = DT_BASE + 2 * GAP * (Math.tan(DT_ANG) + 1 / Math.cos(DT_ANG));
+
+  function el(name, attrs, parent) {
+    var e = document.createElementNS("http://www.w3.org/2000/svg", name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function svg(id, w, h, vb) {
+    var host = document.getElementById(id);
+    var s = el("svg", { viewBox: vb || ("0 0 " + w + " " + h), width: w, height: h,
+      role: "img", "aria-label": id });
+    host.appendChild(s);
+    return s;
+  }
+  function txt(s, x, y, str, size, anchor, fill) {
+    var t = el("text", { x: x, y: y, "font-size": size || 9, "text-anchor": anchor || "start",
+      fill: fill || "var(--muted)" }, s);
+    t.textContent = str;
+    return t;
+  }
+  function hexPts(cx, cy, r, flat) {
+    // pointy-top unless flat; screen y grows downward so we pass cy already flipped
+    var pts = [];
+    for (var k = 0; k < 6; k++) {
+      var a = (flat ? 0 : 90) + 60 * k;
+      a = a * Math.PI / 180;
+      pts.push([cx + r * Math.cos(a), cy - r * Math.sin(a)]);
+    }
+    return pts;
+  }
+  function poly(s, pts, attrs) {
+    attrs.points = pts.map(function (p) { return p[0].toFixed(2) + "," + p[1].toFixed(2); }).join(" ");
+    return el("polygon", attrs, s);
+  }
+  function ringPath(cx, cy, ro, ri) {
+    var o = hexPts(cx, cy, ro), i = hexPts(cx, cy, ri);
+    var d = "M" + o.map(function (p) { return p[0].toFixed(2) + " " + p[1].toFixed(2); }).join("L") + "Z";
+    d += "M" + i.map(function (p) { return p[0].toFixed(2) + " " + p[1].toFixed(2); }).join("L") + "Z";
+    return d;
+  }
+  function dim(s, x1, y1, x2, y2, label, off, size) {
+    off = off || 0;
+    var g = el("g", { stroke: "var(--muted)", "stroke-width": 0.5, fill: "none" }, s);
+    var horiz = Math.abs(y2 - y1) < 1e-6;
+    if (horiz) {
+      el("line", { x1: x1, y1: y1, x2: x1, y2: y1 + off }, g);
+      el("line", { x1: x2, y1: y2, x2: x2, y2: y2 + off }, g);
+      el("line", { x1: x1, y1: y1 + off, x2: x2, y2: y2 + off }, g);
+      txt(s, (x1 + x2) / 2, y1 + off - 2, label, size || 8, "middle");
+    } else {
+      el("line", { x1: x1, y1: y1, x2: x1 + off, y2: y1 }, g);
+      el("line", { x1: x2, y1: y2, x2: x2 + off, y2: y2 }, g);
+      el("line", { x1: x1 + off, y1: y1, x2: x2 + off, y2: y2 }, g);
+      var t = txt(s, x1 + off + 3, (y1 + y2) / 2 + 3, label, size || 8, "start");
+    }
+  }
+
+  // cell centres in rack coordinates (mm, y up from the cube floor)
+  function cells() {
+    var out = [];
+    var y0 = BASE_T + R;
+    var rows = [[3, 0], [2, 1], [3, 2]];
+    rows.forEach(function (rw) {
+      var n = rw[0], k = rw[1];
+      var y = y0 + k * ROW;
+      var xs = n === 3 ? [X0 + P / 2, X0 + 1.5 * P, X0 + 2.5 * P] : [X0 + P, X0 + 2 * P];
+      xs.forEach(function (x) { out.push([x, y]); });
+    });
+    return out;
+  }
+  function railPts(yBottom) {
+    // rack coordinates: bottom at yBottom, zig-zag top
+    var pts = [[X0, yBottom], [X0 + RACK_W, yBottom], [X0 + RACK_W, yBottom + BASE_T + NH]];
+    var xs = [X0 + 2.5 * P, X0 + 2 * P, X0 + 1.5 * P, X0 + P, X0 + P / 2];
+    xs.forEach(function (x, i) { pts.push([x, yBottom + BASE_T + (i % 2 === 0 ? 0 : NH)]); });
+    pts.push([X0, yBottom + BASE_T + NH]);
+    return pts;
+  }
+
+  // ---------- hero: front elevation ----------
+  (function () {
+    var w = 400, h = 392, ox = 32, oy = 34;
+    var s = svg("hero", w, h);
+    function X(x) { return ox + x; }
+    function Y(y) { return oy + OPEN - y; }
+    // cube opening
+    el("rect", { x: X(0) - 18, y: Y(OPEN) - 18, width: OPEN + 36, height: OPEN + 36, fill: "none",
+      stroke: "var(--rule)", "stroke-width": 18 }, s);
+    el("rect", { x: X(0), y: Y(OPEN), width: OPEN, height: OPEN, fill: "none", stroke: "var(--line)", "stroke-width": 0.8 }, s);
+    // rail
+    poly(s, railPts(0).map(function (p) { return [X(p[0]), Y(p[1])]; }), { fill: "var(--ink)", stroke: "none" });
+    // rings
+    var cs = cells();
+    var dias = [76, 90, 88, 78, 75, 85, 77, 89];
+    cs.forEach(function (c, i) {
+      el("path", { d: ringPath(X(c[0]), Y(c[1]), R, RI), fill: "var(--ink)", "fill-rule": "evenodd",
+        stroke: "var(--paper)", "stroke-width": 0.6 }, s);
+      // reveal V at the show face: draw outer hex outline as a thin paper line
+    });
+    // bottles seated in the V
+    cs.forEach(function (c, i) {
+      var d = dias[i], r = d / 2;
+      var drop = RI - r / Math.sin(Math.PI / 3);
+      var cy = c[1] - drop;
+      el("circle", { cx: X(c[0]), cy: Y(cy), r: r, fill: "var(--wine)", stroke: "var(--paper)", "stroke-width": 0.8 }, s);
+      el("circle", { cx: X(c[0]), cy: Y(cy), r: r * 0.42, fill: "none", stroke: "var(--paper)", "stroke-width": 0.6, opacity: 0.7 }, s);
+      el("circle", { cx: X(c[0]), cy: Y(cy), r: 1.2, fill: "var(--paper)" }, s);
+      txt(s, X(c[0]), Y(cy) + r - 5, "ø" + d, 7, "middle", "var(--paper)");
+    });
+    // dims
+    dim(s, X(0), Y(0) + 4, X(OPEN), Y(0) + 4, "335 opening", 12, 8);
+    dim(s, X(X0), Y(OPEN) - 4, X(X0 + RACK_W), Y(OPEN) - 4, "330 rack (3 x 110 pitch)", -6, 8);
+    dim(s, X(OPEN) + 6, Y(0), X(OPEN) + 6, Y(RACK_H), "323.5", 8, 8);
+    txt(s, X(X0 + 1.5 * P), Y(BASE_T / 2) + 2, "rail", 6, "middle", "var(--paper)");
+  })();
+
+  // ---------- side section ----------
+  (function () {
+    var w = 440, h = 150, ox = 40, oy = 14, sc = 0.55;
+    var TOP = BASE_T + 2 * R + 26;
+    var s = svg("side", w, h);
+    function X(z) { return ox + z * sc; }        // z = depth from the back face
+    function Y(y) { return oy + (TOP - y) * sc; }   // y up from cube floor
+    // cube floor and back wall
+    el("line", { x1: X(-10), y1: Y(0), x2: X(395), y2: Y(0), stroke: "var(--line)", "stroke-width": 0.8 }, s);
+    el("line", { x1: X(0), y1: Y(-8), x2: X(0), y2: Y(TOP + 4), stroke: "var(--line)", "stroke-width": 0.8 }, s);
+    el("line", { x1: X(390), y1: Y(-8), x2: X(390), y2: Y(TOP + 4), stroke: "var(--rule)", "stroke-width": 0.8, "stroke-dasharray": "3 3" }, s);
+    txt(s, X(390), Y(TOP + 8), "cube front (~390, unknown)", 7, "end");
+    // section through a bottom-row cell on its vertical centreline
+    var cy = BASE_T + R;
+    var d = 76, r = d / 2, drop = RI - r / Math.sin(Math.PI / 3);
+    var bc = cy - drop;
+    // support bands behind everything
+    [[0, RING_D], [RACK_D - RING_D, RACK_D]].forEach(function (b) {
+      el("rect", { x: X(b[0]), y: Y(bc + r + 6), width: (b[1] - b[0]) * sc, height: (2 * r + 12) * sc, fill: "var(--band)" }, s);
+    });
+    // ring walls (vertex to vertex on the centreline) and rails
+    [[0, RING_D], [RACK_D - RING_D, RACK_D]].forEach(function (b) {
+      var wdt = (b[1] - b[0]) * sc;
+      el("rect", { x: X(b[0]), y: Y(cy + R), width: wdt, height: (R - RI) * sc, fill: "var(--ink)" }, s);
+      el("rect", { x: X(b[0]), y: Y(cy - RI), width: wdt, height: (R - RI) * sc, fill: "var(--ink)" }, s);
+      el("rect", { x: X(b[0]), y: Y(BASE_T), width: wdt, height: BASE_T * sc, fill: "var(--ink)" }, s);
+    });
+    // bottle: Bordeaux 320, body 76 to 190, shoulder to 225, neck 30 to 320, seated in the V
+    var prof = [[0, bc - r], [190, bc - r], [225, bc - 15], [320, bc - 15], [320, bc + 15], [225, bc + 15], [190, bc + r], [0, bc + r]];
+    poly(s, prof.map(function (p) { return [X(p[0]), Y(p[1])]; }), { fill: "var(--wine)", opacity: 0.85, stroke: "none" });
+    // key between the plates: lies in a lower flat, behind this section plane
+    var kz = cy - RI / 2;
+    el("rect", { x: X(FLOOR), y: Y(kz + DT_D), width: (RACK_D - 2 * FLOOR) * sc, height: 2 * DT_D * sc, fill: "none",
+      stroke: "var(--paper)", "stroke-width": 0.9, "stroke-dasharray": "3 2" }, s);
+    txt(s, X(RACK_D + 6), Y(kz) + 2.5, "dashed: key 174, behind the section", 6.5, "start");
+    // CoG
+    var cg = 137;
+    el("line", { x1: X(cg), y1: Y(bc - r - 10), x2: X(cg), y2: Y(bc + r + 10), stroke: "var(--fg)", "stroke-width": 0.6, "stroke-dasharray": "2 2" }, s);
+    el("circle", { cx: X(cg), cy: Y(bc), r: 3, fill: "var(--paper)", stroke: "var(--fg)", "stroke-width": 0.8 }, s);
+    txt(s, X(cg) + 5, Y(bc + r + 14), "CoG 130-145", 7, "start", "var(--fg)");
+    // support band labels
+    txt(s, X(2), Y(cy + R) - 3, "back ring 0-30", 7, "start");
+    txt(s, X(RACK_D), Y(cy + R) - 13, "front ring 150-180", 7, "end");
+    txt(s, X(RING_D + 4), Y(BASE_T / 2) + 2.5, "rail", 6.5, "start");
+    dim(s, X(0), Y(0) + 10, X(RACK_D), Y(0) + 10, "rack_d 180", 8, 8);
+    dim(s, X(0), Y(0) + 24, X(320), Y(0) + 24, "Bordeaux 320", 6, 8);
+    txt(s, X(2), Y(TOP + 8), "back wall", 7, "start");
+  })();
+
+  // ---------- cell detail ----------
+  (function () {
+    var w = 440, h = 230, sc = 1.35, cx = 150, cy = 118;
+    var s = svg("cell", w, h);
+    var ro = R * sc, ri = RI * sc;
+    el("path", { d: ringPath(cx, cy, ro, ri), fill: "var(--ink)", "fill-rule": "evenodd" }, s);
+    // grooves: trapezoid on each flat, drawn in paper colour
+    for (var k = 0; k < 6; k++) {
+      var a = (60 * k) * Math.PI / 180; // flat normals of a pointy-top hex
+      var nx = Math.cos(a), ny = -Math.sin(a), tx = Math.sin(a), ty = Math.cos(a);
+      var fx = cx + nx * (P / 2) * sc, fy = cy + ny * (P / 2) * sc;
+      var pts = [
+        [fx + tx * GRV_NECK / 2 * sc, fy + ty * GRV_NECK / 2 * sc],
+        [fx - nx * GRV_D * sc + tx * GRV_BASE / 2 * sc, fy - ny * GRV_D * sc + ty * GRV_BASE / 2 * sc],
+        [fx - nx * GRV_D * sc - tx * GRV_BASE / 2 * sc, fy - ny * GRV_D * sc - ty * GRV_BASE / 2 * sc],
+        [fx - tx * GRV_NECK / 2 * sc, fy - ty * GRV_NECK / 2 * sc]];
+      poly(s, pts, { fill: "var(--paper)", stroke: "none" });
+    }
+    // bottle 76 seated
+    var d = 76, r = d / 2 * sc, drop = (RI - d / 2 / Math.sin(Math.PI / 3)) * sc;
+    el("circle", { cx: cx, cy: cy + drop, r: r, fill: "var(--wine)", opacity: 0.9 }, s);
+    // contact points on the two lower flats
+    [-1, 1].forEach(function (sg) {
+      var a = (sg > 0 ? -30 : -150) * Math.PI / 180;
+      var px = cx + Math.cos(a) * r, py = cy + drop - Math.sin(a) * r;
+      el("circle", { cx: px, cy: py, r: 2.2, fill: "var(--paper)", stroke: "var(--fg)", "stroke-width": 0.8 }, s);
+    });
+    el("line", { x1: cx - 6, y1: cy, x2: cx + 6, y2: cy, stroke: "var(--paper)", "stroke-width": 0.6 }, s);
+    el("line", { x1: cx, y1: cy - 6, x2: cx, y2: cy + 6, stroke: "var(--paper)", "stroke-width": 0.6 }, s);
+    txt(s, cx, cy + drop + 3, "ø76", 8, "middle", "var(--paper)");
+    dim(s, cx - (P / 2) * sc, cy - ro - 8, cx + (P / 2) * sc, cy - ro - 8, "110 across flats", -6, 8);
+    dim(s, cx - (CLR / 2) * sc, cy + ro + 6, cx + (CLR / 2) * sc, cy + ro + 6, "96 clear", 12, 8);
+    dim(s, cx + (CLR / 2) * sc, cy + 30, cx + (P / 2) * sc, cy + 30, "7", 0, 7);
+    // section inset: ring wall through a groove, show face at the bottom
+    var ix = 322, iy = 40, isc = 2.6;
+    var g = el("g", {}, s);
+    txt(s, ix, iy - 8, "wall section, show face down", 7, "start");
+    // wall block: width W, height RING_D
+    el("rect", { x: ix, y: iy, width: W * isc, height: RING_D * isc, fill: "var(--ink)" }, g);
+    // groove (blind): from the top down to floor, depth GRV_D from the outer face (right side)
+    el("rect", { x: ix + (W - GRV_D) * isc, y: iy, width: GRV_D * isc, height: (RING_D - FLOOR) * isc, fill: "var(--paper)" }, g);
+    // flare chamfer at the inner bottom corner and reveal at the outer bottom corner
+    poly(g, [[ix, iy + RING_D * isc], [ix + 2.5 * isc, iy + RING_D * isc], [ix, iy + (RING_D - 2.5) * isc]], { fill: "var(--paper)" });
+    poly(g, [[ix + W * isc, iy + RING_D * isc], [ix + (W - 1) * isc, iy + RING_D * isc], [ix + W * isc, iy + (RING_D - 1) * isc]], { fill: "var(--paper)" });
+    txt(s, ix + W * isc + 4, iy + 6, "groove mouth", 7);
+    txt(s, ix + W * isc + 4, iy + (RING_D - FLOOR) * isc - 2, "groove floor", 7);
+    txt(s, ix - 4, iy + RING_D * isc - 10, "flare 2.5", 7, "end");
+    txt(s, ix + W * isc + 4, iy + RING_D * isc + 1, "reveal 1", 7);
+    txt(s, ix - 4, iy + (RING_D - FLOOR) * isc + 2, "3", 7, "end");
+    dim(s, ix + W * isc + 62, iy, ix + W * isc + 62, iy + RING_D * isc, "30", 0, 7);
+    dim(s, ix, iy + RING_D * isc + 14, ix + W * isc, iy + RING_D * isc + 14, "7", 4, 7);
+    txt(s, ix - 4, iy + RING_D * isc + 26, "bed / show face", 7);
+  })();
+
+  // ---------- joint section ----------
+  (function () {
+    var w = 440, h = 230, sc = 7.5, cx = 170, cy = 110;
+    var s = svg("joint", w, h);
+    // two walls meeting at x = cx, depth axis horizontal
+    el("rect", { x: cx - W * sc, y: cy - 60, width: W * sc, height: 120, fill: "var(--ink)" }, s);
+    el("rect", { x: cx, y: cy - 60, width: W * sc, height: 120, fill: "var(--ink)" }, s);
+    el("line", { x1: cx, y1: cy - 70, x2: cx, y2: cy + 70, stroke: "var(--paper)", "stroke-width": 0.8, "stroke-dasharray": "3 2" }, s);
+    // groove (paper) as a bow-tie
+    function bow(neck, base, d) {
+      return [[cx - d * sc, cy - base / 2 * sc], [cx, cy - neck / 2 * sc], [cx + d * sc, cy - base / 2 * sc],
+              [cx + d * sc, cy + base / 2 * sc], [cx, cy + neck / 2 * sc], [cx - d * sc, cy + base / 2 * sc]];
+    }
+    poly(s, bow(GRV_NECK, GRV_BASE, GRV_D), { fill: "var(--paper)" });
+    poly(s, bow(DT_NECK, DT_BASE, DT_D), { fill: "var(--key)" });
+    txt(s, cx, cy + 2.5, "key", 8, "middle", "var(--paper)");
+    dim(s, cx - DT_D * sc, cy - 62, cx + DT_D * sc, cy - 62, "2 x 4.0 deep", -4, 8);
+    dim(s, cx + W * sc + 12, cy - DT_BASE / 2 * sc, cx + W * sc + 12, cy + DT_BASE / 2 * sc, "12.9 base", 4, 8);
+    dim(s, cx - W * sc - 12, cy - DT_NECK / 2 * sc, cx - W * sc - 12, cy + DT_NECK / 2 * sc, "10 neck", -52, 8);
+    txt(s, cx - W * sc, cy + 72, "ring A wall 7", 7, "start");
+    txt(s, cx + W * sc, cy + 84, "ring B wall 7", 7, "end");
+    txt(s, cx + W * sc + 4, cy - 52, "groove = key + 0.25 all round", 7, "start");
+    txt(s, cx - W * sc - 4, cy - 52, "20° flanks", 7, "end");
+    txt(s, 8, 16, "section across the slide axis (keys slide along the bottle axis)", 7);
+  })();
+
+  // ---------- exploded ----------
+  (function () {
+    var w = 440, h = 300, sc = 0.42;
+    var s = svg("exploded", w, h);
+    // three stations along x: back plate, keys, front plate; oblique honeycomb drawn small
+    function plate(ox, oy, label, flip) {
+      var g = el("g", {}, s);
+      // rail
+      poly(g, railPts(0).map(function (p) { return [ox + (p[0] - X0) * sc, oy + (RACK_H - p[1]) * sc]; }), { fill: "var(--ink)" });
+      cells().forEach(function (c) {
+        el("path", { d: ringPath(ox + (c[0] - X0) * sc, oy + (RACK_H - c[1]) * sc, R * sc, RI * sc), fill: "var(--ink)",
+          "fill-rule": "evenodd", stroke: "var(--paper)", "stroke-width": 0.5 }, g);
+      });
+      txt(s, ox + RACK_W * sc / 2, oy + RACK_H * sc + 12, label[0], 8, "middle", "var(--fg)");
+      txt(s, ox + RACK_W * sc / 2, oy + RACK_H * sc + 24, label[1], 7, "middle");
+      return g;
+    }
+    plate(8, 20, ["back plate", "rail + 8 rings, mouths forward"]);
+    plate(292, 20, ["front plate", "same parts, flipped"]);
+    // keys: draw as 19 short bars at joint positions in the middle station
+    var ox = 170, oy = 20;
+    var cs = cells();
+    var joints = [];
+    // ring-ring: pairs closer than pitch*1.05
+    for (var i = 0; i < cs.length; i++) for (var j = i + 1; j < cs.length; j++) {
+      var dx = cs[j][0] - cs[i][0], dy = cs[j][1] - cs[i][1];
+      if (Math.hypot(dx, dy) < P * 1.05) joints.push([(cs[i][0] + cs[j][0]) / 2, (cs[i][1] + cs[j][1]) / 2]);
+    }
+    // ring-rail: lower flats of bottom row
+    cs.slice(0, 3).forEach(function (c) {
+      joints.push([c[0] - P / 4, c[1] - 0.75 * R]);
+      joints.push([c[0] + P / 4, c[1] - 0.75 * R]);
+    });
+    joints.forEach(function (j) {
+      el("rect", { x: ox + (j[0] - X0) * sc - 2, y: oy + (RACK_H - j[1]) * sc - 6, width: 4, height: 12, fill: "var(--key)" }, s);
+    });
+    txt(s, ox + RACK_W * sc / 2, oy + RACK_H * sc + 12, "19 keys, 174 long", 8, "middle", "var(--fg)");
+    txt(s, ox + RACK_W * sc / 2, oy + RACK_H * sc + 24, "13 ring-ring + 6 ring-rail", 7, "middle");
+    // arrows
+    [[150, 90], [272, 90]].forEach(function (a) {
+      el("line", { x1: a[0] - 8, y1: a[1], x2: a[0] + 8, y2: a[1], stroke: "var(--fg)", "stroke-width": 0.8 }, s);
+      poly(s, [[a[0] + 8, a[1] - 3], [a[0] + 12, a[1]], [a[0] + 8, a[1] + 3]], { fill: "var(--fg)" });
+    });
+    txt(s, 220, 200, "z: 0-30 back rings / 3-177 keys / 150-180 front rings", 7, "middle");
+  })();
+
+  // ---------- plates ----------
+  (function () {
+    var w = 470, h = 160, sc = 0.42, gap = 20;
+    var s = svg("plates", w, h);
+    function bed(ox, oy, label) {
+      el("rect", { x: ox, y: oy, width: 325 * sc, height: 320 * sc, fill: "none", stroke: "var(--line)", "stroke-width": 0.8 }, s);
+      el("rect", { x: ox + 18 * sc, y: oy + (320 - 15) * sc, width: 222 * sc, height: 15 * sc, fill: "var(--rule)" }, s);
+      txt(s, ox, oy + 320 * sc + 12, label, 7, "start", "var(--fg)");
+    }
+    var ox1 = 4, oy = 8;
+    bed(ox1, oy, "A-D: 4 rings");
+    var lx = 8, ly = 8;
+    for (var i = 0; i < 2; i++) for (var j = 0; j < 2; j++) {
+      var cx = ox1 + (lx + P / 2 + i * (P + 6)) * sc, cy = oy + (320 - (ly + R + j * (2 * R + 6))) * sc;
+      el("path", { d: ringPath(cx, cy, R * sc, RI * sc), fill: "var(--ink)", "fill-rule": "evenodd" }, s);
+    }
+    var ox2 = ox1 + 325 * sc + gap;
+    bed(ox2, oy, "E, F: 10 keys");
+    for (var k = 0; k < 10; k++) {
+      el("rect", { x: ox2 + 10 * sc, y: oy + (320 - 30 - (k + 1) * (DT_BASE + 6)) * sc, width: 174 * sc, height: DT_BASE * sc, fill: "var(--key)" }, s);
+    }
+    var ox3 = ox2 + 325 * sc + gap;
+    bed(ox3, oy, "G: 2 rails, diagonal");
+    var RAIL_H = BASE_T + NH;
+    [-22, 22].forEach(function (off) {
+      var g = el("g", { transform: "translate(" + (ox3 + 162.5 * sc) + "," + (oy + 160 * sc) + ") rotate(-45) translate(0," + (off * sc) + ")" }, s);
+      poly(g, railPts(0).map(function (p) { return [(p[0] - X0 - RACK_W / 2) * sc, -(p[1] - RAIL_H / 2) * sc]; }), { fill: "var(--ink)" });
+    });
+  })();
+})();
+</script>
