@@ -357,7 +357,11 @@ def plane_at_y(ctx, expr, name, y_cm):
 J_BALL_R = 4.0
 J_GAP = 0.3            # radial ball-to-socket clearance
 J_CAV_R = J_BALL_R + J_GAP
-J_OUT_R = 7.2          # knee bowl outer radius (carries the tip channel)
+J_OUT_R = 6.7          # knee bowl outer radius: 1.25 wall outside the tip
+                       # channel (5.45); 7.2 made the custard's two bowls
+                       # (hips 14 apart) clash by 1.7 mm3
+J_RECESS_R = 4.1       # hip recess radius; tab corner reaches 3.90
+                       # (3.9 recess + 3.7 tab clipped the wall, 0.01 mm3)
 J_NECK_R = 2.0
 J_ROD_R = 3.1
 J_LIP = 3.0            # socket opening height above ball centre
@@ -412,8 +416,8 @@ def j_shin_profile(zk, z_end):
 
 def j_socket_cut_profile(zc):
     inner = j_cavity_inner(zc)
-    return ([(0.0, zc + J_LIP + 8.0), (5.0, zc + J_LIP + 8.0),
-             (5.0, zc + J_LIP)] + inner)
+    return ([(0.0, zc + J_LIP + 8.0), (J_RECESS_R, zc + J_LIP + 8.0),
+             (J_RECESS_R, zc + J_LIP)] + inner)
 
 
 def revolve_rz(ctx, plane, name, pts_rz, cx_mm, y_mm, op, participants=None):
@@ -527,6 +531,42 @@ def tip_channel(ctx, plane, name, cx_mm, y_mm, zc, bodies):
     raise RuntimeError("%s: neither sweep direction opened +Y" % name)
 
 
+CHEEK_H = 0.9      # rosy cheek dome height above the face, mm
+
+
+def domed_cheeks(ctx, target, cheeks, face_z, inlay_mm):
+    """Rosy cheeks as true spherical caps: a plug filling the inlay
+    pocket with a spherical cap rising CHEEK_H above the face. Fixed art
+    in z (revolved profile), so the pocket is cut by a revolve at the
+    same fixed heights and open upward: a pocket on a parameter-driven
+    plane moved under a thickness edit and buried the plug (verify:
+    edit.introduces_clash). cheeks = [(x, y, r)] mm, all at one y."""
+    y = cheeks[0][1]
+    pl = plane_at_y(ctx, "%g mm" % abs(y), "cheek_plane", y * MM)
+    out = []
+    for n, (x, _y, r) in enumerate(cheeks):
+        adsk.doEvents()
+        big_r = (r * r + CHEEK_H * CHEEK_H) / (2 * CHEEK_H)
+        zc = face_z + CHEEK_H - big_r
+        a0 = math.degrees(math.asin((face_z - zc) / big_r))
+        prof = ([(0.0, face_z - inlay_mm), (r, face_z - inlay_mm)]
+                + arc_rz(zc, big_r, a0, 90, 10))
+        prof[-1] = (0.0, face_z + CHEEK_H)
+        pocket = [(0.0, face_z - inlay_mm), (r, face_z - inlay_mm),
+                  (r, face_z + 5.0), (0.0, face_z + 5.0)]
+        v0 = target.volume
+        revolve_rz(ctx, pl, "cheek_pocket_%d" % (n + 1), pocket, x, y,
+                   ctx.ops.CutFeatureOperation, [target])
+        if v0 - target.volume < 1e-4:
+            raise RuntimeError("cheek pocket %d cut nothing" % (n + 1))
+        f = revolve_rz(ctx, pl, "cheek_%d" % (n + 1), prof, x, y,
+                       ctx.ops.NewBodyFeatureOperation)
+        body = f.bodies.item(0)
+        body.name = "cheek_%d" % (n + 1)
+        out.append(body)
+    return out
+
+
 def cut_some(ctx, profs, dist_expr, targets, name, min_dv):
     v0 = sum(b.volume for b in targets)
     extrude(ctx, profs, ctx.ops.CutFeatureOperation, dist_expr,
@@ -543,7 +583,7 @@ def j_tabs(cx, cy):
     the rim and ends above the slot, so it never touches anything."""
     hw = J_TAB[0] / 2
     return [[(cx - hw, cy + 1.5), (cx + hw, cy + 1.5),
-             (cx + hw, cy + 3.7), (cx - hw, cy + 3.7)]]
+             (cx + hw, cy + 3.6), (cx - hw, cy + 3.6)]]
 
 
 def jointed_legs(ctx, bodies, hip_x, hip_y, face_z):

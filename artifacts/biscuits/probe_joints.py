@@ -3,8 +3,7 @@ document is not modified). Measures pull-out retention and the 90 degree
 swing at hip and knee as overlap volumes in mm3."""
 import adsk.core, adsk.fusion, json, math
 
-HIP = (0.9, -2.21, 1.26)     # cm: leg 1 hip centre
-KNEE = (0.9, -2.21, 3.46)
+TIP = 0.5157   # cm: ball centre above its flat tip (4*sqrt(2) - 0.5 mm)
 
 
 def run(_context: str):
@@ -39,7 +38,15 @@ def run(_context: str):
                         adsk.core.Point3D.create(*centre))
         return m
 
-    body = ["biscuit_top", "jam", "biscuit_base"]
+    body = [n for n in by if not n.startswith(("thigh", "shin", "foot"))]
+    sb = by["shin_1"].boundingBox
+    tb = by["thigh_1"].boundingBox
+    cx = (sb.minPoint.x + sb.maxPoint.x) / 2
+    cy = (sb.minPoint.y + sb.maxPoint.y) / 2
+    HIP = (cx, cy, tb.minPoint.z + TIP)
+    KNEE = (cx, cy, sb.minPoint.z + TIP)
+    print("FH_RESULT doc bodies %d, hip %s knee %s" % (
+        len(by), [round(v * 10, 2) for v in HIP], [round(v * 10, 2) for v in KNEE]))
     out = {}
     out["hip_rest"] = overlap("thigh_1", body, None)
     out["hip_lift_0.2"] = overlap("thigh_1", body, lift(0.02))

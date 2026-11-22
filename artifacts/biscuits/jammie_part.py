@@ -167,9 +167,7 @@ def run(_context: str):
         polys=[smile(0, 13.5, 6.0, 1.3)],
         circles=[(7.5, 14.5, 1.2), (-7.5, 14.5, 1.2)])
     inlay(ctx, sk_ink, top, "inlay_d", "ink")
-    sk_chk = fixed_sketch(ctx, pl_face, "face_cheeks", zf,
-                          circles=[(14.5, 9.0, 2.5), (-14.5, 9.0, 2.5)])
-    inlay(ctx, sk_chk, top, "inlay_d", "cheek")
+    domed_cheeks(ctx, top, [(14.5, 9.0, 2.5), (-14.5, 9.0, 2.5)], total / MM, inlay_cm / MM)
     print("FH face ok")
 
     jointed_legs(ctx, [top, jam], JM_HIP[0], JM_HIP[1], total / MM)

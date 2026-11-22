@@ -44,6 +44,10 @@ design); timeline, interference and liveness pass.
   overhangs; `spike_*_part.py` are the probes behind the fillet and
   taper limits; `ctl.py` gained `docs`.
 
-Built and verified in Fusion with jointed legs: jam biscuit only.
-Wafer and custard cream artifacts are gated but not yet rebuilt with
-the jointed legs (print orientation still to be decided).
+Revision 3 (same day): all three biscuits rebuilt on one leg design
+(knee bowl r 6.7, hip recess r 4.1) and verified: timeline,
+interference and liveness pass; `probe_joints.py` reads 0.0 mm3 clash
+at 30/60/90 deg swing and 2.6 mm3 lip engagement at 1 mm lift on each.
+Rosy cheeks (jam biscuit, wafer) are spherical caps 0.9 mm proud
+(`domed_cheeks`). Print orientation: on the back, legs straight up.
+Not yet print-tested.
