@@ -102,6 +102,39 @@ def run(_context: str):
     print("FH_RESULT " + json.dumps(report))
 '''
 
+SETPARAM = '''
+import adsk.core, adsk.fusion, json
+NAME, EXPR = "%s", "%s"
+def run(_context: str):
+    # Edit one user parameter in EVERY open biscuit document, then report
+    # timeline health and the bounding size of the feet.
+    app = adsk.core.Application.get()
+    docs = [app.documents.item(i) for i in range(app.documents.count)]
+    last = app.activeDocument
+    report = []
+    for d in docs:
+        d.activate()
+        adsk.doEvents()
+        des = adsk.fusion.Design.cast(app.activeProduct)
+        if des is None:
+            continue
+        prm = des.userParameters.itemByName(NAME)
+        if prm is None:
+            report.append([d.name, "no such parameter"])
+            continue
+        old = prm.expression
+        prm.expression = EXPR
+        adsk.doEvents()
+        tl = des.timeline
+        bad = [tl.item(i).name for i in range(tl.count) if tl.item(i).healthState != 0]
+        kinds = []
+        for o in des.rootComponent.occurrences:
+            kinds.append(o.component.name)
+        report.append([kinds, old, "->", prm.expression, "unhealthy", bad])
+    last.activate()
+    print("FH_RESULT " + json.dumps(report))
+'''
+
 PAINT = '''
 import adsk.core, adsk.fusion
 COLOURS = {
@@ -239,6 +272,9 @@ elif cmd == "undoall":
         if '"canUndo": false' in text or '"success": false' in text:
             break
     print("undid", n, "steps;", " ".join(text.split())[:160])
+elif cmd == "setparam":
+    r = c.execute(SETPARAM % (sys.argv[2], sys.argv[3]))
+    print("SUCCESS", r.success, (r.message if r.success else r.error)[-600:])
 elif cmd == "activate":
     r = c.execute(ACTIVATE % sys.argv[2])
     print("SUCCESS", r.success, (r.message if r.success else r.error)[-300:])
