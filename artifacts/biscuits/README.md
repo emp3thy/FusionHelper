@@ -51,3 +51,18 @@ at 30/60/90 deg swing and 2.6 mm3 lip engagement at 1 mm lift on each.
 Rosy cheeks (jam biscuit, wafer) are spherical caps 0.9 mm proud
 (`domed_cheeks`). Print orientation: on the back, legs straight up.
 Not yet print-tested.
+
+## Revision 4 (2026-11-22)
+
+- Eyes and smile sit `face_sink` (1.2 mm) below the face; the colour is
+  the bottom `inlay_d` of the pocket.
+- Foot biscuits have bevelled rims (`foot_fillet`, bed edge at 0.4x).
+- Pink wafer is four pink sheets (`wafer_1..4`) with three white cream
+  layers (`wafer_cream_1..3`) set back `groove_d`; its legs are painted
+  white by `ctl.py paint`.
+- Post-build steps per document: `ctl.py paint`, then `ctl.py group`
+  (cookie component + Feet component).
+- `ctl.py activate jam|wafer|custard` finds a document by its bodies;
+  `ctl.py undoall` rolls the active document back to empty for a
+  rebuild. Do not switch Fusion tabs during a build: verify reads the
+  active document.

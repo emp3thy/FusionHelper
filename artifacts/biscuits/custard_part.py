@@ -138,13 +138,14 @@ def run(_context: str):
     print("FH emboss ok %.3f" % top.volume)
 
     # face inside the diamond
-    pl_ink = ctx.plane_at_z("(2 * bis_t + fill_t) - inlay_d", "face_plane")
-    zi = total - inlay_cm
+    pl_ink = ctx.plane_at_z("(2 * bis_t + fill_t) - face_sink - inlay_d",
+                           "face_plane")
+    zi = total - ctx.val("face_sink") - inlay_cm
     sk_ink = fixed_sketch(
         ctx, pl_ink, "face_ink", zi,
         polys=[smile(0, 2.5, 4.2, 1.2)],
         circles=[(4.0, 3.5, 1.1), (-4.0, 3.5, 1.1)])
-    inlay(ctx, sk_ink, top, "inlay_d", "ink")
+    inlay(ctx, sk_ink, top, "inlay_d", "ink", sink_expr="face_sink")
     print("FH face ok")
 
     jointed_legs(ctx, [top, cream], 7.0, -24.5, total / MM)

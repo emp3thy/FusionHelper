@@ -1,21 +1,20 @@
 SUCCESS=True
 --- message ---
 FH params added
-FH block 42.000
-FH grooves 41.480
-FH lattice 41.901
+FH sheets 34.125 cream 7.355
+FH lattice 9.609
 FH face ok
 FH jointed legs ok: thigh 1.163 shin 0.878 cm3
 FH feet ok
-FH BUILD OK: 14 bodies
-FH_CHECK1 {"c":"constraints","s":"warn","f":[{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_outline","dim":0,"expr":"35 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_outline","dim":1,"expr":"75 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_outline","dim":2,"expr":"abs(0 mm - ( 17.5 mm ))"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_outline","dim":3,"expr":"abs(0 mm - ( 37.5 mm ))"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/groove_ring_1","dim":0,"expr":"41 mm"}],"more":21}
+FH BUILD OK: 20 bodies
+FH_CHECK1 {"c":"constraints","s":"warn","f":[{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_1_outline","dim":0,"expr":"35 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_1_outline","dim":1,"expr":"75 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_1_outline","dim":2,"expr":"abs(0 mm - ( 35 mm / 2 ))"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_1_outline","dim":3,"expr":"abs(0 mm - ( 75 mm / 2 ))"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_2_outline","dim":0,"expr":"35 mm"}],"more":21}
 FH_CHECK1 {"c":"timeline","s":"pass"}
 FH_CHECK1 {"c":"interference","s":"pass"}
 FH_CHECK1 {"c":"clearance","s":"skip","why":"none_declared"}
-FH_GUARD1 {"restore":{"wafer_t":"16 mm","groove_d":"0.8 mm","groove_h":"1 mm","relief_h":"0.8 mm","inlay_d":"0.6 mm","foot_hole_d":"6.5 mm","foot_disc_h":"6 mm","foot_cream_h":"7 mm"}}
+FH_GUARD1 {"restore":{"wafer_t":"16 mm","groove_d":"0.8 mm","groove_h":"1 mm","relief_h":"0.8 mm","inlay_d":"0.6 mm","foot_hole_d":"6.5 mm","face_sink":"1.2 mm","foot_fillet":"1.2 mm","foot_disc_h":"6 mm","foot_cream_h":"7 mm"}}
 FH_GUARD1 {"restore":"released"}
 FH_CHECK1 {"c":"liveness","s":"pass"}
-FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":14,"volume_mm3":49147.51,"bbox_mm":[42,101.5,60.6],"origin_mm":[-21,-64,0]},"stats":{"timeline":74,"params":8,"sec":8.3},"skipped":{"clearance":"none_declared"}}
+FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":20,"volume_mm3":48826.05,"bbox_mm":[42,101.5,60.6],"origin_mm":[-21,-64,0]},"stats":{"timeline":87,"params":10,"sec":11.4},"skipped":{"clearance":"none_declared"}}
 
 --- error ---
 

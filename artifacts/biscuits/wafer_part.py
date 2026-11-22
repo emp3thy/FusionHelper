@@ -1,8 +1,9 @@
 
 
 # ============================ pink wafer =================================
-# Printed flat, face up. Bodies: wafer (with layer grooves and raised
-# lattice), ink_* (eyes, smile), cheek_*, feet, legs.
+# Printed flat, face up. Bodies: wafer_1..4 (pink sheets, the top one
+# carrying the lattice and face), wafer_cream_1..3 (white layers),
+# ink_*, cheek_*, feet, legs.
 
 WF_W, WF_H = 35.0, 75.0
 WF_PITCH = 8.0      # lattice line spacing along x, mm
@@ -49,47 +50,45 @@ def run(_context: str):
     gd = ctx.val("groove_d")
     hw, hh = WF_W / 2 * MM, WF_H / 2 * MM
 
-    sk0 = root.sketches.add(root.xYConstructionPlane)
-    sk0.name = "wafer_outline"
-    ctx.bound_rect2(sk0, (0, 0, 0), hw, hh,
-                    u_size="%g mm" % WF_W, v_size="%g mm" % WF_H,
-                    u_pos=("0 mm", "%g mm" % (WF_W / 2)),
-                    v_pos=("0 mm", "%g mm" % (WF_H / 2)))
-    wafer = new_bodies(ctx, ctx.all_profiles(sk0), "wafer_t", "wafer")[0]
-    print("FH block %.3f" % wafer.volume)
+    # Four pink wafer sheets with three white cream layers between them.
+    # The cream is set back groove_d from the edge, so the layer lines
+    # read as white grooves round the sides.
+    def slab(z_expr, h_expr, name, inset):
+        z_cm = depth_cm(ctx, z_expr)
+        if z_cm < 1e-9:
+            plane = root.xYConstructionPlane
+        else:
+            plane = ctx.plane_at_z(z_expr, name + "_plane")
+        sk = root.sketches.add(plane)
+        sk.name = name + "_outline"
+        if inset:
+            w_e = "(%g mm - 2 * groove_d)" % WF_W
+            h_e = "(%g mm - 2 * groove_d)" % WF_H
+            shrink = gd
+        else:
+            w_e = "%g mm" % WF_W
+            h_e = "%g mm" % WF_H
+            shrink = 0.0
+        ctx.bound_rect2(sk, (0, 0, z_cm), hw - shrink, hh - shrink,
+                        u_size=w_e, v_size=h_e,
+                        u_pos=("0 mm", w_e + " / 2"),
+                        v_pos=("0 mm", h_e + " / 2"))
+        return new_bodies(ctx, ctx.all_profiles(sk), h_expr, name)[0]
 
-    # three layer grooves round the perimeter
-    for k in (1, 2, 3):
+    sheets, creams = [], []
+    for k in range(4):
         adsk.doEvents()
-        z_expr = "wafer_t * %d / 4 - groove_h / 2" % k
-        pl = ctx.plane_at_z(z_expr, "groove_plane_%d" % k)
-        zk = depth_cm(ctx, z_expr)
-        skg = root.sketches.add(pl)
-        skg.name = "groove_ring_%d" % k
-        ctx.bound_rect2(skg, (0, 0, zk), hw + 0.3, hh + 0.3,
-                        u_size="%g mm" % (WF_W + 6),
-                        v_size="%g mm" % (WF_H + 6),
-                        u_pos=("0 mm", "%g mm" % (WF_W / 2 + 3)),
-                        v_pos=("0 mm", "%g mm" % (WF_H / 2 + 3)))
-        in_w = "(%g mm - 2 * groove_d)" % WF_W
-        in_h = "(%g mm - 2 * groove_d)" % WF_H
-        ctx.bound_rect2(skg, (0, 0, zk), hw - gd, hh - gd,
-                        u_size=in_w, v_size=in_h,
-                        u_pos=("0 mm", in_w + " / 2"),
-                        v_pos=("0 mm", in_h + " / 2"))
-        ring = adsk.core.ObjectCollection.create()
-        for p in skg.profiles:  # fusionhelper: allow R11 — collection add, not a document mutation
-            if p.profileLoops.count == 2:
-                ring.add(p)
-        if ring.count != 1:
-            raise RuntimeError("groove ring profiles %d" % ring.count)
-        v0 = wafer.volume
-        extrude(ctx, ring, ctx.ops.CutFeatureOperation, "groove_h",
-                "groove_cut_%d" % k, participants=[wafer])
-        if v0 - wafer.volume < 0.05:
-            raise RuntimeError("groove %d removed %.4f"
-                               % (k, v0 - wafer.volume))
-    print("FH grooves %.3f" % wafer.volume)
+        z0 = "0 mm" if k == 0 else "wafer_t * %d / 4 + groove_h / 2" % k
+        h = ("wafer_t / 4 - groove_h / 2" if k in (0, 3)
+             else "wafer_t / 4 - groove_h")
+        sheets.append(slab(z0, h, "wafer_%d" % (k + 1), False))
+        if k < 3:
+            creams.append(slab("wafer_t * %d / 4 - groove_h / 2" % (k + 1),
+                               "groove_h", "wafer_cream_%d" % (k + 1), True))
+    wafer = sheets[3]          # the face sheet
+    pieces = sheets + creams
+    print("FH sheets %.3f cream %.3f" % (sum(b.volume for b in sheets),
+                                         sum(b.volume for b in creams)))
 
     # raised lattice, one sketch per diagonal direction so every ridge
     # is its own profile (crossing strokes in one sketch fill diamonds)
@@ -101,16 +100,16 @@ def run(_context: str):
     print("FH lattice %.3f" % wafer.volume)
 
     # face inlays in the plain band
-    pl_face = ctx.plane_at_z("wafer_t - inlay_d", "face_plane")
-    zf = t_cm - inlay_cm
+    pl_face = ctx.plane_at_z("wafer_t - face_sink - inlay_d", "face_plane")
+    zf = t_cm - ctx.val("face_sink") - inlay_cm
     sk_ink = fixed_sketch(
         ctx, pl_face, "face_ink", zf,
         polys=[smile(0, 4.0, 4.6, 1.2)],
         circles=[(6.0, 5.0, 1.1), (-6.0, 5.0, 1.1)])
-    inlay(ctx, sk_ink, wafer, "inlay_d", "ink")
+    inlay(ctx, sk_ink, wafer, "inlay_d", "ink", sink_expr="face_sink")
     domed_cheeks(ctx, wafer, [(11.5, 1.5, 2.0), (-11.5, 1.5, 2.0)], t_cm / MM, inlay_cm / MM)
     print("FH face ok")
 
-    jointed_legs(ctx, [wafer], 8.0, -32.0, t_cm / MM)
+    jointed_legs(ctx, pieces, 8.0, -32.0, t_cm / MM)
     feet(ctx, 12, -55)
     print("FH BUILD OK: %d bodies" % root.bRepBodies.count)

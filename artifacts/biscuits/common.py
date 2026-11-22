@@ -321,11 +321,15 @@ def join_up(ctx, profs, dist_expr, target, name):
                            % (name, dv, want))
 
 
-def inlay(ctx, sk, target, depth_expr, name):
-    """Flush colour inlay: pocket the target, then fill the pocket with
-    new bodies from the same profiles."""
+def inlay(ctx, sk, target, depth_expr, name, sink_expr=None):
+    """Colour inlay: pocket the target, then fill the pocket floor with
+    new bodies from the same profiles. With sink_expr the pocket is that
+    much deeper than the inlay, so the colour sits recessed below the
+    face (the sketch plane must be at face - sink - depth)."""
     profs = ctx.all_profiles(sk)
-    cut_up(ctx, profs, depth_expr, [target], name)
+    pocket = depth_expr if sink_expr is None else (
+        "(%s) + (%s)" % (sink_expr, depth_expr))
+    cut_up(ctx, profs, pocket, [target], name)
     return new_bodies(ctx, ctx.all_profiles(sk), depth_expr, name)
 
 
@@ -675,13 +679,40 @@ def feet(ctx, foot_x, foot_y):
                        "foot_disc")
     if len(discs) != 2:
         raise RuntimeError("foot discs %d" % len(discs))
+    # bevel both rims of each foot biscuit (before the cream and socket,
+    # while each disc has exactly two circular edges)
+    fil = root.features.filletFeatures
+    for n, disc in enumerate(discs):
+        adsk.doEvents()
+        for z_cm, expr, nm in ((ctx.val("foot_disc_h"), "foot_fillet", "top"),
+                               (0.0, "foot_fillet * 0.4", "bed")):
+            adsk.doEvents()
+            coll = adsk.core.ObjectCollection.create()
+            for e in disc.edges:  # fusionhelper: allow R11 — collection add, not a document mutation
+                bb = e.boundingBox
+                if (abs(bb.maxPoint.z - z_cm) < 1e-4
+                        and abs(bb.minPoint.z - z_cm) < 1e-4):
+                    coll.add(e)
+            if coll.count != 1:
+                raise RuntimeError("foot %d %s rim edges %d"
+                                   % (n + 1, nm, coll.count))
+            v0 = disc.volume
+            finp = fil.createInput()
+            finp.edgeSetInputs.addConstantRadiusEdgeSet(
+                coll, ctx.cbs(expr), True)
+            ff = fil.add(finp)
+            ff.name = "foot_%s_bevel_%d" % (nm, n + 1)
+            if (ff.healthState
+                    != adsk.fusion.FeatureHealthStates.HealthyFeatureHealthState
+                    or v0 - disc.volume < 1e-5):
+                raise RuntimeError("foot %d %s bevel failed" % (n + 1, nm))
     plc = ctx.plane_at_z("foot_disc_h", "foot_cream_plane")
     zc = ctx.val("foot_disc_h")
     stars = []
     for sx in (1, -1):
         star = []
         for i in range(16):
-            r = 8.2 if i % 2 == 0 else 6.2
+            r = 7.5 if i % 2 == 0 else 5.8   # inside the bevelled rim
             a = math.radians(i * 22.5)
             star.append((sx * foot_x + r * math.cos(a),
                          foot_y + r * math.sin(a)))
@@ -733,5 +764,8 @@ def common_params(ctx):
     up.add("inlay_d", cbs("0.6 mm"), "mm", "colour inlay depth")
     up.add("foot_hole_d", cbs("6.5 mm"), "mm",
            "foot socket dia (shin end is 6.2)")
+    up.add("face_sink", cbs("1.2 mm"), "mm",
+           "eyes and smile recessed below the face")
+    up.add("foot_fillet", cbs("1.2 mm"), "mm", "foot biscuit rim bevel")
     up.add("foot_disc_h", cbs("6 mm"), "mm", "foot biscuit height")
     up.add("foot_cream_h", cbs("7 mm"), "mm", "foot cream height")

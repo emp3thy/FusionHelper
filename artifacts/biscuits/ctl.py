@@ -79,7 +79,7 @@ def run(_context: str):
         if not any(n.startswith("foot_disc") for n in names):
             report.append([d.name, "skipped: no loose feet at root", len(names)])
             continue
-        kind = ("Pink wafer" if "wafer" in names else
+        kind = ("Pink wafer" if any(n.startswith("wafer") for n in names) else
                 "Custard cream" if "cream" in names else "Jam biscuit")
         v0 = sum(b.volume for b in bodies)
         occ_c = root.occurrences.addNewComponent(adsk.core.Matrix3D.create())
@@ -109,7 +109,9 @@ COLOURS = {
     "thigh": (205, 170, 115), "shin": (205, 170, 115), "jam": (214, 60, 80), "wafer": (242, 172, 160),
     "ink": (25, 22, 22), "cheek": (236, 120, 150), "cream": (250, 246, 236),
     "foot_cream": (250, 246, 236), "scroll": (92, 52, 30),
+    "wafer_cream": (250, 246, 236),
 }
+WAFER_LEGS = (250, 246, 236)   # the pink wafer has white legs
 def run(_context: str):
     app = adsk.core.Application.get()
     des = adsk.fusion.Design.cast(app.activeProduct)
@@ -132,6 +134,7 @@ def run(_context: str):
         print("FH_RESULT no base appearance found; nothing painted")
         return
     done = 0
+    is_wafer = any(b.name.startswith("wafer") for b in root.bRepBodies)
     for b in root.bRepBodies:
         adsk.doEvents()
         key = None
@@ -142,6 +145,10 @@ def run(_context: str):
         if key is None:
             continue
         nm = "fh_" + key
+        rgb = COLOURS[key]
+        if is_wafer and key in ("thigh", "shin"):
+            nm = "fh_white_leg"
+            rgb = WAFER_LEGS
         ap = None
         for j in range(des.appearances.count):
             if des.appearances.item(j).name == nm:
@@ -150,7 +157,7 @@ def run(_context: str):
             ap = des.appearances.addByCopy(base, nm)
             prop = adsk.core.ColorProperty.cast(
                 ap.appearanceProperties.itemByName("Color"))
-            r, g, bl = COLOURS[key]
+            r, g, bl = rgb
             prop.value = adsk.core.Color.create(r, g, bl, 255)
         b.appearance = ap
         done += 1
@@ -181,11 +188,54 @@ def run(_context: str):
     print("FH_RESULT shot", ok)
 '''
 
+ACTIVATE = '''
+import adsk.core, adsk.fusion, json
+KIND = "%s"
+def run(_context: str):
+    # Find the document by CONTENT, never by position: the user closes
+    # and reorders documents while we work.
+    app = adsk.core.Application.get()
+    hits = []
+    for i in range(app.documents.count):
+        d = app.documents.item(i)
+        des = adsk.fusion.Design.cast(d.products.itemByProductType("DesignProductType"))
+        if des is None:
+            continue
+        root = des.rootComponent
+        names = [b.name for b in root.bRepBodies]
+        for o in root.occurrences:
+            names += [b.name for b in o.component.bRepBodies]
+        kind = ("wafer" if any(n.startswith("wafer") for n in names) else
+                "custard" if "cream" in names else
+                "jam" if "jam" in names else
+                "empty" if not names else "other")
+        if kind == KIND:
+            hits.append(d)
+    if len(hits) != 1:
+        print("FH_RESULT " + json.dumps({"ok": False, "kind": KIND, "matches": len(hits)}))
+        return
+    hits[0].activate()
+    adsk.doEvents()
+    print("FH_RESULT " + json.dumps({"ok": True, "kind": KIND, "active": app.activeDocument.name}))
+'''
+
 cmd = sys.argv[1]
 c = McpClient("http://127.0.0.1:27182/mcp")
 c.initialize()
 if cmd == "undo":
     print(c.undo())
+elif cmd == "undoall":
+    n = 0
+    while n < 40:
+        out = c.undo()
+        text = out["result"]["content"][0]["text"]
+        n += 1
+        if '"canUndo": false' in text or '"success": false' in text:
+            break
+    print("undid", n, "steps;", " ".join(text.split())[:160])
+elif cmd == "activate":
+    r = c.execute(ACTIVATE % sys.argv[2])
+    print("SUCCESS", r.success, (r.message if r.success else r.error)[-300:])
 else:
     if cmd == "shot":
         out = str(Path(sys.argv[2]).resolve())

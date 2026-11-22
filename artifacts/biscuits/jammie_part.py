@@ -160,13 +160,14 @@ def run(_context: str):
     print("FH emboss ok %.3f" % top.volume)
 
     # face inlays
-    pl_face = ctx.plane_at_z("(2 * bis_t + fill_t) - inlay_d", "face_plane")
-    zf = total - inlay_cm
+    pl_face = ctx.plane_at_z("(2 * bis_t + fill_t) - face_sink - inlay_d",
+                            "face_plane")
+    zf = total - ctx.val("face_sink") - inlay_cm
     sk_ink = fixed_sketch(
         ctx, pl_face, "face_ink", zf,
         polys=[smile(0, 13.5, 6.0, 1.3)],
         circles=[(7.5, 14.5, 1.2), (-7.5, 14.5, 1.2)])
-    inlay(ctx, sk_ink, top, "inlay_d", "ink")
+    inlay(ctx, sk_ink, top, "inlay_d", "ink", sink_expr="face_sink")
     domed_cheeks(ctx, top, [(14.5, 9.0, 2.5), (-14.5, 9.0, 2.5)], total / MM, inlay_cm / MM)
     print("FH face ok")
 
