@@ -78,3 +78,14 @@ spline swirls 0.3 mm). Jam biscuit and wafer geometry unchanged.
 Revision 6: the jam biscuit gets the same treatment - rim ring and
 splat arms (now spline outlines) have their tops rounded by
 `JM_TOP_ROUND` (0.25 mm).
+
+## Revision 7 (2026-11-22): print brace
+
+First print: a leg wobbled (60 mm tower on a ball joint, one tab).
+Every biscuit now carries a `print_brace` body in the cookie component:
+a 1.2 mm wall on the bed just past the bottom edge, two buttresses
+behind it, and five 45 degree struts per leg that end tangent to the
+thigh and shin rods (`print_brace` in `common.py`). `probe_brace.py`
+measures 0.0 mm strut-to-leg gap on all four leg parts and no overhang
+faces. It snaps off after printing. Feet moved further out to clear the
+buttresses. Not yet print-tested.

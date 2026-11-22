@@ -727,6 +727,117 @@ def jointed_legs(ctx, bodies, hip_x, hip_y, face_z):
     return thighs, shins
 
 
+# ---- break-away print brace -------------------------------------------
+# The legs print as 60 mm towers on ball joints; one tab and a tip weld
+# did not hold them (printed 2026-11-22: leg wobbled). This is a
+# sacrificial wall on the bed just outside the bottom edge, buttressed
+# behind, with 45 deg struts up to each thigh and shin rod. Struts touch
+# the rods (tangent, zero overlap) so the slicer fuses them; everything
+# rises at 45 deg or steeper, nothing bridges.
+BR_T = 1.2          # wall and buttress thickness
+BR_NIB = (0.8, 0.9)  # strut width (x), height (z)
+BR_FOOT = 14.0      # buttress depth on the bed
+
+
+def plane_at_x(ctx, expr, name, x_cm):
+    """YZ-parallel datum at world x = x_cm; offset sign measured (R6)."""
+    for e in (expr, "-(%s)" % expr):
+        adsk.doEvents()
+        pin = ctx.planes.createInput()
+        pin.setByOffset(ctx.root.yZConstructionPlane, ctx.cbs(e))
+        pl = ctx.planes.add(pin)
+        if abs(pl.geometry.origin.x - x_cm) < 1e-4:
+            pl.name = name
+            return pl
+        pl.deleteMe()
+    raise RuntimeError("no offset sign puts %s at x=%.3f" % (name, x_cm))
+
+
+def sketch_xyz(ctx, plane, name, polys):
+    """Fixed closed polylines given as (x, y, z) mm points on `plane`."""
+    sk = ctx.root.sketches.add(plane)
+    sk.name = name
+    lines = sk.sketchCurves.sketchLines
+    for poly in polys:
+        adsk.doEvents()
+        pts = [sk.modelToSketchSpace(ctx.pt(x * MM, y * MM, z * MM))
+               for x, y, z in poly]
+        first = lines.addByTwoPoints(pts[0], pts[1])
+        prev = first
+        for k in range(2, len(pts)):
+            adsk.doEvents()
+            prev = lines.addByTwoPoints(prev.endSketchPoint, pts[k])
+        lines.addByTwoPoints(prev.endSketchPoint, first.startSketchPoint)
+    for c in sk.sketchCurves:
+        adsk.doEvents()
+        if not c.isFixed:
+            c.isFixed = True
+    for sp in sk.sketchPoints:
+        adsk.doEvents()
+        if sp.isFullyConstrained or sp.isFixed:
+            continue
+        sp.isFixed = True
+    if sk.profiles.count != len(polys):
+        raise RuntimeError("%s: %d profiles, expected %d"
+                           % (name, sk.profiles.count, len(polys)))
+    return sk
+
+
+def sym_join(ctx, sk, width_expr, target, name):
+    v0 = target.volume
+    inp = ctx.extrudes.createInput(ctx.all_profiles(sk),
+                                   ctx.ops.JoinFeatureOperation)
+    inp.setSymmetricExtent(ctx.cbs(width_expr), True)
+    inp.participantBodies = [target]
+    f = ctx.extrudes.add(inp)
+    f.name = name
+    if target.volume - v0 < 1e-4:
+        raise RuntimeError("%s joined nothing" % name)
+
+
+def print_brace(ctx, hip_x, hip_y, face_z, edge_y):
+    """edge_y: the biscuit's outermost bottom-edge y (mm, negative)."""
+    zc = face_z - J_RECESS - J_LIP
+    zk = zc + J_THIGH
+    z_end = zk + J_SHIN
+    z_top = z_end - 1.0
+    # clear of the biscuit edge AND of the knee bowls, which overhang it
+    yw = min(edge_y - 0.6, hip_y - J_OUT_R - 0.8)
+    half = hip_x + 6.0
+    skw = fixed_sketch(ctx, ctx.root.xYConstructionPlane, "brace_wall", 0,
+                       polys=[[(-half, yw - BR_T), (half, yw - BR_T),
+                               (half, yw), (-half, yw)]])
+    brace = new_bodies(ctx, ctx.all_profiles(skw), "%g mm" % z_top,
+                       "print_brace")[0]
+    y_leg = hip_y - J_ROD_R
+    gap = y_leg - yw
+    # thigh rod is straight only from zc + 8.1 to zc + 15.6 (the knee
+    # bowl's cone starts there): zc + 15.0 clipped the cone by 0.01 mm3
+    heights = (zc + 9.0, zc + 13.5, zk + 11.0, zk + 18.0, z_end - 2.0)
+    for n, sx in enumerate((1, -1)):
+        adsk.doEvents()
+        x = sx * hip_x
+        pl = plane_at_x(ctx, "%g mm" % hip_x, "brace_plane_%d" % (n + 1),
+                        x * MM)
+        rib = [(x, yw - BR_T + 0.3, 0.0), (x, yw - BR_T - BR_FOOT, 0.0),
+               (x, yw - BR_T + 0.3, z_top)]
+        skr = sketch_xyz(ctx, pl, "brace_rib_%d" % (n + 1), [rib])
+        sym_join(ctx, skr, "%g mm" % BR_T, brace,
+                 "brace_rib_join_%d" % (n + 1))
+        nibs = []
+        for z0 in heights:
+            nibs.append([(x, yw - 0.3, z0 - gap - 0.3),
+                         (x, yw - 0.3, z0 - gap - 0.3 + BR_NIB[1]),
+                         (x, y_leg, z0 + BR_NIB[1]),
+                         (x, y_leg, z0)])
+        skn = sketch_xyz(ctx, pl, "brace_struts_%d" % (n + 1), nibs)
+        sym_join(ctx, skn, "%g mm" % BR_NIB[0], brace,
+                 "brace_strut_join_%d" % (n + 1))
+    print("FH print brace ok %.3f cm3, wall y %.1f, strut reach %.1f"
+          % (brace.volume, yw, gap))
+    return brace
+
+
 def feet(ctx, foot_x, foot_y):
     """Two push-on biscuit feet with piped-cream tops. Positions in mm."""
     root = ctx.root
@@ -1013,5 +1124,6 @@ def run(_context: str):
     print("FH face ok")
 
     jointed_legs(ctx, [top, jam], JM_HIP[0], JM_HIP[1], total / MM)
-    feet(ctx, 12, -48)
+    print_brace(ctx, JM_HIP[0], JM_HIP[1], total / MM, -JM_R_OUT)
+    feet(ctx, 12, -66)
     print("FH BUILD OK: %d bodies" % root.bRepBodies.count)

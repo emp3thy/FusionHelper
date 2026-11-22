@@ -180,5 +180,6 @@ def run(_context: str):
     print("FH face ok")
 
     jointed_legs(ctx, [top, jam], JM_HIP[0], JM_HIP[1], total / MM)
-    feet(ctx, 12, -48)
+    print_brace(ctx, JM_HIP[0], JM_HIP[1], total / MM, -JM_R_OUT)
+    feet(ctx, 12, -66)
     print("FH BUILD OK: %d bodies" % root.bRepBodies.count)

@@ -38,7 +38,7 @@ def run(_context: str):
                         adsk.core.Point3D.create(*centre))
         return m
 
-    body = [n for n in by if not n.startswith(("thigh", "shin", "foot"))]
+    body = [n for n in by if not n.startswith(("thigh", "shin", "foot", "print_"))]
     sb = by["shin_1"].boundingBox
     tb = by["thigh_1"].boundingBox
     cx = (sb.minPoint.x + sb.maxPoint.x) / 2

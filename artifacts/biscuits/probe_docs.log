@@ -1,6 +1,6 @@
 SUCCESS=True
 --- message ---
-FH_RESULT [{"i": 0, "active": false, "timeline": 95, "root_bodies": 0, "occ": 2, "n_bodies": 14, "sample": ["Custard cream/biscuit_base", "Custard cream/cream", "Custard cream/biscuit_top"], "has_face_sink": true, "n_params": 14}, {"i": 1, "active": false, "timeline": 109, "root_bodies": 0, "occ": 2, "n_bodies": 20, "sample": ["Pink wafer/wafer_1", "Pink wafer/wafer_cream_1", "Pink wafer/wafer_2"], "has_face_sink": true, "n_params": 10}, {"i": 2, "active": true, "timeline": 103, "root_bodies": 0, "occ": 2, "n_bodies": 16, "sample": ["Jam biscuit/biscuit_base", "Jam biscuit/jam", "Jam biscuit/biscuit_top"], "has_face_sink": true, "n_params": 13}]
+FH_RESULT [{"i": 0, "active": false, "timeline": 113, "root_bodies": 0, "occ": 2, "n_bodies": 15, "sample": ["Custard cream/biscuit_base", "Custard cream/cream", "Custard cream/biscuit_top"], "has_face_sink": true, "n_params": 14}, {"i": 1, "active": false, "timeline": 122, "root_bodies": 0, "occ": 2, "n_bodies": 21, "sample": ["Pink wafer/wafer_1", "Pink wafer/wafer_cream_1", "Pink wafer/wafer_2"], "has_face_sink": true, "n_params": 10}, {"i": 2, "active": true, "timeline": 118, "root_bodies": 0, "occ": 2, "n_bodies": 17, "sample": ["Jam biscuit/biscuit_base", "Jam biscuit/jam", "Jam biscuit/biscuit_top"], "has_face_sink": true, "n_params": 13}]
 
 --- error ---
 

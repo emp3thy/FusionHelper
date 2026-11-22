@@ -110,6 +110,7 @@ COLOURS = {
     "ink": (25, 22, 22), "cheek": (236, 120, 150), "cream": (250, 246, 236),
     "foot_cream": (250, 246, 236), "scroll": (92, 52, 30),
     "wafer_cream": (250, 246, 236),
+    "print_brace": (120, 125, 135),
 }
 WAFER_LEGS = (250, 246, 236)   # the pink wafer has white legs
 def run(_context: str):
