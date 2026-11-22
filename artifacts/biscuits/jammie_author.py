@@ -60,11 +60,20 @@ def smile(cx, cy, r, w, half_span_deg=55, n=12):
                           270 + half_span_deg, n), w)
 
 
-def capsule(ax, ay, bx, by, w, n=6):
-    """Round-ended bar from A to B, width w."""
+def capsule(ax, ay, bx, by, w, n=6, n_side=4):
+    """Round-ended bar from A to B, width w. The straight sides carry
+    intermediate points so a closed spline through the outline stays
+    straight along them."""
     ang = math.degrees(math.atan2(by - ay, bx - ax))
-    return (arc_pts(bx, by, w / 2, ang - 90, ang + 90, n)
-            + arc_pts(ax, ay, w / 2, ang + 90, ang + 270, n))
+    end_b = arc_pts(bx, by, w / 2, ang - 90, ang + 90, n)
+    end_a = arc_pts(ax, ay, w / 2, ang + 90, ang + 270, n)
+
+    def side(p, q):
+        return [(p[0] + (q[0] - p[0]) * k / n_side,
+                 p[1] + (q[1] - p[1]) * k / n_side)
+                for k in range(1, n_side)]
+
+    return end_b + side(end_b[-1], end_a[0]) + end_a + side(end_a[-1], end_b[0])
 
 
 def spiral(cx, cy, r0, r1, turns, a0_deg, n):
@@ -838,6 +847,7 @@ JM_ARM_ANGLES = (15, -25, -90, -155, 165)   # gaps at +-57 deg: hips
 JM_HIP = (9.0, -22.1)          # hip socket x, y
 JM_ARM_W = 3.2
 JM_RING = (24.2, 26.6)         # embossed rim ring radii
+JM_TOP_ROUND = "0.25 mm"       # rounding of the relief ridge tops
 
 
 def jm_outline(inset):
@@ -949,12 +959,19 @@ def run(_context: str):
 
     # embossed pattern: rim ring, splat arms and dots
     pl_emb = ctx.plane_at_z("(2 * bis_t + fill_t)", "emboss_plane")
+    z_rel = total + ctx.val("relief_h")
+    before = top_edge_keys(top, z_rel)
     skr = fixed_sketch(ctx, pl_emb, "rim_ring", total,
                        circles=[(0, 0, JM_RING[0]), (0, 0, JM_RING[1])])
     emboss(ctx, ring_profile(skr), top, "rim_ring")
+    soften_new_tops(ctx, top, z_rel, before, JM_TOP_ROUND, "rim_ring_round")
     arms, dots = jm_splat()
-    sks = fixed_sketch(ctx, pl_emb, "splat_arms", total, polys=arms)
+    # arm outlines as closed splines so their tops take a fillet
+    before = top_edge_keys(top, z_rel)
+    sks = fixed_sketch(ctx, pl_emb, "splat_arms", total, splines=arms)
     emboss(ctx, ctx.all_profiles(sks), top, "splat_arms")
+    soften_new_tops(ctx, top, z_rel, before, JM_TOP_ROUND,
+                    "splat_arms_round")
     # dimples: raised buttons with the top edge rolled over into a dome
     skd = fixed_sketch(ctx, pl_emb, "dimples", total, circles=dots)
     join_up(ctx, ctx.all_profiles(skd), "relief_h", top, "dimples")

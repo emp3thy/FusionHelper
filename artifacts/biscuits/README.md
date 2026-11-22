@@ -74,3 +74,7 @@ splines (`CC_SMOOTH`), and each embossed set has its ridge tops rounded
 by `CC_TOP_ROUND` (0.25 mm) via `soften_new_tops`. `spike_soften_part.py`
 is the measurement behind it (polyline swirls take 0.12 mm at most,
 spline swirls 0.3 mm). Jam biscuit and wafer geometry unchanged.
+
+Revision 6: the jam biscuit gets the same treatment - rim ring and
+splat arms (now spline outlines) have their tops rounded by
+`JM_TOP_ROUND` (0.25 mm).

@@ -60,11 +60,20 @@ def smile(cx, cy, r, w, half_span_deg=55, n=12):
                           270 + half_span_deg, n), w)
 
 
-def capsule(ax, ay, bx, by, w, n=6):
-    """Round-ended bar from A to B, width w."""
+def capsule(ax, ay, bx, by, w, n=6, n_side=4):
+    """Round-ended bar from A to B, width w. The straight sides carry
+    intermediate points so a closed spline through the outline stays
+    straight along them."""
     ang = math.degrees(math.atan2(by - ay, bx - ax))
-    return (arc_pts(bx, by, w / 2, ang - 90, ang + 90, n)
-            + arc_pts(ax, ay, w / 2, ang + 90, ang + 270, n))
+    end_b = arc_pts(bx, by, w / 2, ang - 90, ang + 90, n)
+    end_a = arc_pts(ax, ay, w / 2, ang + 90, ang + 270, n)
+
+    def side(p, q):
+        return [(p[0] + (q[0] - p[0]) * k / n_side,
+                 p[1] + (q[1] - p[1]) * k / n_side)
+                for k in range(1, n_side)]
+
+    return end_b + side(end_b[-1], end_a[0]) + end_a + side(end_a[-1], end_b[0])
 
 
 def spiral(cx, cy, r0, r1, turns, a0_deg, n):

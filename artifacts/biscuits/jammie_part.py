@@ -14,6 +14,7 @@ JM_ARM_ANGLES = (15, -25, -90, -155, 165)   # gaps at +-57 deg: hips
 JM_HIP = (9.0, -22.1)          # hip socket x, y
 JM_ARM_W = 3.2
 JM_RING = (24.2, 26.6)         # embossed rim ring radii
+JM_TOP_ROUND = "0.25 mm"       # rounding of the relief ridge tops
 
 
 def jm_outline(inset):
@@ -125,12 +126,19 @@ def run(_context: str):
 
     # embossed pattern: rim ring, splat arms and dots
     pl_emb = ctx.plane_at_z("(2 * bis_t + fill_t)", "emboss_plane")
+    z_rel = total + ctx.val("relief_h")
+    before = top_edge_keys(top, z_rel)
     skr = fixed_sketch(ctx, pl_emb, "rim_ring", total,
                        circles=[(0, 0, JM_RING[0]), (0, 0, JM_RING[1])])
     emboss(ctx, ring_profile(skr), top, "rim_ring")
+    soften_new_tops(ctx, top, z_rel, before, JM_TOP_ROUND, "rim_ring_round")
     arms, dots = jm_splat()
-    sks = fixed_sketch(ctx, pl_emb, "splat_arms", total, polys=arms)
+    # arm outlines as closed splines so their tops take a fillet
+    before = top_edge_keys(top, z_rel)
+    sks = fixed_sketch(ctx, pl_emb, "splat_arms", total, splines=arms)
     emboss(ctx, ctx.all_profiles(sks), top, "splat_arms")
+    soften_new_tops(ctx, top, z_rel, before, JM_TOP_ROUND,
+                    "splat_arms_round")
     # dimples: raised buttons with the top edge rolled over into a dome
     skd = fixed_sketch(ctx, pl_emb, "dimples", total, circles=dots)
     join_up(ctx, ctx.all_profiles(skd), "relief_h", top, "dimples")
