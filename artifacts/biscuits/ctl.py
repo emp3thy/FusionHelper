@@ -31,11 +31,40 @@ def run(_context: str):
     print("FH_RESULT new doc", doc.name, "bodies", des.rootComponent.bRepBodies.count)
 '''
 
+DOCS = '''
+import adsk.core, adsk.fusion, json
+def run(_context: str):
+    app = adsk.core.Application.get()
+    out = []
+    for i in range(app.documents.count):
+        d = app.documents.item(i)
+        des = adsk.fusion.Design.cast(d.products.itemByProductType("DesignProductType"))
+        out.append([d.name, d.isSaved, des.rootComponent.bRepBodies.count if des else -1])
+    print("FH_RESULT " + json.dumps(out))
+'''
+
+CLOSE_UNSAVED = '''
+import adsk.core, adsk.fusion
+def run(_context: str):
+    app = adsk.core.Application.get()
+    victims = []
+    for i in range(app.documents.count):
+        d = app.documents.item(i)
+        if not d.isSaved and d.name.startswith("Untitled"):
+            victims.append(d)
+    n = 0
+    for d in victims:
+        adsk.doEvents()
+        d.close(False)
+        n += 1
+    print("FH_RESULT closed", n, "remaining", app.documents.count)
+'''
+
 PAINT = '''
 import adsk.core, adsk.fusion
 COLOURS = {
     "biscuit": (222, 190, 130), "foot_disc": (222, 190, 130),
-    "leg": (205, 170, 115), "jam": (214, 60, 80), "wafer": (242, 172, 160),
+    "thigh": (205, 170, 115), "shin": (205, 170, 115), "jam": (214, 60, 80), "wafer": (242, 172, 160),
     "ink": (25, 22, 22), "cheek": (236, 120, 150), "cream": (250, 246, 236),
     "foot_cream": (250, 246, 236), "scroll": (92, 52, 30),
 }
@@ -121,7 +150,7 @@ else:
         view = sys.argv[3] if len(sys.argv) > 3 else "6, -14, 28"
         text = SHOT % (view, out)
     else:
-        text = {"probe": PROBE, "newdoc": NEWDOC, "paint": PAINT}[cmd]
+        text = {"probe": PROBE, "newdoc": NEWDOC, "paint": PAINT, "docs": DOCS, "close_unsaved": CLOSE_UNSAVED}[cmd]
     r = c.execute(text)
     print("SUCCESS", r.success)
     print((r.message if r.success else r.error)[-1500:])

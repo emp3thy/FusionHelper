@@ -1,37 +1,67 @@
 
 
 # ========================= custard cream =================================
-# Printed flat, face up. Bodies: biscuit_base, cream, biscuit_top (with
-# raised diamond), scroll_* (brown inlaid scrollwork), ink_*, feet, legs.
+# Printed flat, face up. Bodies: biscuit_base, cream, biscuit_top (rounded
+# corners, bevelled rim, embossed diamond frame and swirls), ink_*, feet,
+# legs.
 
 CC_W, CC_H = 45.0, 60.0
-CC_STROKE = 1.2
+CC_STROKE = 1.4
+CC_DIA = (15.0, 21.0)          # diamond frame centreline half-diagonals
+CC_FRAME_W = 1.6
 
 
-def cc_brackets():
-    polys = []
+def cc_frame():
+    d = 1 / math.hypot(1 / CC_DIA[0], 1 / CC_DIA[1])
+    out = []
+    for k in ((d + CC_FRAME_W / 2) / d, (d - CC_FRAME_W / 2) / d):
+        hx, hy = CC_DIA[0] * k, CC_DIA[1] * k
+        out.append([(hx, 0), (0, hy), (-hx, 0), (0, -hy)])
+    return out
+
+
+def cc_quad(make):
+    return [mirror(make(), sx, sy) for sx in (1, -1) for sy in (1, -1)]
+
+
+def cc_big_spirals():
+    return cc_quad(lambda: stroke(
+        spiral(15.3, 22.8, 1.5, 3.9, 1.1, 250, 26), CC_STROKE))
+
+
+def cc_top_spirals():
+    # top edge only: the bottom pair would sit where the hips are
+    return [mirror(q, 1, 1) for q in cc_quad(lambda: stroke(
+        spiral(6.0, 24.9, 1.5, 2.6, 0.75, 60, 16), CC_STROKE))[0::2]]
+
+
+def cc_side_spirals():
+    return cc_quad(lambda: stroke(
+        spiral(17.5, 6.2, 1.5, 2.6, 0.75, 300, 16), CC_STROKE))
+
+
+def cc_tendrils():
+    nrm = math.hypot(1 / CC_DIA[0], 1 / CC_DIA[1])
+    nx, ny = 1 / CC_DIA[0] / nrm, 1 / CC_DIA[1] / nrm
+
+    def one():
+        pts = []
+        for i in range(13):
+            t = 0.24 + 0.44 * i / 12
+            off = 3.7 + 0.7 * math.sin(2 * math.pi * i / 12)
+            pts.append((CC_DIA[0] * t + nx * off,
+                        CC_DIA[1] * (1 - t) + ny * off))
+        return stroke(pts, CC_STROKE)
+    return cc_quad(one)
+
+
+def cc_dots():
+    dots = [(0, 25.4, 1.3), (0, -25.4, 1.3), (19.2, 0, 1.3), (-19.2, 0, 1.3)]
     for sx in (1, -1):
         for sy in (1, -1):
-            cl = ([(18.5, 14.0), (18.5, 21.0)]
-                  + arc_pts(16.0, 23.0, 2.5, 0, 90, 6)
-                  + [(14.0, 25.5), (8.0, 25.5)])
-            polys.append(mirror(stroke(cl, CC_STROKE), sx, sy))
-    return polys
-
-
-def cc_curls():
-    polys = []
-    for sx in (1, -1):
-        for sy in (1, -1):
-            # corner curl, open towards the diamond
-            polys.append(mirror(
-                stroke(arc_pts(12.0, 19.5, 2.6, 250, -20, 14), CC_STROKE),
-                sx, sy))
-            # one bowl of the side "3"
-            polys.append(mirror(
-                stroke(arc_pts(16.0, 3.3, 2.3, 160, -80, 12), CC_STROKE),
-                sx, sy))
-    return polys
+            dots.append((sx * 19.4, sy * 14.6, 1.2))
+            dots.append((sx * 10.6, sy * 18.2, 1.2))
+    return dots
 
 
 def run(_context: str):
@@ -43,7 +73,10 @@ def run(_context: str):
     up.add("bis_t", cbs("5.5 mm"), "mm", "biscuit layer thickness")
     up.add("fill_t", cbs("4 mm"), "mm", "cream layer thickness")
     up.add("fill_inset", cbs("0.8 mm"), "mm", "cream set back from edge")
-    up.add("diamond_h", cbs("1 mm"), "mm", "raised diamond height")
+    up.add("corner_r", cbs("4 mm"), "mm", "biscuit corner radius")
+    # spike_emboss: the four corner swirls together fail a 30 deg
+    # tapered join (ASM_INCONS_REL); every set passes at 20 deg.
+    bevel_params(ctx, taper_deg=20)
     common_params(ctx)
     print("FH params added")
 
@@ -77,34 +110,43 @@ def run(_context: str):
     print("FH sandwich: %.3f %.3f %.3f" % (base.volume, cream.volume,
                                            top.volume))
 
-    # raised central diamond
-    pl_face = ctx.plane_at_z("(2 * bis_t + fill_t)", "top_face_plane")
-    skd = fixed_sketch(ctx, pl_face, "diamond", total,
-                       polys=[[(9.0, 0), (0, 13.0), (-9.0, 0), (0, -13.0)]])
-    join_up(ctx, ctx.all_profiles(skd), "diamond_h", top, "diamond")
+    # rounded corners, then bevelled rims on the two biscuit layers
+    fillet_corners(ctx, base, "corner_r", "base_corner_fillet")
+    fillet_corners(ctx, cream, "corner_r - fill_inset",
+                   "cream_corner_fillet")
+    fillet_corners(ctx, top, "corner_r", "top_corner_fillet")
+    fillet_rims(ctx, base, "edge_fillet", "base_top_bevel", bis)
+    fillet_rims(ctx, base, "under_fillet", "base_bed_bevel", 0)
+    fillet_rims(ctx, top, "edge_fillet", "top_face_bevel", total)
+    fillet_rims(ctx, top, "under_fillet", "top_under_bevel", bis + fill)
+    print("FH fillets ok %.3f %.3f" % (base.volume, top.volume))
 
-    # brown scrollwork inlays
-    pl_scroll = ctx.plane_at_z("(2 * bis_t + fill_t) - inlay_d", "scroll_plane")
-    zs = total - inlay_cm
-    skb = fixed_sketch(ctx, pl_scroll, "scroll_brackets", zs,
-                       polys=cc_brackets())
-    inlay(ctx, skb, top, "inlay_d", "scroll_bracket")
-    skc = fixed_sketch(ctx, pl_scroll, "scroll_curls", zs,
-                       polys=cc_curls())
-    inlay(ctx, skc, top, "inlay_d", "scroll_curl")
-    print("FH scrollwork ok")
+    # embossed pattern: diamond frame, swirls, tendrils and dots
+    pl_emb = ctx.plane_at_z("(2 * bis_t + fill_t)", "emboss_plane")
+    skf = fixed_sketch(ctx, pl_emb, "diamond_frame", total,
+                       polys=cc_frame())
+    emboss(ctx, ring_profile(skf), top, "diamond_frame")
+    for nm, polys, circles in (
+            ("swirl_corner", cc_big_spirals(), ()),
+            ("swirl_top", cc_top_spirals(), ()),
+            ("swirl_side", cc_side_spirals(), ()),
+            ("tendrils", cc_tendrils(), cc_dots())):
+        adsk.doEvents()
+        ske = fixed_sketch(ctx, pl_emb, nm, total, polys=polys,
+                           circles=circles)
+        emboss(ctx, ctx.all_profiles(ske), top, nm)
+    print("FH emboss ok %.3f" % top.volume)
 
-    # face on the diamond
-    pl_ink = ctx.plane_at_z("(2 * bis_t + fill_t) + diamond_h - inlay_d", "face_plane")
-    zi = total + ctx.val("diamond_h") - inlay_cm
+    # face inside the diamond
+    pl_ink = ctx.plane_at_z("(2 * bis_t + fill_t) - inlay_d", "face_plane")
+    zi = total - inlay_cm
     sk_ink = fixed_sketch(
         ctx, pl_ink, "face_ink", zi,
-        polys=[smile(0, 1.5, 3.2, 1.0)],
-        circles=[(3.0, 2.6, 0.9), (-3.0, 2.6, 0.9)])
+        polys=[smile(0, 2.5, 4.2, 1.2)],
+        circles=[(4.0, 3.5, 1.1), (-4.0, 3.5, 1.1)])
     inlay(ctx, sk_ink, top, "inlay_d", "ink")
     print("FH face ok")
 
-    leg_sockets(ctx, [base, cream, top], "%g mm" % (CC_H / 2), hh,
-                "10 mm", 1.0, "(2 * bis_t + fill_t) / 2", total / 2)
-    feet_and_legs(ctx, 12, -47, (33, 42), 0)
+    jointed_legs(ctx, [top, cream], 7.0, -24.5, total / MM)
+    feet(ctx, 12, -47)
     print("FH BUILD OK: %d bodies" % root.bRepBodies.count)

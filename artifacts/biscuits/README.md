@@ -29,3 +29,21 @@ socket size/depth and the feet and legs.
 Verdicts (2026-11-22): all three `warn` only for
 `dimension.literal_expression` (layout positions are literals by
 design); timeline, interference and liveness pass.
+
+## Revision 2 (2026-11-22, same day)
+
+- Jam biscuit and custard cream: bevelled rims (`edge_fillet`,
+  `under_fillet`), embossed front patterns with a bevel (`relief_h`,
+  `emboss_taper`), domed dimples on the jam biscuit, rounded corners on
+  the custard cream.
+- Rope sockets and loose legs replaced by print-in-place ball-jointed
+  legs (`jointed_legs` in `common.py`): hip socket inside the biscuit,
+  knee bowl on the thigh, teardrop balls, tip relief channels, one
+  break-away tab per joint. Feet still push on (`foot_hole_d`).
+- `probe_joints.py` measures retention (lift), swing clash (rotate) and
+  overhangs; `spike_*_part.py` are the probes behind the fillet and
+  taper limits; `ctl.py` gained `docs`.
+
+Built and verified in Fusion with jointed legs: jam biscuit only.
+Wafer and custard cream artifacts are gated but not yet rebuilt with
+the jointed legs (print orientation still to be decided).

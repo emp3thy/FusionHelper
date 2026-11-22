@@ -45,6 +45,32 @@ def smile(cx, cy, r, w, half_span_deg=55, n=12):
                           270 + half_span_deg, n), w)
 
 
+def capsule(ax, ay, bx, by, w, n=6):
+    """Round-ended bar from A to B, width w."""
+    ang = math.degrees(math.atan2(by - ay, bx - ax))
+    return (arc_pts(bx, by, w / 2, ang - 90, ang + 90, n)
+            + arc_pts(ax, ay, w / 2, ang + 90, ang + 270, n))
+
+
+def spiral(cx, cy, r0, r1, turns, a0_deg, n):
+    pts = []
+    for i in range(n + 1):
+        a = math.radians(a0_deg + 360.0 * turns * i / n)
+        r = r0 + (r1 - r0) * i / n
+        pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    return pts
+
+
+def in_poly(x, y, poly):
+    inside = False
+    for i in range(len(poly)):
+        x0, y0 = poly[i - 1]
+        x1, y1 = poly[i]
+        if (y0 > y) != (y1 > y) and x < x0 + (x1 - x0) * (y - y0) / (y1 - y0):
+            inside = not inside
+    return inside
+
+
 def mirror(poly, sx, sy):
     return [(x * sx, y * sy) for x, y in poly]
 
@@ -104,7 +130,92 @@ def poly_area(poly):
 
 # ---- Fusion helpers -----------------------------------------------------
 
-def fixed_sketch(ctx, plane, name, z_cm, polys=(), circles=()):
+def fillet_corners(ctx, body, radius_expr, name):
+    """Round the four vertical corner edges of a rectangular slab."""
+    coll = adsk.core.ObjectCollection.create()
+    for e in body.edges:  # fusionhelper: allow R11 — collection add, not a document mutation
+        bb = e.boundingBox
+        if (bb.maxPoint.z - bb.minPoint.z > 0.1
+                and abs(bb.maxPoint.x - bb.minPoint.x) < 1e-4
+                and abs(bb.maxPoint.y - bb.minPoint.y) < 1e-4):
+            coll.add(e)
+    if coll.count != 4:
+        raise RuntimeError("%s: %d corner edges" % (name, coll.count))
+    v0 = body.volume
+    fil = ctx.root.features.filletFeatures
+    inp = fil.createInput()
+    inp.edgeSetInputs.addConstantRadiusEdgeSet(
+        coll, ctx.cbs(radius_expr), False)
+    f = fil.add(inp)
+    f.name = name
+    ok = (adsk.fusion.FeatureHealthStates.HealthyFeatureHealthState,)
+    if f.healthState not in ok or v0 - body.volume < 1e-4:
+        raise RuntimeError("%s: health %s dv %.5f"
+                           % (name, f.healthState, v0 - body.volume))
+
+
+def ring_profile(sk):
+    ring = adsk.core.ObjectCollection.create()
+    for pr in sk.profiles:  # fusionhelper: allow R11 — collection add, not a document mutation
+        if pr.profileLoops.count == 2:
+            ring.add(pr)
+    if ring.count != 1:
+        raise RuntimeError("%s: %d ring profiles" % (sk.name, ring.count))
+    return ring
+
+
+def emboss(ctx, profs, target, name):
+    """Bevelled raised relief: tapered join, relief_h high. The taper
+    sign is measured (must narrow), never assumed."""
+    prism = prof_area(profs) * ctx.val("relief_h")
+    v0 = target.volume
+    # Once a sign is known to narrow, only that sign is ever tried: the
+    # widening sign self-intersects on tight strokes and raises
+    # (ASM_INCONS_REL) instead of returning something checkable. So the
+    # FIRST emboss of a build must be a simple shape (ring / frame).
+    signs = ctx._resolved.get("emboss_sign",
+                              ("-emboss_taper", "emboss_taper"))
+    for taper in signs:
+        adsk.doEvents()
+        f = extrude(ctx, profs, ctx.ops.JoinFeatureOperation, "relief_h",
+                    name + "_emboss", participants=[target], taper=taper)
+        dv = target.volume - v0
+        if 0.25 * prism < dv < 0.95 * prism:
+            ctx._resolved["emboss_sign"] = (taper,)
+            return
+        f.deleteMe()
+    raise RuntimeError("%s emboss never narrowed (prism %.5f)"
+                       % (name, prism))
+
+
+def fillet_rims(ctx, body, radius_expr, name, z_cm, min_span_cm=3.0):
+    """Fillet the body's flat outer rim at height z_cm. Edges are picked
+    by predicate (R4): planar at that z and spanning most of the part.
+    add() can succeed while the fillet errors, so health and volume are
+    both checked."""
+    coll = adsk.core.ObjectCollection.create()
+    for e in body.edges:  # fusionhelper: allow R11 — collection add, not a document mutation
+        bb = e.boundingBox
+        if (abs(bb.maxPoint.z - z_cm) < 1e-4
+                and abs(bb.minPoint.z - z_cm) < 1e-4
+                and bb.maxPoint.x - bb.minPoint.x > min_span_cm):
+            coll.add(e)
+    if coll.count < 1:
+        raise RuntimeError("%s: %d rim edges" % (name, coll.count))
+    v0 = body.volume
+    fil = ctx.root.features.filletFeatures
+    inp = fil.createInput()
+    inp.edgeSetInputs.addConstantRadiusEdgeSet(
+        coll, ctx.cbs(radius_expr), True)
+    f = fil.add(inp)
+    f.name = name
+    ok = (adsk.fusion.FeatureHealthStates.HealthyFeatureHealthState,)
+    if f.healthState not in ok or v0 - body.volume < 1e-4:
+        raise RuntimeError("%s: health %s dv %.5f"
+                           % (name, f.healthState, v0 - body.volume))
+
+
+def fixed_sketch(ctx, plane, name, z_cm, polys=(), circles=(), splines=()):
     """Fixed-art sketch: closed polylines and circles at mm coordinates,
     mapped through the sketch's own transform (R6), then fixed."""
     sk = ctx.root.sketches.add(plane)
@@ -125,6 +236,13 @@ def fixed_sketch(ctx, plane, name, z_cm, polys=(), circles=()):
         adsk.doEvents()
         sk.sketchCurves.sketchCircles.addByCenterRadius(
             sk.modelToSketchSpace(ctx.pt(x * MM, y * MM, z_cm)), r * MM)
+    for sp_pts in splines:
+        adsk.doEvents()
+        coll = adsk.core.ObjectCollection.create()
+        for x, y in sp_pts:  # fusionhelper: allow R11 — collection add, not a document mutation
+            coll.add(sk.modelToSketchSpace(ctx.pt(x * MM, y * MM, z_cm)))
+        spl = sk.sketchCurves.sketchFittedSplines.add(coll)
+        spl.isClosed = True
     for c in sk.sketchCurves:
         adsk.doEvents()
         if not c.isFixed:
@@ -135,7 +253,7 @@ def fixed_sketch(ctx, plane, name, z_cm, polys=(), circles=()):
             continue
         sp.isFixed = True
     sk.isComputeDeferred = False
-    want = len(polys) + len(circles)
+    want = len(polys) + len(circles) + len(splines)
     if sk.profiles.count != want:
         raise RuntimeError("%s: %d profiles, expected %d"
                            % (name, sk.profiles.count, want))
@@ -228,28 +346,286 @@ def plane_at_y(ctx, expr, name, y_cm):
     raise RuntimeError("no offset sign puts %s at y=%.3f" % (name, y_cm))
 
 
-def leg_sockets(ctx, bodies, edge_expr, edge_cm, x_expr, x_cm,
-                z_expr, z_cm):
-    """Two round rope/leg sockets bored into the bottom (-Y) edge."""
-    pl = plane_at_y(ctx, edge_expr, "leg_socket_plane", -edge_cm)
-    sk = ctx.root.sketches.add(pl)
-    sk.name = "leg_sockets"
-    for sx in (1, -1):
+# ---- print-in-place ball-jointed legs ----------------------------------
+# Printed with the biscuit on its back and both legs straight up. Fixed
+# art (mm). Each leg: thigh (hip ball + rod + knee bowl) and shin (knee
+# ball + rod). Balls are teardrops (45 deg cone underneath) so nothing
+# starts on a shallow overhang; each ball tip sits one layer above its
+# socket floor and thin break-away tabs hold the tower rigid while it
+# prints. Sockets wrap 44 deg past the equator: ball 8.0 through a 6.16
+# opening, so the joint cannot pull out, and the 4.8 slot lets the neck
+# (4.0) swing 90 deg: hip slot towards the bottom edge, knee slot the
+# same way so a seated shin hangs down.
+J_BALL_R = 4.0
+J_GAP = 0.3            # radial ball-to-socket clearance
+J_CAV_R = J_BALL_R + J_GAP
+J_OUT_R = 7.2          # knee bowl outer radius (carries the tip channel)
+J_NECK_R = 2.0
+J_ROD_R = 3.1
+J_LIP = 3.0            # socket opening height above ball centre
+J_SLOT_W = 4.8
+J_SLOT_FLOOR = 2.6     # slot floor below ball centre
+J_RECESS = 0.4         # hip opening floor below the biscuit face
+J_THIGH = 22.0         # hip centre to knee centre
+J_SHIN = 26.0          # knee centre to shin end
+J_TAB = (3.0, 0.4)     # break-away tab width, height
+
+
+def arc_rz(zc, r, lat0_deg, lat1_deg, n):
+    out = []
+    for i in range(n + 1):
+        a = math.radians(lat0_deg + (lat1_deg - lat0_deg) * i / n)
+        out.append((r * math.cos(a), zc + r * math.sin(a)))
+    return out
+
+
+def j_ball_lower(zc):
+    """Teardrop ball from its flat tip up to the neck."""
+    s = J_BALL_R * math.sqrt(2)
+    neck_lat = math.degrees(math.acos(J_NECK_R / J_BALL_R))
+    return ([(0.0, zc - s + 0.5), (0.5, zc - s + 0.5)]
+            + arc_rz(zc, J_BALL_R, -45, neck_lat, 14)
+            + [(J_NECK_R, zc + 7.0), (J_ROD_R, zc + 7.0 + J_ROD_R - J_NECK_R)])
+
+
+def j_floor_z(zc):
+    return zc - J_CAV_R * math.sqrt(2) + 0.7
+
+
+def j_cavity_inner(zc):
+    """Socket wall from the lip down to the flat floor (r, z)."""
+    lip_lat = math.degrees(math.asin(J_LIP / J_CAV_R))
+    return (arc_rz(zc, J_CAV_R, lip_lat, -45, 14)
+            + [(0.7, j_floor_z(zc)), (0.0, j_floor_z(zc))])
+
+
+def j_thigh_profile(zc, zk):
+    cone0 = zk - J_OUT_R / math.sqrt(2) - (J_OUT_R / math.sqrt(2) - J_ROD_R)
+    return (j_ball_lower(zc)
+            + [(J_ROD_R, cone0)]
+            + arc_rz(zk, J_OUT_R, -45, math.degrees(math.asin(J_LIP / J_OUT_R)), 12)
+            + j_cavity_inner(zk))
+
+
+def j_shin_profile(zk, z_end):
+    return (j_ball_lower(zk)
+            + [(J_ROD_R, z_end - 0.6), (J_ROD_R - 0.6, z_end), (0.0, z_end)])
+
+
+def j_socket_cut_profile(zc):
+    inner = j_cavity_inner(zc)
+    return ([(0.0, zc + J_LIP + 8.0), (5.0, zc + J_LIP + 8.0),
+             (5.0, zc + J_LIP)] + inner)
+
+
+def revolve_rz(ctx, plane, name, pts_rz, cx_mm, y_mm, op, participants=None):
+    """Revolve a closed (r, z) polygon about the vertical axis through
+    (cx_mm, y_mm). The polygon must have exactly one edge on the axis."""
+    sk = ctx.root.sketches.add(plane)
+    sk.name = name + "_profile"
+    sk.isComputeDeferred = True
+    lines = sk.sketchCurves.sketchLines
+    pts = [sk.modelToSketchSpace(ctx.pt((cx_mm + r) * MM, y_mm * MM, z * MM))
+           for r, z in pts_rz]
+    first = lines.addByTwoPoints(pts[0], pts[1])
+    prev = first
+    for k in range(2, len(pts)):
         adsk.doEvents()
-        ctx.bound_circle(sk, (sx * x_cm, -edge_cm, z_cm), 0.325,
-                         "leg_hole_d", x_pos=x_expr, v_pos=z_expr)
-    if sk.profiles.count != 2:
-        raise RuntimeError("leg socket profiles %d" % sk.profiles.count)
-    f = ctx.sym_cut(ctx.all_profiles(sk), "2 * leg_hole_depth", bodies,
-                    min_vol_cm3=0.1)
-    f.name = "leg_socket_cut"
+        prev = lines.addByTwoPoints(prev.endSketchPoint, pts[k])
+    lines.addByTwoPoints(prev.endSketchPoint, first.startSketchPoint)
+    for c in sk.sketchCurves:
+        adsk.doEvents()
+        if not c.isFixed:
+            c.isFixed = True
+    for sp in sk.sketchPoints:
+        adsk.doEvents()
+        if sp.isFullyConstrained or sp.isFixed:
+            continue
+        sp.isFixed = True
+    sk.isComputeDeferred = False
+    if sk.profiles.count != 1:
+        raise RuntimeError("%s: %d profiles" % (name, sk.profiles.count))
+    axis = None
+    for ln in sk.sketchCurves.sketchLines:
+        s = sk.sketchToModelSpace(ln.startSketchPoint.geometry)
+        e = sk.sketchToModelSpace(ln.endSketchPoint.geometry)
+        if (abs(s.x - cx_mm * MM) < 1e-5 and abs(e.x - cx_mm * MM) < 1e-5
+                and abs(s.z - e.z) > 1e-4):
+            axis = ln
+    if axis is None:
+        raise RuntimeError("%s: no axis line" % name)
+    rev = ctx.root.features.revolveFeatures
+    rinp = rev.createInput(sk.profiles.item(0), axis, op)
+    rinp.setAngleExtent(False, ctx.cbs("360 deg"))
+    if participants is not None:
+        rinp.participantBodies = participants
+    f = rev.add(rinp)
+    f.name = name
+    return f
 
 
-def feet_and_legs(ctx, foot_x, foot_y, leg_xs, leg_y):
-    """Two biscuit feet with piped-cream tops and rope sockets, plus two
-    printable octagonal legs. Positions in mm; foot_y / leg_y signed."""
+def tip_channel(ctx, plane, name, cx_mm, y_mm, zc, bodies):
+    """Relief for the teardrop tip. The ball's 45 deg underside reaches
+    5.16 mm from the ball centre, outside the 4.3 socket sphere, so a
+    snug socket jams the joint (measured: 3.5 mm3 clash through the
+    swing). This sweeps the tip pocket about the hinge (X) axis from
+    straight-down round to 135 deg on the +Y side, so the tip can follow
+    a 90 deg swing; stopping at 135 deg makes the end face a 45 deg
+    roof. The sweep direction is measured by point containment."""
+    s2 = J_CAV_R * math.sqrt(2)
+    # Hexagon, 0.14 mm proud of the pocket cone everywhere and with its
+    # top edge well inside the socket sphere. Measured the hard way: a
+    # top edge outside the sphere leaves 0.38 mm slivers hanging
+    # (probe_face), and sides exactly ON the pocket cone (tangent to
+    # the sphere) made the boolean return garbage volumes.
+    c = s2 + 0.2
+    wide, top, floor = 3.3, 2.0, 5.45
+    quad = [(-wide, zc - top), (wide, zc - top), (wide, zc - (c - wide)),
+            (c - floor, zc - floor), (-(c - floor), zc - floor),
+            (-wide, zc - (c - wide))]
+    sk = ctx.root.sketches.add(plane)
+    sk.name = name + "_profile"
+    lines = sk.sketchCurves.sketchLines
+    pts = [sk.modelToSketchSpace(ctx.pt((cx_mm + x) * MM, y_mm * MM, z * MM))
+           for x, z in quad]
+    first = lines.addByTwoPoints(pts[0], pts[1])
+    prev = first
+    for k in range(2, len(pts)):
+        adsk.doEvents()
+        prev = lines.addByTwoPoints(prev.endSketchPoint, pts[k])
+    lines.addByTwoPoints(prev.endSketchPoint, first.startSketchPoint)
+    axis = lines.addByTwoPoints(
+        sk.modelToSketchSpace(ctx.pt((cx_mm - 3) * MM, y_mm * MM, zc * MM)),
+        sk.modelToSketchSpace(ctx.pt((cx_mm + 3) * MM, y_mm * MM, zc * MM)))
+    for c in sk.sketchCurves:
+        adsk.doEvents()
+        if not c.isFixed:
+            c.isFixed = True
+    for sp in sk.sketchPoints:
+        adsk.doEvents()
+        if sp.isFullyConstrained or sp.isFixed:
+            continue
+        sp.isFixed = True
+    if sk.profiles.count != 1:
+        raise RuntimeError("%s: %d profiles" % (name, sk.profiles.count))
+    probe = ctx.pt(cx_mm * MM, (y_mm + 4.9) * MM, zc * MM)
+    inside = adsk.fusion.PointContainment.PointInsidePointContainment
+    rev = ctx.root.features.revolveFeatures
+    for ang in ("135 deg", "-135 deg"):
+        adsk.doEvents()
+        rinp = rev.createInput(sk.profiles.item(0), axis,
+                               ctx.ops.CutFeatureOperation)
+        rinp.setAngleExtent(False, ctx.cbs(ang))
+        rinp.participantBodies = bodies
+        v0 = sum(b.volume for b in bodies)
+        f = rev.add(rinp)
+        dv = v0 - sum(b.volume for b in bodies)
+        if (all(b.pointContainment(probe) != inside for b in bodies)
+                and 0.005 < dv < 0.25):
+            f.name = name
+            return
+        print("FH %s %s rejected dv %.5f" % (name, ang, dv))
+        f.deleteMe()
+    raise RuntimeError("%s: neither sweep direction opened +Y" % name)
+
+
+def cut_some(ctx, profs, dist_expr, targets, name, min_dv):
+    v0 = sum(b.volume for b in targets)
+    extrude(ctx, profs, ctx.ops.CutFeatureOperation, dist_expr,
+            name + "_cut", participants=targets)
+    dv = v0 - sum(b.volume for b in targets)
+    if dv < min_dv:
+        raise RuntimeError("%s cut removed only %.5f cm3" % (name, dv))
+
+
+def j_tabs(cx, cy):
+    """One wide break-away tab on the +Y side of a neck. Measured
+    (probe_joints): tabs on the +-X sides stay on the neck as nubs and
+    foul the socket wall through the 90 deg swing; a +Y nub rides over
+    the rim and ends above the slot, so it never touches anything."""
+    hw = J_TAB[0] / 2
+    return [[(cx - hw, cy + 1.5), (cx + hw, cy + 1.5),
+             (cx + hw, cy + 3.7), (cx - hw, cy + 3.7)]]
+
+
+def jointed_legs(ctx, bodies, hip_x, hip_y, face_z):
+    """Cut two hip sockets into `bodies` and build two print-in-place
+    legs standing in them. hip_x / hip_y / face_z in mm."""
     root = ctx.root
-    # discs
+    zc = face_z - J_RECESS - J_LIP
+    zk = zc + J_THIGH
+    z_end = zk + J_SHIN
+    new_op = ctx.ops.NewBodyFeatureOperation
+    pl = plane_at_y(ctx, "%g mm" % abs(hip_y), "hip_plane", hip_y * MM)
+    v0 = sum(b.volume for b in bodies)
+    thighs, shins = [], []
+    for n, sx in enumerate((1, -1)):
+        adsk.doEvents()
+        cx = sx * hip_x
+        tag = "_%d" % (n + 1)
+        revolve_rz(ctx, pl, "hip_socket" + tag, j_socket_cut_profile(zc),
+                   cx, hip_y, ctx.ops.CutFeatureOperation, bodies)
+        ft = revolve_rz(ctx, pl, "thigh" + tag, j_thigh_profile(zc, zk),
+                        cx, hip_y, new_op)
+        thigh = ft.bodies.item(0)
+        thigh.name = "thigh" + tag
+        fs = revolve_rz(ctx, pl, "shin" + tag, j_shin_profile(zk, z_end),
+                        cx, hip_y, new_op)
+        shin = fs.bodies.item(0)
+        shin.name = "shin" + tag
+        tip_channel(ctx, pl, "hip_tip_channel" + tag, cx, hip_y, zc,
+                    bodies)
+        tip_channel(ctx, pl, "knee_tip_channel" + tag, cx, hip_y, zk,
+                    [thigh])
+        thighs.append(thigh)
+        shins.append(shin)
+    if v0 - sum(b.volume for b in bodies) < 0.3:
+        raise RuntimeError("hip sockets removed too little")
+
+    def slot_polys(z_unused):
+        hw = J_SLOT_W / 2
+        return [[(sx * hip_x - hw, hip_y - 14.0), (sx * hip_x + hw, hip_y - 14.0),
+                 (sx * hip_x + hw, hip_y), (sx * hip_x - hw, hip_y)]
+                for sx in (1, -1)]
+
+    # hip slots: from each socket out through the bottom edge
+    zs = zc - J_SLOT_FLOOR
+    pl_hs = ctx.plane_at_z("%g mm" % zs, "hip_slot_plane")
+    sk_hs = fixed_sketch(ctx, pl_hs, "hip_slots", zs * MM,
+                         polys=slot_polys(zs))
+    cut_some(ctx, ctx.all_profiles(sk_hs), "14 mm", bodies, "hip_slots",
+             0.05)
+    # knee slots in the thigh bowls, same side
+    zks = zk - J_SLOT_FLOOR
+    pl_ks = ctx.plane_at_z("%g mm" % zks, "knee_slot_plane")
+    sk_ks = fixed_sketch(ctx, pl_ks, "knee_slots", zks * MM,
+                         polys=slot_polys(zks))
+    cut_some(ctx, ctx.all_profiles(sk_ks), "8 mm", thighs, "knee_slots",
+             0.02)
+    # break-away tabs: hip tabs rest on the socket recess floor, knee
+    # tabs on the bowl rim (coincident faces, not interference)
+    pl_ht = ctx.plane_at_z("%g mm" % (zc + J_LIP), "hip_tab_plane")
+    pl_kt = ctx.plane_at_z("%g mm" % (zk + J_LIP), "knee_tab_plane")
+    for n, sx in enumerate((1, -1)):
+        adsk.doEvents()
+        tag = "_%d" % (n + 1)
+        sk_t = fixed_sketch(ctx, pl_ht, "hip_tabs" + tag, (zc + J_LIP) * MM,
+                            polys=j_tabs(sx * hip_x, hip_y))
+        join_up(ctx, ctx.all_profiles(sk_t), "%g mm" % J_TAB[1],
+                thighs[n], "hip_tabs" + tag)
+        sk_t2 = fixed_sketch(ctx, pl_kt, "knee_tabs" + tag,
+                             (zk + J_LIP) * MM,
+                             polys=j_tabs(sx * hip_x, hip_y))
+        join_up(ctx, ctx.all_profiles(sk_t2), "%g mm" % J_TAB[1],
+                shins[n], "knee_tabs" + tag)
+    print("FH jointed legs ok: thigh %.3f shin %.3f cm3"
+          % (thighs[0].volume, shins[0].volume))
+    return thighs, shins
+
+
+def feet(ctx, foot_x, foot_y):
+    """Two push-on biscuit feet with piped-cream tops. Positions in mm."""
+    root = ctx.root
     skd = root.sketches.add(root.xYConstructionPlane)
     skd.name = "foot_discs"
     for sx in (1, -1):
@@ -261,7 +637,6 @@ def feet_and_legs(ctx, foot_x, foot_y, leg_xs, leg_y):
                        "foot_disc")
     if len(discs) != 2:
         raise RuntimeError("foot discs %d" % len(discs))
-    # piped cream: 8-point star, tapered inward
     plc = ctx.plane_at_z("foot_disc_h", "foot_cream_plane")
     zc = ctx.val("foot_disc_h")
     stars = []
@@ -290,7 +665,6 @@ def feet_and_legs(ctx, foot_x, foot_y, leg_xs, leg_y):
         raise RuntimeError("foot cream taper never narrowed")
     for i, b in enumerate(creams):
         b.name = "foot_cream_%d" % (i + 1)
-    # rope socket down through the cream into the disc
     pls = ctx.plane_at_z("foot_disc_h + foot_cream_h", "foot_top_plane")
     zs = zc + ctx.val("foot_cream_h")
     sks = root.sketches.add(pls)
@@ -298,89 +672,95 @@ def feet_and_legs(ctx, foot_x, foot_y, leg_xs, leg_y):
     for sx in (1, -1):
         adsk.doEvents()
         ctx.bound_circle(sks, (sx * foot_x * MM, foot_y * MM, zs), 0.325,
-                         "leg_hole_d", x_pos="%g mm" % foot_x,
+                         "foot_hole_d", x_pos="%g mm" % foot_x,
                          v_pos="%g mm" % abs(foot_y))
     f = ctx.sym_cut(ctx.all_profiles(sks),
                     "2 * (foot_cream_h + foot_disc_h / 2)",
                     discs + creams, min_vol_cm3=0.1)
     f.name = "foot_socket_cut"
-    # printable legs: square bar chamfered to an octagon, lying flat
-    skl = root.sketches.add(root.xYConstructionPlane)
-    skl.name = "printed_legs"
-    for lx in leg_xs:
-        adsk.doEvents()
-        ctx.bound_rect2(skl, (lx * MM, leg_y * MM, 0), 0.28, 2.75,
-                        u_size="leg_w", v_size="leg_len",
-                        u_pos=("%g mm" % lx, "leg_w / 2"),
-                        v_pos=("%g mm" % leg_y, "leg_len / 2"))
-    legs = new_bodies(ctx, ctx.all_profiles(skl), "leg_w", "leg")
-    if len(legs) != 2:
-        raise RuntimeError("legs %d" % len(legs))
-    leg_len_cm = ctx.val("leg_len")
-    chf = root.features.chamferFeatures
-    for n, leg in enumerate(legs):
-        adsk.doEvents()
-        coll = adsk.core.ObjectCollection.create()
-        for e in leg.edges:  # fusionhelper: allow R11 — collection add, not a document mutation
-            if abs(e.length - leg_len_cm) < 0.01:
-                coll.add(e)
-        if coll.count != 4:
-            raise RuntimeError("leg long edges %d != 4" % coll.count)
-        v0 = leg.volume
-        ci = chf.createInput2()
-        ci.chamferEdgeSets.addEqualDistanceChamferEdgeSet(
-            coll, ctx.cbs("leg_w * 0.29"), True)
-        cf = chf.add(ci)
-        cf.name = "leg_octagon_chamfer_%d" % (n + 1)
-        if v0 - leg.volume < 0.05 * v0:
-            raise RuntimeError("leg chamfer removed too little")
-    print("FH feet+legs ok")
+    print("FH feet ok")
+
+
+def bevel_params(ctx, taper_deg=30):
+    up, cbs = ctx.up, ctx.cbs
+    up.add("edge_fillet", cbs("1.5 mm"), "mm", "upward-facing rim bevel")
+    up.add("under_fillet", cbs("0.5 mm"), "mm", "downward-facing rim bevel")
+    up.add("relief_h", cbs("0.8 mm"), "mm", "embossed pattern height")
+    up.add("emboss_taper", cbs("%g deg" % taper_deg), "deg",
+           "embossing bevel angle")
 
 
 def common_params(ctx):
     up, cbs = ctx.up, ctx.cbs
     up.add("inlay_d", cbs("0.6 mm"), "mm", "colour inlay depth")
-    up.add("leg_hole_d", cbs("6.5 mm"), "mm", "rope / leg socket dia")
-    up.add("leg_hole_depth", cbs("12 mm"), "mm", "socket depth from edge")
-    up.add("leg_clear", cbs("0.9 mm"), "mm", "printed leg fit clearance")
-    up.add("leg_w", cbs("leg_hole_d - leg_clear"), "mm", "printed leg AF")
-    up.add("leg_len", cbs("55 mm"), "mm", "printed leg length")
+    up.add("foot_hole_d", cbs("6.5 mm"), "mm",
+           "foot socket dia (shin end is 6.2)")
     up.add("foot_disc_h", cbs("6 mm"), "mm", "foot biscuit height")
     up.add("foot_cream_h", cbs("7 mm"), "mm", "foot cream height")
 
 
 # ========================= custard cream =================================
-# Printed flat, face up. Bodies: biscuit_base, cream, biscuit_top (with
-# raised diamond), scroll_* (brown inlaid scrollwork), ink_*, feet, legs.
+# Printed flat, face up. Bodies: biscuit_base, cream, biscuit_top (rounded
+# corners, bevelled rim, embossed diamond frame and swirls), ink_*, feet,
+# legs.
 
 CC_W, CC_H = 45.0, 60.0
-CC_STROKE = 1.2
+CC_STROKE = 1.4
+CC_DIA = (15.0, 21.0)          # diamond frame centreline half-diagonals
+CC_FRAME_W = 1.6
 
 
-def cc_brackets():
-    polys = []
+def cc_frame():
+    d = 1 / math.hypot(1 / CC_DIA[0], 1 / CC_DIA[1])
+    out = []
+    for k in ((d + CC_FRAME_W / 2) / d, (d - CC_FRAME_W / 2) / d):
+        hx, hy = CC_DIA[0] * k, CC_DIA[1] * k
+        out.append([(hx, 0), (0, hy), (-hx, 0), (0, -hy)])
+    return out
+
+
+def cc_quad(make):
+    return [mirror(make(), sx, sy) for sx in (1, -1) for sy in (1, -1)]
+
+
+def cc_big_spirals():
+    return cc_quad(lambda: stroke(
+        spiral(15.3, 22.8, 1.5, 3.9, 1.1, 250, 26), CC_STROKE))
+
+
+def cc_top_spirals():
+    # top edge only: the bottom pair would sit where the hips are
+    return [mirror(q, 1, 1) for q in cc_quad(lambda: stroke(
+        spiral(6.0, 24.9, 1.5, 2.6, 0.75, 60, 16), CC_STROKE))[0::2]]
+
+
+def cc_side_spirals():
+    return cc_quad(lambda: stroke(
+        spiral(17.5, 6.2, 1.5, 2.6, 0.75, 300, 16), CC_STROKE))
+
+
+def cc_tendrils():
+    nrm = math.hypot(1 / CC_DIA[0], 1 / CC_DIA[1])
+    nx, ny = 1 / CC_DIA[0] / nrm, 1 / CC_DIA[1] / nrm
+
+    def one():
+        pts = []
+        for i in range(13):
+            t = 0.24 + 0.44 * i / 12
+            off = 3.7 + 0.7 * math.sin(2 * math.pi * i / 12)
+            pts.append((CC_DIA[0] * t + nx * off,
+                        CC_DIA[1] * (1 - t) + ny * off))
+        return stroke(pts, CC_STROKE)
+    return cc_quad(one)
+
+
+def cc_dots():
+    dots = [(0, 25.4, 1.3), (0, -25.4, 1.3), (19.2, 0, 1.3), (-19.2, 0, 1.3)]
     for sx in (1, -1):
         for sy in (1, -1):
-            cl = ([(18.5, 14.0), (18.5, 21.0)]
-                  + arc_pts(16.0, 23.0, 2.5, 0, 90, 6)
-                  + [(14.0, 25.5), (8.0, 25.5)])
-            polys.append(mirror(stroke(cl, CC_STROKE), sx, sy))
-    return polys
-
-
-def cc_curls():
-    polys = []
-    for sx in (1, -1):
-        for sy in (1, -1):
-            # corner curl, open towards the diamond
-            polys.append(mirror(
-                stroke(arc_pts(12.0, 19.5, 2.6, 250, -20, 14), CC_STROKE),
-                sx, sy))
-            # one bowl of the side "3"
-            polys.append(mirror(
-                stroke(arc_pts(16.0, 3.3, 2.3, 160, -80, 12), CC_STROKE),
-                sx, sy))
-    return polys
+            dots.append((sx * 19.4, sy * 14.6, 1.2))
+            dots.append((sx * 10.6, sy * 18.2, 1.2))
+    return dots
 
 
 def run(_context: str):
@@ -392,7 +772,10 @@ def run(_context: str):
     up.add("bis_t", cbs("5.5 mm"), "mm", "biscuit layer thickness")
     up.add("fill_t", cbs("4 mm"), "mm", "cream layer thickness")
     up.add("fill_inset", cbs("0.8 mm"), "mm", "cream set back from edge")
-    up.add("diamond_h", cbs("1 mm"), "mm", "raised diamond height")
+    up.add("corner_r", cbs("4 mm"), "mm", "biscuit corner radius")
+    # spike_emboss: the four corner swirls together fail a 30 deg
+    # tapered join (ASM_INCONS_REL); every set passes at 20 deg.
+    bevel_params(ctx, taper_deg=20)
     common_params(ctx)
     print("FH params added")
 
@@ -426,34 +809,43 @@ def run(_context: str):
     print("FH sandwich: %.3f %.3f %.3f" % (base.volume, cream.volume,
                                            top.volume))
 
-    # raised central diamond
-    pl_face = ctx.plane_at_z("(2 * bis_t + fill_t)", "top_face_plane")
-    skd = fixed_sketch(ctx, pl_face, "diamond", total,
-                       polys=[[(9.0, 0), (0, 13.0), (-9.0, 0), (0, -13.0)]])
-    join_up(ctx, ctx.all_profiles(skd), "diamond_h", top, "diamond")
+    # rounded corners, then bevelled rims on the two biscuit layers
+    fillet_corners(ctx, base, "corner_r", "base_corner_fillet")
+    fillet_corners(ctx, cream, "corner_r - fill_inset",
+                   "cream_corner_fillet")
+    fillet_corners(ctx, top, "corner_r", "top_corner_fillet")
+    fillet_rims(ctx, base, "edge_fillet", "base_top_bevel", bis)
+    fillet_rims(ctx, base, "under_fillet", "base_bed_bevel", 0)
+    fillet_rims(ctx, top, "edge_fillet", "top_face_bevel", total)
+    fillet_rims(ctx, top, "under_fillet", "top_under_bevel", bis + fill)
+    print("FH fillets ok %.3f %.3f" % (base.volume, top.volume))
 
-    # brown scrollwork inlays
-    pl_scroll = ctx.plane_at_z("(2 * bis_t + fill_t) - inlay_d", "scroll_plane")
-    zs = total - inlay_cm
-    skb = fixed_sketch(ctx, pl_scroll, "scroll_brackets", zs,
-                       polys=cc_brackets())
-    inlay(ctx, skb, top, "inlay_d", "scroll_bracket")
-    skc = fixed_sketch(ctx, pl_scroll, "scroll_curls", zs,
-                       polys=cc_curls())
-    inlay(ctx, skc, top, "inlay_d", "scroll_curl")
-    print("FH scrollwork ok")
+    # embossed pattern: diamond frame, swirls, tendrils and dots
+    pl_emb = ctx.plane_at_z("(2 * bis_t + fill_t)", "emboss_plane")
+    skf = fixed_sketch(ctx, pl_emb, "diamond_frame", total,
+                       polys=cc_frame())
+    emboss(ctx, ring_profile(skf), top, "diamond_frame")
+    for nm, polys, circles in (
+            ("swirl_corner", cc_big_spirals(), ()),
+            ("swirl_top", cc_top_spirals(), ()),
+            ("swirl_side", cc_side_spirals(), ()),
+            ("tendrils", cc_tendrils(), cc_dots())):
+        adsk.doEvents()
+        ske = fixed_sketch(ctx, pl_emb, nm, total, polys=polys,
+                           circles=circles)
+        emboss(ctx, ctx.all_profiles(ske), top, nm)
+    print("FH emboss ok %.3f" % top.volume)
 
-    # face on the diamond
-    pl_ink = ctx.plane_at_z("(2 * bis_t + fill_t) + diamond_h - inlay_d", "face_plane")
-    zi = total + ctx.val("diamond_h") - inlay_cm
+    # face inside the diamond
+    pl_ink = ctx.plane_at_z("(2 * bis_t + fill_t) - inlay_d", "face_plane")
+    zi = total - inlay_cm
     sk_ink = fixed_sketch(
         ctx, pl_ink, "face_ink", zi,
-        polys=[smile(0, 1.5, 3.2, 1.0)],
-        circles=[(3.0, 2.6, 0.9), (-3.0, 2.6, 0.9)])
+        polys=[smile(0, 2.5, 4.2, 1.2)],
+        circles=[(4.0, 3.5, 1.1), (-4.0, 3.5, 1.1)])
     inlay(ctx, sk_ink, top, "inlay_d", "ink")
     print("FH face ok")
 
-    leg_sockets(ctx, [base, cream, top], "%g mm" % (CC_H / 2), hh,
-                "10 mm", 1.0, "(2 * bis_t + fill_t) / 2", total / 2)
-    feet_and_legs(ctx, 12, -47, (33, 42), 0)
+    jointed_legs(ctx, [top, cream], 7.0, -24.5, total / MM)
+    feet(ctx, 12, -47)
     print("FH BUILD OK: %d bodies" % root.bRepBodies.count)

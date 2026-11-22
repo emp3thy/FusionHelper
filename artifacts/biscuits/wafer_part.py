@@ -113,7 +113,6 @@ def run(_context: str):
     inlay(ctx, sk_chk, wafer, "inlay_d", "cheek")
     print("FH face ok")
 
-    leg_sockets(ctx, [wafer], "%g mm" % (WF_H / 2), hh,
-                "8 mm", 0.8, "wafer_t / 2", t_cm / 2)
-    feet_and_legs(ctx, 12, -55, (28, 37), 0)
+    jointed_legs(ctx, [wafer], 8.0, -32.0, t_cm / MM)
+    feet(ctx, 12, -55)
     print("FH BUILD OK: %d bodies" % root.bRepBodies.count)

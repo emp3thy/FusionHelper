@@ -1,0 +1,11 @@
+SUCCESS=True
+--- message ---
+FH_RESULT {"type": "adsk::core::Cylinder", "area_mm2": 0.693, "pt_mm": [-10.99, -20.51, 9.04], "n": [0.0, 0.408, -0.913], "bb_min": [-11.18, -22.1, 8.7], "bb_max": [-10.8, -19.19, 10.0]}
+FH_RESULT {"type": "adsk::core::Cylinder", "area_mm2": 0.693, "pt_mm": [-7.01, -20.51, 9.04], "n": [0.0, 0.408, -0.913], "bb_min": [-7.2, -22.1, 8.7], "bb_max": [-6.82, -19.19, 10.0]}
+FH_RESULT {"type": "adsk::core::Cylinder", "area_mm2": 0.693, "pt_mm": [7.01, -20.51, 9.04], "n": [0.0, 0.408, -0.913], "bb_min": [6.82, -22.1, 8.7], "bb_max": [7.2, -19.19, 10.0]}
+FH_RESULT {"type": "adsk::core::Cylinder", "area_mm2": 0.693, "pt_mm": [10.99, -20.51, 9.04], "n": [0.0, 0.408, -0.913], "bb_min": [10.8, -22.1, 8.7], "bb_max": [11.18, -19.19, 10.0]}
+FH_RESULT {"type": "adsk::core::Plane", "area_mm2": 0.741, "pt_mm": [0.01, -15.46, 12.25], "n": [0.991, -0.134, 0.0], "bb_min": [0.0, -15.54, 10.0], "bb_max": [0.02, -15.38, 14.5]}
+FH_RESULT {"type": "adsk::core::Plane", "area_mm2": 0.741, "pt_mm": [-0.01, -15.46, 12.25], "n": [-0.991, -0.134, 0.0], "bb_min": [-0.02, -15.54, 10.0], "bb_max": [0.0, -15.38, 14.5]}
+
+--- error ---
+
