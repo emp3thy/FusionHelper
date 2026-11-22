@@ -135,6 +135,38 @@ def run(_context: str):
     print("FH_RESULT " + json.dumps(report))
 '''
 
+GROUP1 = '''
+import adsk.core, adsk.fusion, json
+NAME = "%s"
+def run(_context: str):
+    # Move every root body of the ACTIVE document into one component.
+    app = adsk.core.Application.get()
+    des = adsk.fusion.Design.cast(app.activeProduct)
+    root = des.rootComponent
+    bodies = [b for b in root.bRepBodies]      # list first: moves mutate the collection
+    names = sorted(b.name for b in bodies)
+    if not bodies:
+        print("FH_RESULT " + json.dumps({"ok": False, "why": "no bodies at root"}))
+        return
+    if not all(n.startswith("foot_") for n in names):
+        print("FH_RESULT " + json.dumps({"ok": False, "why": "not the feet-only document", "names": names[:4]}))
+        return
+    v0 = sum(b.volume for b in bodies)
+    occ = root.occurrences.addNewComponent(adsk.core.Matrix3D.create())
+    occ.component.name = NAME
+    for b in bodies:
+        adsk.doEvents()
+        b.moveToComponent(occ)
+    moved = [b for b in occ.component.bRepBodies]
+    occ.isLightBulbOn = True
+    tl = des.timeline
+    bad = [tl.item(i).name for i in range(tl.count) if tl.item(i).healthState != 0]
+    print("FH_RESULT " + json.dumps({
+        "ok": True, "component": NAME, "bodies": len(moved), "left_at_root": root.bRepBodies.count,
+        "names_kept": sorted(b.name for b in moved) == names,
+        "dvol_mm3": round((sum(b.volume for b in moved) - v0) * 1000, 4), "unhealthy": bad}))
+'''
+
 PAINT = '''
 import adsk.core, adsk.fusion
 COLOURS = {
@@ -275,6 +307,9 @@ elif cmd == "undoall":
 elif cmd == "setparam":
     r = c.execute(SETPARAM % (sys.argv[2], sys.argv[3]))
     print("SUCCESS", r.success, (r.message if r.success else r.error)[-600:])
+elif cmd == "group1":
+    r = c.execute(GROUP1 % sys.argv[2])
+    print("SUCCESS", r.success, (r.message if r.success else r.error)[-500:])
 elif cmd == "activate":
     r = c.execute(ACTIVATE % sys.argv[2])
     print("SUCCESS", r.success, (r.message if r.success else r.error)[-300:])
