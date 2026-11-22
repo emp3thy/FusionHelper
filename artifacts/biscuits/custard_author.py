@@ -728,7 +728,8 @@ def jointed_legs(ctx, bodies, hip_x, hip_y, face_z):
 # behind, with 45 deg struts up to each thigh and shin rod. Struts touch
 # the rods (tangent, zero overlap) so the slicer fuses them; everything
 # rises at 45 deg or steeper, nothing bridges.
-BR_T = 1.2          # wall and buttress thickness
+BR_T = 2.0          # wall and buttress thickness (1.2 got knocked loose)
+BR_PAD = (0.8, 3.0)  # bed pad thickness, margin round the footprint
 BR_NIB = (0.8, 0.9)  # strut width (x), height (z)
 BR_FOOT = 14.0      # buttress depth on the bed
 
@@ -822,6 +823,17 @@ def print_brace(ctx, hip_x, hip_y, zc, z_end, edge_y):
         skn = sketch_xyz(ctx, pl, "brace_struts_%d" % (n + 1), nibs)
         sym_join(ctx, skn, "%g mm" % BR_NIB[0], brace,
                  "brace_strut_join_%d" % (n + 1))
+    # Flat pad on the bed under the whole brace. Printed 2026-11-22: the
+    # wall and two thin buttress edges alone did not grip the bed and the
+    # brace kept being dislodged.
+    m = BR_PAD[1]
+    pad = [(-half - m, yw - BR_T - BR_FOOT - m), (half + m, yw - BR_T - BR_FOOT - m),
+           (half + m, yw), (-half - m, yw)]
+    skp = fixed_sketch(ctx, ctx.root.xYConstructionPlane, "brace_pad", 0,
+                       polys=[pad])
+    join_up(ctx, ctx.all_profiles(skp), "%g mm" % BR_PAD[0], brace,
+            "brace_pad")
+    print("FH brace pad %.0f x %.0f mm" % (2 * (half + m), BR_T + BR_FOOT + m))
     print("FH print brace ok %.3f cm3, wall y %.1f, strut reach %.1f"
           % (brace.volume, yw, gap))
     return brace

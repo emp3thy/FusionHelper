@@ -104,3 +104,10 @@ legs too long; the hip-to-knee part alone stood and sat well. Now:
 
 `probe_joints.py` (leg_1): 0.0 mm3 clash at 15/30/45/60/75/90 deg,
 2.6 mm3 lip engagement at 1 mm lift, on all three biscuits.
+
+## Revision 9 (2026-11-22): brace bed pad
+
+Printed brace was too thin and kept being dislodged. Wall and buttresses
+are now 2.0 mm (`BR_T`) and the brace stands on a 0.8 mm flat pad with a
+3 mm margin round its footprint (`BR_PAD`). `pipeline.sh <kind>` rebuilds
+one biscuit end to end in its open document.

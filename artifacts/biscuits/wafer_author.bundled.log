@@ -5,7 +5,8 @@ FH sheets 34.125 cream 7.355
 FH lattice 9.609
 FH face ok
 FH jointed legs ok: leg 0.908 cm3, hip z 8.0, top z 35.0
-FH print brace ok 1.715 cm3, wall y -38.1, strut reach 3.0
+FH brace pad 34 x 19 mm
+FH print brace ok 3.277 cm3, wall y -38.1, strut reach 3.0
 FH feet ok
 FH BUILD OK: 19 bodies
 FH_CHECK1 {"c":"constraints","s":"warn","f":[{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_1_outline","dim":0,"expr":"35 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_1_outline","dim":1,"expr":"75 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_1_outline","dim":2,"expr":"abs(0 mm - ( 35 mm / 2 ))"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_1_outline","dim":3,"expr":"abs(0 mm - ( 75 mm / 2 ))"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_2_outline","dim":0,"expr":"35 mm"}],"more":21}
@@ -15,7 +16,7 @@ FH_CHECK1 {"c":"clearance","s":"skip","why":"none_declared"}
 FH_GUARD1 {"restore":{"wafer_t":"16 mm","groove_d":"0.8 mm","groove_h":"1 mm","relief_h":"0.8 mm","inlay_d":"0.6 mm","foot_hole_d":"6.5 mm","face_sink":"1.2 mm","foot_fillet":"1.2 mm","foot_disc_h":"6 mm","foot_cream_h":"7 mm"}}
 FH_GUARD1 {"restore":"released"}
 FH_CHECK1 {"c":"liveness","s":"pass"}
-FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":19,"volume_mm3":47650.38,"bbox_mm":[42,120.5,35],"origin_mm":[-21,-83,0]},"stats":{"timeline":87,"params":10,"sec":13},"skipped":{"clearance":"none_declared"}}
+FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":19,"volume_mm3":49212.53,"bbox_mm":[42,120.5,35],"origin_mm":[-21,-83,0]},"stats":{"timeline":89,"params":10,"sec":13.3},"skipped":{"clearance":"none_declared"}}
 
 --- error ---
 
