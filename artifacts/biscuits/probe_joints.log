@@ -1,18 +1,16 @@
 SUCCESS=True
 --- message ---
-FH_RESULT doc bodies 16, hip [9.0, -22.1, 12.6] knee [9.0, -22.1, 34.6]
-FH_RESULT {"hip_rest": 0.0, "hip_lift_0.2": 0.0, "hip_lift_1.0": 2.609, "hip_lift_2.0": 6.511, "knee_rest": 0.0, "knee_lift_1.0": 2.609, "knee_lift_2.0": 6.511, "hip_swing_30": 0.0, "knee_swing_30": 0.0, "hip_swing_60": 0.0, "knee_swing_60": 0.0, "hip_swing_90": 0.0, "knee_swing_90": 0.0, "hip_swing_100": 0.221, "knee_swing_100": 1.018, "hip_swing_back_-20": 1.325, "one_tab_set_mm3": 2.64}
-FH_RESULT overhang jam: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 2498.76, 6.0, 6.0]]
-FH_RESULT overhang biscuit_top: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 2229.59, 10.0, 10.0]]
-FH_RESULT overhang ink_1: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 4.52, 14.2, 14.2]]
-FH_RESULT overhang ink_2: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 4.52, 14.2, 14.2]]
-FH_RESULT overhang ink_3: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 14.92, 14.2, 14.2]]
-FH_RESULT overhang cheek_1: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 19.63, 15.4, 15.4]]
-FH_RESULT overhang cheek_2: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 19.63, 15.4, 15.4]]
-FH_RESULT overhang thigh_1: 2 faces [nz, mm2, zmin, zmax] [[-1.0, 3.35, 15.6, 15.6], [-1.0, 0.79, 7.44, 7.44]]
-FH_RESULT overhang shin_1: 2 faces [nz, mm2, zmin, zmax] [[-1.0, 3.35, 37.6, 37.6], [-1.0, 0.79, 29.44, 29.44]]
-FH_RESULT overhang thigh_2: 2 faces [nz, mm2, zmin, zmax] [[-1.0, 3.35, 15.6, 15.6], [-1.0, 0.79, 7.44, 7.44]]
-FH_RESULT overhang shin_2: 2 faces [nz, mm2, zmin, zmax] [[-1.0, 3.35, 37.6, 37.6], [-1.0, 0.79, 29.44, 29.44]]
+FH_RESULT doc bodies 14, hip [7.0, -24.5, 11.6] knee [7.0, -24.5, 33.6]
+FH_RESULT {"hip_rest": 0.0, "hip_lift_0.2": 0.0, "hip_lift_1.0": 2.609, "hip_lift_2.0": 6.511, "knee_rest": 0.0, "knee_lift_1.0": 2.609, "knee_lift_2.0": 6.511, "hip_swing_30": 0.0, "knee_swing_30": 0.0, "hip_swing_60": 0.0, "knee_swing_60": 0.0, "hip_swing_90": 0.0, "knee_swing_90": 0.0, "hip_swing_100": 0.202, "knee_swing_100": 1.018, "hip_swing_back_-20": 1.325, "one_tab_set_mm3": 2.64}
+FH_RESULT overhang cream: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 2525.77, 5.5, 5.5]]
+FH_RESULT overhang biscuit_top: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 2472.05, 9.5, 9.5]]
+FH_RESULT overhang ink_1: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 3.8, 13.2, 13.2]]
+FH_RESULT overhang ink_2: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 3.8, 13.2, 13.2]]
+FH_RESULT overhang ink_3: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 9.64, 13.2, 13.2]]
+FH_RESULT overhang thigh_1: 2 faces [nz, mm2, zmin, zmax] [[-1.0, 3.35, 14.6, 14.6], [-1.0, 0.79, 6.44, 6.44]]
+FH_RESULT overhang shin_1: 2 faces [nz, mm2, zmin, zmax] [[-1.0, 3.35, 36.6, 36.6], [-1.0, 0.79, 28.44, 28.44]]
+FH_RESULT overhang thigh_2: 2 faces [nz, mm2, zmin, zmax] [[-1.0, 3.35, 14.6, 14.6], [-1.0, 0.79, 6.44, 6.44]]
+FH_RESULT overhang shin_2: 2 faces [nz, mm2, zmin, zmax] [[-1.0, 3.35, 36.6, 36.6], [-1.0, 0.79, 28.44, 28.44]]
 FH_RESULT overhang foot_cream_1: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 99.99, 6.0, 6.0]]
 FH_RESULT overhang foot_cream_2: 1 faces [nz, mm2, zmin, zmax] [[-1.0, 99.99, 6.0, 6.0]]
 

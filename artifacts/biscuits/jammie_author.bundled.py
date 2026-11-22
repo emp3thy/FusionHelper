@@ -357,6 +357,21 @@ def stroke(centre, w):
     return left + right[::-1]
 
 
+def stroke_round(centre, w, n=4):
+    """Like stroke() but with semicircular ends, so a closed spline
+    through the points is smooth all the way round."""
+    body = stroke(centre, w)
+    half = len(body) // 2
+    left, right = body[:half], body[half:]
+
+    def cap(p_from, p_to):
+        mx, my = (p_from[0] + p_to[0]) / 2, (p_from[1] + p_to[1]) / 2
+        a0 = math.degrees(math.atan2(p_from[1] - my, p_from[0] - mx))
+        return arc_pts(mx, my, w / 2, a0, a0 - 180, n)[1:-1]
+
+    return left + cap(left[-1], right[0]) + right + cap(right[-1], left[0])
+
+
 def smile(cx, cy, r, w, half_span_deg=55, n=12):
     return stroke(arc_pts(cx, cy, r, 270 - half_span_deg,
                           270 + half_span_deg, n), w)
@@ -503,6 +518,42 @@ def emboss(ctx, profs, target, name):
         f.deleteMe()
     raise RuntimeError("%s emboss never narrowed (prism %.5f)"
                        % (name, prism))
+
+
+def top_edge_keys(body, z_cm):
+    """Flat edges of `body` lying at height z_cm, keyed by plan bbox."""
+    out = {}
+    for e in body.edges:
+        bb = e.boundingBox
+        if (abs(bb.maxPoint.z - z_cm) < 1e-4
+                and abs(bb.minPoint.z - z_cm) < 1e-4):
+            out[(round(bb.minPoint.x, 4), round(bb.minPoint.y, 4),
+                 round(bb.maxPoint.x, 4), round(bb.maxPoint.y, 4))] = e
+    return out
+
+
+def soften_new_tops(ctx, body, z_cm, before, radius_expr, name):
+    """Round the top edges that appeared at z_cm since `before` was
+    taken (i.e. the relief just embossed). Earlier, already-rounded
+    relief keeps flat-top edges at the same height, so edges are
+    selected by what is NEW, never by height alone."""
+    coll = adsk.core.ObjectCollection.create()
+    for key, e in top_edge_keys(body, z_cm).items():  # fusionhelper: allow R11 — collection add, not a document mutation
+        if key not in before:
+            coll.add(e)
+    if coll.count < 1:
+        raise RuntimeError("%s: no new top edges" % name)
+    v0 = body.volume
+    fil = ctx.root.features.filletFeatures
+    inp = fil.createInput()
+    inp.edgeSetInputs.addConstantRadiusEdgeSet(
+        coll, ctx.cbs(radius_expr), True)
+    f = fil.add(inp)
+    f.name = name
+    ok = (adsk.fusion.FeatureHealthStates.HealthyFeatureHealthState,)
+    if f.healthState not in ok or v0 - body.volume < 1e-6:
+        raise RuntimeError("%s: health %s dv %.6f"
+                           % (name, f.healthState, v0 - body.volume))
 
 
 def fillet_rims(ctx, body, radius_expr, name, z_cm, min_span_cm=3.0):

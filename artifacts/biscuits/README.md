@@ -66,3 +66,11 @@ Not yet print-tested.
   `ctl.py undoall` rolls the active document back to empty for a
   rebuild. Do not switch Fusion tabs during a build: verify reads the
   active document.
+
+## Revision 5 (2026-11-22)
+
+Custard cream relief softened: swirl and tendril outlines are closed
+splines (`CC_SMOOTH`), and each embossed set has its ridge tops rounded
+by `CC_TOP_ROUND` (0.25 mm) via `soften_new_tops`. `spike_soften_part.py`
+is the measurement behind it (polyline swirls take 0.12 mm at most,
+spline swirls 0.3 mm). Jam biscuit and wafer geometry unchanged.

@@ -3,7 +3,7 @@ SUCCESS=True
 FH params added
 FH sandwich: 14.850 10.138 14.850
 FH fillets ok 14.667 14.667
-FH emboss ok 14.966
+FH emboss ok 14.976
 FH face ok
 FH jointed legs ok: thigh 1.163 shin 0.878 cm3
 FH feet ok
@@ -15,7 +15,7 @@ FH_CHECK1 {"c":"clearance","s":"skip","why":"none_declared"}
 FH_GUARD1 {"restore":{"bis_t":"5.5 mm","fill_t":"4 mm","fill_inset":"0.8 mm","corner_r":"4 mm","edge_fillet":"1.5 mm","under_fillet":"0.5 mm","relief_h":"0.8 mm","emboss_taper":"20 deg","inlay_d":"0.6 mm","foot_hole_d":"6.5 mm","face_sink":"1.2 mm","foot_fillet":"1.2 mm","foot_disc_h":"6 mm","foot_cream_h":"7 mm"}}
 FH_GUARD1 {"restore":"released"}
 FH_CHECK1 {"c":"liveness","s":"pass"}
-FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":14,"volume_mm3":46678.36,"bbox_mm":[45,86,59.6],"origin_mm":[-22.5,-56,0]},"stats":{"timeline":79,"params":14,"sec":29.6},"skipped":{"clearance":"none_declared"}}
+FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":14,"volume_mm3":46689.01,"bbox_mm":[45,86,59.6],"origin_mm":[-22.5,-56,0]},"stats":{"timeline":84,"params":14,"sec":37.7},"skipped":{"clearance":"none_declared"}}
 
 --- error ---
 

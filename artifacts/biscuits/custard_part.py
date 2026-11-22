@@ -11,6 +11,18 @@ CC_DIA = (15.0, 21.0)          # diamond frame centreline half-diagonals
 CC_FRAME_W = 1.6
 
 
+# Smooth (spline) stroke outlines. Measured (spike_soften): polyline
+# swirls accept only a 0.12 mm top fillet; spline swirls accept 0.3.
+CC_SMOOTH = True
+CC_TOP_ROUND = "0.25 mm"       # rounding of the relief ridge tops
+
+
+def cc_stroke(centre):
+    if CC_SMOOTH:
+        return stroke_round(centre, CC_STROKE)
+    return stroke(centre, CC_STROKE)
+
+
 def cc_frame():
     d = 1 / math.hypot(1 / CC_DIA[0], 1 / CC_DIA[1])
     out = []
@@ -25,19 +37,16 @@ def cc_quad(make):
 
 
 def cc_big_spirals():
-    return cc_quad(lambda: stroke(
-        spiral(15.3, 22.8, 1.5, 3.9, 1.1, 250, 26), CC_STROKE))
+    return cc_quad(lambda: cc_stroke(spiral(15.3, 22.8, 1.5, 3.9, 1.1, 250, 26)))
 
 
 def cc_top_spirals():
     # top edge only: the bottom pair would sit where the hips are
-    return [mirror(q, 1, 1) for q in cc_quad(lambda: stroke(
-        spiral(6.0, 24.9, 1.5, 2.6, 0.75, 60, 16), CC_STROKE))[0::2]]
+    return [mirror(q, 1, 1) for q in cc_quad(lambda: cc_stroke(spiral(6.0, 24.9, 1.5, 2.6, 0.75, 60, 16)))[0::2]]
 
 
 def cc_side_spirals():
-    return cc_quad(lambda: stroke(
-        spiral(17.5, 6.2, 1.5, 2.6, 0.75, 300, 16), CC_STROKE))
+    return cc_quad(lambda: cc_stroke(spiral(17.5, 6.2, 1.5, 2.6, 0.75, 300, 16)))
 
 
 def cc_tendrils():
@@ -51,7 +60,7 @@ def cc_tendrils():
             off = 3.7 + 0.7 * math.sin(2 * math.pi * i / 12)
             pts.append((CC_DIA[0] * t + nx * off,
                         CC_DIA[1] * (1 - t) + ny * off))
-        return stroke(pts, CC_STROKE)
+        return cc_stroke(pts)
     return cc_quad(one)
 
 
@@ -123,18 +132,25 @@ def run(_context: str):
 
     # embossed pattern: diamond frame, swirls, tendrils and dots
     pl_emb = ctx.plane_at_z("(2 * bis_t + fill_t)", "emboss_plane")
+    z_rel = total + ctx.val("relief_h")
+    before = top_edge_keys(top, z_rel)
     skf = fixed_sketch(ctx, pl_emb, "diamond_frame", total,
                        polys=cc_frame())
     emboss(ctx, ring_profile(skf), top, "diamond_frame")
-    for nm, polys, circles in (
+    soften_new_tops(ctx, top, z_rel, before, CC_TOP_ROUND,
+                    "diamond_frame_round")
+    for nm, strokes, circles in (
             ("swirl_corner", cc_big_spirals(), ()),
             ("swirl_top", cc_top_spirals(), ()),
             ("swirl_side", cc_side_spirals(), ()),
             ("tendrils", cc_tendrils(), cc_dots())):
         adsk.doEvents()
-        ske = fixed_sketch(ctx, pl_emb, nm, total, polys=polys,
+        before = top_edge_keys(top, z_rel)
+        ske = fixed_sketch(ctx, pl_emb, nm, total, splines=strokes,
                            circles=circles)
         emboss(ctx, ctx.all_profiles(ske), top, nm)
+        soften_new_tops(ctx, top, z_rel, before, CC_TOP_ROUND,
+                        nm + "_round")
     print("FH emboss ok %.3f" % top.volume)
 
     # face inside the diamond

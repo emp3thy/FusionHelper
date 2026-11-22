@@ -1,0 +1,17 @@
+SUCCESS=True
+--- message ---
+FH_RESULT pol frame: 0.3 mm ok (8 edges)
+FH_RESULT pol corner: 0.3 mm FAIL | 0.2 mm FAIL | 0.12 mm ok (216 edges)
+FH_RESULT pol top: 0.3 mm FAIL | 0.2 mm FAIL | 0.12 mm ok (68 edges)
+FH_RESULT pol side: 0.3 mm FAIL | 0.2 mm FAIL | 0.12 mm ok (136 edges)
+FH_RESULT pol tendrils: 0.3 mm ok (104 edges)
+FH_RESULT pol dots: 0.3 mm ok (12 edges)
+FH_RESULT spl frame: 0.3 mm ok (8 edges)
+FH_RESULT spl corner: 0.3 mm ok (4 edges)
+FH_RESULT spl top: 0.3 mm ok (2 edges)
+FH_RESULT spl side: 0.3 mm ok (4 edges)
+FH_RESULT spl tendrils: 0.3 mm ok (4 edges)
+FH_RESULT spl dots: 0.3 mm ok (12 edges)
+
+--- error ---
+

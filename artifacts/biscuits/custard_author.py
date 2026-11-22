@@ -40,6 +40,21 @@ def stroke(centre, w):
     return left + right[::-1]
 
 
+def stroke_round(centre, w, n=4):
+    """Like stroke() but with semicircular ends, so a closed spline
+    through the points is smooth all the way round."""
+    body = stroke(centre, w)
+    half = len(body) // 2
+    left, right = body[:half], body[half:]
+
+    def cap(p_from, p_to):
+        mx, my = (p_from[0] + p_to[0]) / 2, (p_from[1] + p_to[1]) / 2
+        a0 = math.degrees(math.atan2(p_from[1] - my, p_from[0] - mx))
+        return arc_pts(mx, my, w / 2, a0, a0 - 180, n)[1:-1]
+
+    return left + cap(left[-1], right[0]) + right + cap(right[-1], left[0])
+
+
 def smile(cx, cy, r, w, half_span_deg=55, n=12):
     return stroke(arc_pts(cx, cy, r, 270 - half_span_deg,
                           270 + half_span_deg, n), w)
@@ -186,6 +201,42 @@ def emboss(ctx, profs, target, name):
         f.deleteMe()
     raise RuntimeError("%s emboss never narrowed (prism %.5f)"
                        % (name, prism))
+
+
+def top_edge_keys(body, z_cm):
+    """Flat edges of `body` lying at height z_cm, keyed by plan bbox."""
+    out = {}
+    for e in body.edges:
+        bb = e.boundingBox
+        if (abs(bb.maxPoint.z - z_cm) < 1e-4
+                and abs(bb.minPoint.z - z_cm) < 1e-4):
+            out[(round(bb.minPoint.x, 4), round(bb.minPoint.y, 4),
+                 round(bb.maxPoint.x, 4), round(bb.maxPoint.y, 4))] = e
+    return out
+
+
+def soften_new_tops(ctx, body, z_cm, before, radius_expr, name):
+    """Round the top edges that appeared at z_cm since `before` was
+    taken (i.e. the relief just embossed). Earlier, already-rounded
+    relief keeps flat-top edges at the same height, so edges are
+    selected by what is NEW, never by height alone."""
+    coll = adsk.core.ObjectCollection.create()
+    for key, e in top_edge_keys(body, z_cm).items():  # fusionhelper: allow R11 — collection add, not a document mutation
+        if key not in before:
+            coll.add(e)
+    if coll.count < 1:
+        raise RuntimeError("%s: no new top edges" % name)
+    v0 = body.volume
+    fil = ctx.root.features.filletFeatures
+    inp = fil.createInput()
+    inp.edgeSetInputs.addConstantRadiusEdgeSet(
+        coll, ctx.cbs(radius_expr), True)
+    f = fil.add(inp)
+    f.name = name
+    ok = (adsk.fusion.FeatureHealthStates.HealthyFeatureHealthState,)
+    if f.healthState not in ok or v0 - body.volume < 1e-6:
+        raise RuntimeError("%s: health %s dv %.6f"
+                           % (name, f.healthState, v0 - body.volume))
 
 
 def fillet_rims(ctx, body, radius_expr, name, z_cm, min_span_cm=3.0):
@@ -784,6 +835,18 @@ CC_DIA = (15.0, 21.0)          # diamond frame centreline half-diagonals
 CC_FRAME_W = 1.6
 
 
+# Smooth (spline) stroke outlines. Measured (spike_soften): polyline
+# swirls accept only a 0.12 mm top fillet; spline swirls accept 0.3.
+CC_SMOOTH = True
+CC_TOP_ROUND = "0.25 mm"       # rounding of the relief ridge tops
+
+
+def cc_stroke(centre):
+    if CC_SMOOTH:
+        return stroke_round(centre, CC_STROKE)
+    return stroke(centre, CC_STROKE)
+
+
 def cc_frame():
     d = 1 / math.hypot(1 / CC_DIA[0], 1 / CC_DIA[1])
     out = []
@@ -798,19 +861,16 @@ def cc_quad(make):
 
 
 def cc_big_spirals():
-    return cc_quad(lambda: stroke(
-        spiral(15.3, 22.8, 1.5, 3.9, 1.1, 250, 26), CC_STROKE))
+    return cc_quad(lambda: cc_stroke(spiral(15.3, 22.8, 1.5, 3.9, 1.1, 250, 26)))
 
 
 def cc_top_spirals():
     # top edge only: the bottom pair would sit where the hips are
-    return [mirror(q, 1, 1) for q in cc_quad(lambda: stroke(
-        spiral(6.0, 24.9, 1.5, 2.6, 0.75, 60, 16), CC_STROKE))[0::2]]
+    return [mirror(q, 1, 1) for q in cc_quad(lambda: cc_stroke(spiral(6.0, 24.9, 1.5, 2.6, 0.75, 60, 16)))[0::2]]
 
 
 def cc_side_spirals():
-    return cc_quad(lambda: stroke(
-        spiral(17.5, 6.2, 1.5, 2.6, 0.75, 300, 16), CC_STROKE))
+    return cc_quad(lambda: cc_stroke(spiral(17.5, 6.2, 1.5, 2.6, 0.75, 300, 16)))
 
 
 def cc_tendrils():
@@ -824,7 +884,7 @@ def cc_tendrils():
             off = 3.7 + 0.7 * math.sin(2 * math.pi * i / 12)
             pts.append((CC_DIA[0] * t + nx * off,
                         CC_DIA[1] * (1 - t) + ny * off))
-        return stroke(pts, CC_STROKE)
+        return cc_stroke(pts)
     return cc_quad(one)
 
 
@@ -896,18 +956,25 @@ def run(_context: str):
 
     # embossed pattern: diamond frame, swirls, tendrils and dots
     pl_emb = ctx.plane_at_z("(2 * bis_t + fill_t)", "emboss_plane")
+    z_rel = total + ctx.val("relief_h")
+    before = top_edge_keys(top, z_rel)
     skf = fixed_sketch(ctx, pl_emb, "diamond_frame", total,
                        polys=cc_frame())
     emboss(ctx, ring_profile(skf), top, "diamond_frame")
-    for nm, polys, circles in (
+    soften_new_tops(ctx, top, z_rel, before, CC_TOP_ROUND,
+                    "diamond_frame_round")
+    for nm, strokes, circles in (
             ("swirl_corner", cc_big_spirals(), ()),
             ("swirl_top", cc_top_spirals(), ()),
             ("swirl_side", cc_side_spirals(), ()),
             ("tendrils", cc_tendrils(), cc_dots())):
         adsk.doEvents()
-        ske = fixed_sketch(ctx, pl_emb, nm, total, polys=polys,
+        before = top_edge_keys(top, z_rel)
+        ske = fixed_sketch(ctx, pl_emb, nm, total, splines=strokes,
                            circles=circles)
         emboss(ctx, ctx.all_profiles(ske), top, nm)
+        soften_new_tops(ctx, top, z_rel, before, CC_TOP_ROUND,
+                        nm + "_round")
     print("FH emboss ok %.3f" % top.volume)
 
     # face inside the diamond
