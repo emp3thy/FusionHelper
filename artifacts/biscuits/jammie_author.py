@@ -936,9 +936,9 @@ def bevel_params(ctx, taper_deg=30):
 def common_params(ctx):
     up, cbs = ctx.up, ctx.cbs
     up.add("inlay_d", cbs("0.6 mm"), "mm", "colour inlay depth")
-    # 6.5 printed loose on the 6.2 mm leg end (2026-11-22); 6.3 for a
-    # push fit. Tune here or in Fusion - it is a live parameter.
-    up.add("foot_hole_d", cbs("6.3 mm"), "mm",
+    # 6.5 printed loose on the 6.2 mm leg end (2026-11-22); the owner
+    # asked for 0.1 mm tighter. Tune here or in Fusion - live parameter.
+    up.add("foot_hole_d", cbs("6.4 mm"), "mm",
            "foot socket dia (leg end is 6.2)")
     up.add("face_sink", cbs("1.2 mm"), "mm",
            "eyes and smile recessed below the face")
