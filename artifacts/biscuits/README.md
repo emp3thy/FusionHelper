@@ -120,3 +120,5 @@ one biscuit end to end in its open document.
 two sole dimples). `feet()` now takes `hole_param`, `tag` and `marks`.
 Once a size is chosen: `python ctl.py setparam foot_hole_d "<size>"`
 applies it to every open biscuit document.
+
+Result: **6.3 mm is the push fit** (print-confirmed); `foot_hole_d` is 6.3 in the scripts and the three open biscuit documents.
