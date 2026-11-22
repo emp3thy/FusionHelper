@@ -135,8 +135,12 @@ def run(_context: str):
         print("FH_RESULT no base appearance found; nothing painted")
         return
     done = 0
-    is_wafer = any(b.name.startswith("wafer") for b in root.bRepBodies)
-    for b in root.bRepBodies:
+    # bodies at root AND inside components (after `group`)
+    todo = [b for b in root.bRepBodies]
+    for o in root.occurrences:
+        todo += [b for b in o.component.bRepBodies]
+    is_wafer = any(b.name.startswith("wafer") for b in todo)
+    for b in todo:
         adsk.doEvents()
         key = None
         for k in sorted(COLOURS, key=len, reverse=True):
@@ -162,7 +166,7 @@ def run(_context: str):
             prop.value = adsk.core.Color.create(r, g, bl, 255)
         b.appearance = ap
         done += 1
-    print("FH_RESULT painted", done, "of", root.bRepBodies.count)
+    print("FH_RESULT painted", done, "of", len(todo))
 '''
 
 SHOT = '''
