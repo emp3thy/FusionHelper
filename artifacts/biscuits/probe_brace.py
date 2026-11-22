@@ -12,9 +12,9 @@ def run(_context: str):
     br = by["print_brace"]
     out = {}
     for n in sorted(by):
-        if n.startswith(("thigh", "shin")):
+        if n.startswith(("thigh", "shin", "leg")):
             out["gap_mm_" + n] = round(app.measureManager.measureMinimumDistance(br, by[n]).value * 10, 4)
-    others = [n for n in by if not n.startswith(("thigh", "shin", "print_", "foot"))]
+    others = [n for n in by if not n.startswith(("thigh", "shin", "leg", "print_", "foot"))]
     out["gap_mm_to_biscuit"] = round(min(app.measureManager.measureMinimumDistance(br, by[n]).value for n in others) * 10, 3)
     bad = []
     for f in br.faces:

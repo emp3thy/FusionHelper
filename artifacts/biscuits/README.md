@@ -89,3 +89,18 @@ thigh and shin rods (`print_brace` in `common.py`). `probe_brace.py`
 measures 0.0 mm strut-to-leg gap on all four leg parts and no overhang
 faces. It snaps off after printing. Feet moved further out to clear the
 buttresses. Not yet print-tested.
+
+## Revision 8 (2026-11-22): single-joint legs at mid thickness
+
+First print came off with hips near the front face (over-balanced) and
+legs too long; the hip-to-knee part alone stood and sat well. Now:
+
+- hip ball at MID thickness (`zc = face_z / 2`), reached through a well
+  from the face; slot neck-wide round the ball, shaft-wide above the lip
+  and beyond the socket wall;
+- one segment per leg, `J_LEG` = 27 mm hip centre to end (no knee, no
+  shin); printed height about 35 mm instead of 61;
+- brace kept, three struts per leg.
+
+`probe_joints.py` (leg_1): 0.0 mm3 clash at 15/30/45/60/75/90 deg,
+2.6 mm3 lip engagement at 1 mm lift, on all three biscuits.

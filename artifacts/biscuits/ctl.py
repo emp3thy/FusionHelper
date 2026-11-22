@@ -106,7 +106,8 @@ PAINT = '''
 import adsk.core, adsk.fusion
 COLOURS = {
     "biscuit": (222, 190, 130), "foot_disc": (222, 190, 130),
-    "thigh": (205, 170, 115), "shin": (205, 170, 115), "jam": (214, 60, 80), "wafer": (242, 172, 160),
+    "thigh": (205, 170, 115), "shin": (205, 170, 115),
+    "leg": (205, 170, 115), "jam": (214, 60, 80), "wafer": (242, 172, 160),
     "ink": (25, 22, 22), "cheek": (236, 120, 150), "cream": (250, 246, 236),
     "foot_cream": (250, 246, 236), "scroll": (92, 52, 30),
     "wafer_cream": (250, 246, 236),
@@ -151,7 +152,7 @@ def run(_context: str):
             continue
         nm = "fh_" + key
         rgb = COLOURS[key]
-        if is_wafer and key in ("thigh", "shin"):
+        if is_wafer and key in ("thigh", "shin", "leg"):
             nm = "fh_white_leg"
             rgb = WAFER_LEGS
         ap = None

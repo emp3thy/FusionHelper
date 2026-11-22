@@ -110,7 +110,7 @@ def run(_context: str):
     domed_cheeks(ctx, wafer, [(11.5, 1.5, 2.0), (-11.5, 1.5, 2.0)], t_cm / MM, inlay_cm / MM)
     print("FH face ok")
 
-    jointed_legs(ctx, pieces, 8.0, -32.0, t_cm / MM)
-    print_brace(ctx, 8.0, -32.0, t_cm / MM, -WF_H / 2)
+    _legs, zc, z_end = jointed_legs(ctx, pieces, 8.0, -32.0, t_cm / MM)
+    print_brace(ctx, 8.0, -32.0, zc, z_end, -WF_H / 2)
     feet(ctx, 12, -74)
     print("FH BUILD OK: %d bodies" % root.bRepBodies.count)

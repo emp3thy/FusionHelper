@@ -164,7 +164,8 @@ def run(_context: str):
     inlay(ctx, sk_ink, top, "inlay_d", "ink", sink_expr="face_sink")
     print("FH face ok")
 
-    jointed_legs(ctx, [top, cream], 7.0, -24.5, total / MM)
-    print_brace(ctx, 7.0, -24.5, total / MM, -CC_H / 2)
+    _legs, zc, z_end = jointed_legs(ctx, [top, cream, base], 7.0, -24.5,
+                                    total / MM)
+    print_brace(ctx, 7.0, -24.5, zc, z_end, -CC_H / 2)
     feet(ctx, 12, -66)
     print("FH BUILD OK: %d bodies" % root.bRepBodies.count)

@@ -179,7 +179,8 @@ def run(_context: str):
     domed_cheeks(ctx, top, [(14.5, 9.0, 2.5), (-14.5, 9.0, 2.5)], total / MM, inlay_cm / MM)
     print("FH face ok")
 
-    jointed_legs(ctx, [top, jam], JM_HIP[0], JM_HIP[1], total / MM)
-    print_brace(ctx, JM_HIP[0], JM_HIP[1], total / MM, -JM_R_OUT)
+    _legs, zc, z_end = jointed_legs(ctx, [top, jam, base], JM_HIP[0],
+                                    JM_HIP[1], total / MM)
+    print_brace(ctx, JM_HIP[0], JM_HIP[1], zc, z_end, -JM_R_OUT)
     feet(ctx, 12, -66)
     print("FH BUILD OK: %d bodies" % root.bRepBodies.count)

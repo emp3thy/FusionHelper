@@ -431,9 +431,6 @@ J_ROD_R = 3.1
 J_LIP = 3.0            # socket opening height above ball centre
 J_SLOT_W = 4.8
 J_SLOT_FLOOR = 2.6     # slot floor below ball centre
-J_RECESS = 0.4         # hip opening floor below the biscuit face
-J_THIGH = 22.0         # hip centre to knee centre
-J_SHIN = 26.0          # knee centre to shin end
 J_TAB = (3.0, 0.4)     # break-away tab width, height
 
 
@@ -463,14 +460,6 @@ def j_cavity_inner(zc):
     lip_lat = math.degrees(math.asin(J_LIP / J_CAV_R))
     return (arc_rz(zc, J_CAV_R, lip_lat, -45, 14)
             + [(0.7, j_floor_z(zc)), (0.0, j_floor_z(zc))])
-
-
-def j_thigh_profile(zc, zk):
-    cone0 = zk - J_OUT_R / math.sqrt(2) - (J_OUT_R / math.sqrt(2) - J_ROD_R)
-    return (j_ball_lower(zc)
-            + [(J_ROD_R, cone0)]
-            + arc_rz(zk, J_OUT_R, -45, math.degrees(math.asin(J_LIP / J_OUT_R)), 12)
-            + j_cavity_inner(zk))
 
 
 def j_shin_profile(zk, z_end):
@@ -650,79 +639,84 @@ def j_tabs(cx, cy):
              (cx + hw, cy + 3.6), (cx - hw, cy + 3.6)]]
 
 
+J_LEG = 27.0           # hip centre to leg end (single-segment leg)
+
+
 def jointed_legs(ctx, bodies, hip_x, hip_y, face_z):
     """Cut two hip sockets into `bodies` and build two print-in-place
-    legs standing in them. hip_x / hip_y / face_z in mm."""
-    root = ctx.root
-    zc = face_z - J_RECESS - J_LIP
-    zk = zc + J_THIGH
-    z_end = zk + J_SHIN
+    single-segment legs standing in them. hip_x / hip_y / face_z in mm.
+
+    Print feedback 2026-11-22: (1) hips near the front face made the
+    biscuit over-balance, so the ball now sits at MID thickness with a
+    well down from the face; (2) the two-segment leg was too long and
+    the part that survived (hip to knee) stood and sat well, so the knee
+    joint and shin are gone. Returns (legs, zc, z_end)."""
+    zc = face_z / 2.0
+    z_end = zc + J_LEG
     new_op = ctx.ops.NewBodyFeatureOperation
     pl = plane_at_y(ctx, "%g mm" % abs(hip_y), "hip_plane", hip_y * MM)
     v0 = sum(b.volume for b in bodies)
-    thighs, shins = [], []
+    legs = []
     for n, sx in enumerate((1, -1)):
         adsk.doEvents()
         cx = sx * hip_x
         tag = "_%d" % (n + 1)
         revolve_rz(ctx, pl, "hip_socket" + tag, j_socket_cut_profile(zc),
                    cx, hip_y, ctx.ops.CutFeatureOperation, bodies)
-        ft = revolve_rz(ctx, pl, "thigh" + tag, j_thigh_profile(zc, zk),
+        fl = revolve_rz(ctx, pl, "leg" + tag, j_shin_profile(zc, z_end),
                         cx, hip_y, new_op)
-        thigh = ft.bodies.item(0)
-        thigh.name = "thigh" + tag
-        fs = revolve_rz(ctx, pl, "shin" + tag, j_shin_profile(zk, z_end),
-                        cx, hip_y, new_op)
-        shin = fs.bodies.item(0)
-        shin.name = "shin" + tag
+        leg = fl.bodies.item(0)
+        leg.name = "leg" + tag
         tip_channel(ctx, pl, "hip_tip_channel" + tag, cx, hip_y, zc,
                     bodies)
-        tip_channel(ctx, pl, "knee_tip_channel" + tag, cx, hip_y, zk,
-                    [thigh])
-        thighs.append(thigh)
-        shins.append(shin)
+        legs.append(leg)
     if v0 - sum(b.volume for b in bodies) < 0.3:
         raise RuntimeError("hip sockets removed too little")
-
-    def slot_polys(z_unused):
-        hw = J_SLOT_W / 2
-        return [[(sx * hip_x - hw, hip_y - 14.0), (sx * hip_x + hw, hip_y - 14.0),
-                 (sx * hip_x + hw, hip_y), (sx * hip_x - hw, hip_y)]
-                for sx in (1, -1)]
-
     # hip slots: from each socket out through the bottom edge
+    hw = J_SLOT_W / 2
     zs = zc - J_SLOT_FLOOR
     pl_hs = ctx.plane_at_z("%g mm" % zs, "hip_slot_plane")
-    sk_hs = fixed_sketch(ctx, pl_hs, "hip_slots", zs * MM,
-                         polys=slot_polys(zs))
-    cut_some(ctx, ctx.all_profiles(sk_hs), "14 mm", bodies, "hip_slots",
-             0.05)
-    # knee slots in the thigh bowls, same side
-    zks = zk - J_SLOT_FLOOR
-    pl_ks = ctx.plane_at_z("%g mm" % zks, "knee_slot_plane")
-    sk_ks = fixed_sketch(ctx, pl_ks, "knee_slots", zks * MM,
-                         polys=slot_polys(zks))
-    cut_some(ctx, ctx.all_profiles(sk_ks), "8 mm", thighs, "knee_slots",
-             0.02)
-    # break-away tabs: hip tabs rest on the socket recess floor, knee
-    # tabs on the bowl rim (coincident faces, not interference)
+    sk_hs = fixed_sketch(
+        ctx, pl_hs, "hip_slots", zs * MM,
+        polys=[[(sx * hip_x - hw, hip_y - 14.0), (sx * hip_x + hw, hip_y - 14.0),
+                (sx * hip_x + hw, hip_y), (sx * hip_x - hw, hip_y)]
+               for sx in (1, -1)])
+    cut_some(ctx, ctx.all_profiles(sk_hs), "%g mm" % (face_z - zs + 4.0),
+             bodies, "hip_slots", 0.05)
+    # The slot is only neck-wide (4.8) around the ball, which is what
+    # retains it. With the hip at mid thickness the 6.2 mm shaft also
+    # travels through the body on its way down (measured: 2.8 mm3 clash
+    # at 30 deg), so the slot widens to shaft width (a) everywhere above
+    # the socket lip and (b) at every height beyond the socket wall.
+    hs = J_ROD_R + 0.4
     pl_ht = ctx.plane_at_z("%g mm" % (zc + J_LIP), "hip_tab_plane")
-    pl_kt = ctx.plane_at_z("%g mm" % (zk + J_LIP), "knee_tab_plane")
+    sk_wa = fixed_sketch(
+        ctx, pl_ht, "shaft_slots_upper", (zc + J_LIP) * MM,
+        polys=[[(sx * hip_x - hs, hip_y - 14.0), (sx * hip_x + hs, hip_y - 14.0),
+                (sx * hip_x + hs, hip_y), (sx * hip_x - hs, hip_y)]
+               for sx in (1, -1)])
+    cut_some(ctx, ctx.all_profiles(sk_wa),
+             "%g mm" % (face_z - zc - J_LIP + 4.0), bodies,
+             "shaft_slots_upper", 0.02)
+    y_out = hip_y - J_CAV_R - 0.3
+    sk_wb = fixed_sketch(
+        ctx, pl_hs, "shaft_slots_outer", zs * MM,
+        polys=[[(sx * hip_x - hs, hip_y - 14.0), (sx * hip_x + hs, hip_y - 14.0),
+                (sx * hip_x + hs, y_out), (sx * hip_x - hs, y_out)]
+               for sx in (1, -1)])
+    cut_some(ctx, ctx.all_profiles(sk_wb), "%g mm" % (face_z - zs + 4.0),
+             bodies, "shaft_slots_outer", 0.005)
+    # one break-away tab per leg, on the floor of the socket well
     for n, sx in enumerate((1, -1)):
         adsk.doEvents()
         tag = "_%d" % (n + 1)
         sk_t = fixed_sketch(ctx, pl_ht, "hip_tabs" + tag, (zc + J_LIP) * MM,
                             polys=j_tabs(sx * hip_x, hip_y))
         join_up(ctx, ctx.all_profiles(sk_t), "%g mm" % J_TAB[1],
-                thighs[n], "hip_tabs" + tag)
-        sk_t2 = fixed_sketch(ctx, pl_kt, "knee_tabs" + tag,
-                             (zk + J_LIP) * MM,
-                             polys=j_tabs(sx * hip_x, hip_y))
-        join_up(ctx, ctx.all_profiles(sk_t2), "%g mm" % J_TAB[1],
-                shins[n], "knee_tabs" + tag)
-    print("FH jointed legs ok: thigh %.3f shin %.3f cm3"
-          % (thighs[0].volume, shins[0].volume))
-    return thighs, shins
+                legs[n], "hip_tabs" + tag)
+    print("FH jointed legs ok: leg %.3f cm3, hip z %.1f, top z %.1f"
+          % (legs[0].volume, zc, z_end))
+    return legs, zc, z_end
 
 
 # ---- break-away print brace -------------------------------------------
@@ -793,14 +787,10 @@ def sym_join(ctx, sk, width_expr, target, name):
         raise RuntimeError("%s joined nothing" % name)
 
 
-def print_brace(ctx, hip_x, hip_y, face_z, edge_y):
+def print_brace(ctx, hip_x, hip_y, zc, z_end, edge_y):
     """edge_y: the biscuit's outermost bottom-edge y (mm, negative)."""
-    zc = face_z - J_RECESS - J_LIP
-    zk = zc + J_THIGH
-    z_end = zk + J_SHIN
     z_top = z_end - 1.0
-    # clear of the biscuit edge AND of the knee bowls, which overhang it
-    yw = min(edge_y - 0.6, hip_y - J_OUT_R - 0.8)
+    yw = edge_y - 0.6
     half = hip_x + 6.0
     skw = fixed_sketch(ctx, ctx.root.xYConstructionPlane, "brace_wall", 0,
                        polys=[[(-half, yw - BR_T), (half, yw - BR_T),
@@ -809,9 +799,8 @@ def print_brace(ctx, hip_x, hip_y, face_z, edge_y):
                        "print_brace")[0]
     y_leg = hip_y - J_ROD_R
     gap = y_leg - yw
-    # thigh rod is straight only from zc + 8.1 to zc + 15.6 (the knee
-    # bowl's cone starts there): zc + 15.0 clipped the cone by 0.01 mm3
-    heights = (zc + 9.0, zc + 13.5, zk + 11.0, zk + 18.0, z_end - 2.0)
+    # the rod is straight from zc + 8.1 up to the end chamfer
+    heights = (zc + 10.5, zc + 17.0, z_end - 2.5)
     for n, sx in enumerate((1, -1)):
         adsk.doEvents()
         x = sx * hip_x
@@ -934,7 +923,7 @@ def common_params(ctx):
     up, cbs = ctx.up, ctx.cbs
     up.add("inlay_d", cbs("0.6 mm"), "mm", "colour inlay depth")
     up.add("foot_hole_d", cbs("6.5 mm"), "mm",
-           "foot socket dia (shin end is 6.2)")
+           "foot socket dia (leg end is 6.2)")
     up.add("face_sink", cbs("1.2 mm"), "mm",
            "eyes and smile recessed below the face")
     up.add("foot_fillet", cbs("1.2 mm"), "mm", "foot biscuit rim bevel")
