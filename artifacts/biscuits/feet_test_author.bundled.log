@@ -1,0 +1,17 @@
+SUCCESS=True
+--- message ---
+FH params added
+FH feet ok_63
+FH feet ok_62
+FH BUILD OK: 8 bodies
+FH_CHECK1 {"c":"constraints","s":"warn","f":[{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/foot_discs_63","dim":0,"expr":"12 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/foot_discs_63","dim":1,"expr":"12 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/foot_discs_63","dim":2,"expr":"18 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/foot_discs_63","dim":3,"expr":"12 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/foot_discs_63","dim":4,"expr":"12 mm"}],"more":15}
+FH_CHECK1 {"c":"timeline","s":"pass"}
+FH_CHECK1 {"c":"interference","s":"pass"}
+FH_CHECK1 {"c":"clearance","s":"skip","why":"none_declared"}
+FH_GUARD1 {"restore":{"foot_hole_63":"6.3 mm","foot_hole_62":"6.2 mm","foot_fillet":"1.2 mm","foot_disc_h":"6 mm","foot_cream_h":"7 mm"}}
+FH_GUARD1 {"restore":"released"}
+FH_CHECK1 {"c":"liveness","s":"pass"}
+FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":8,"volume_mm3":7588.47,"bbox_mm":[42,42,13],"origin_mm":[-21,-21,0]},"stats":{"timeline":28,"params":5,"sec":3.4},"skipped":{"clearance":"none_declared"}}
+
+--- error ---
+

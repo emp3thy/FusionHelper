@@ -111,3 +111,12 @@ Printed brace was too thin and kept being dislodged. Wall and buttresses
 are now 2.0 mm (`BR_T`) and the brace stands on a 0.8 mm flat pad with a
 3 mm margin round its footprint (`BR_PAD`). `pipeline.sh <kind>` rebuilds
 one biscuit end to end in its open document.
+
+## Foot socket fit test (2026-11-22)
+
+6.5 and 6.4 mm sockets both printed loose on the 6.2 mm leg end.
+`feet_test_part.py` builds two pairs of feet in their own document:
+`foot_hole_63` (6.3 mm, three sole dimples) and `foot_hole_62` (6.2 mm,
+two sole dimples). `feet()` now takes `hole_param`, `tag` and `marks`.
+Once a size is chosen: `python ctl.py setparam foot_hole_d "<size>"`
+applies it to every open biscuit document.

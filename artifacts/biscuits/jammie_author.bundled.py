@@ -1156,18 +1156,21 @@ def print_brace(ctx, hip_x, hip_y, zc, z_end, edge_y):
     return brace
 
 
-def feet(ctx, foot_x, foot_y):
-    """Two push-on biscuit feet with piped-cream tops. Positions in mm."""
+def feet(ctx, foot_x, foot_y, hole_param="foot_hole_d", tag="", marks=0):
+    """Two push-on biscuit feet with piped-cream tops. Positions in mm.
+    `tag` keeps names unique when a document holds more than one pair;
+    `marks` cuts that many small dimples in each sole to tell pairs
+    apart once printed."""
     root = ctx.root
     skd = root.sketches.add(root.xYConstructionPlane)
-    skd.name = "foot_discs"
+    skd.name = "foot_discs" + tag
     for sx in (1, -1):
         adsk.doEvents()
         ctx.bound_circle(skd, (sx * foot_x * MM, foot_y * MM, 0), 0.9,
                          "18 mm", x_pos="%g mm" % foot_x,
                          v_pos="%g mm" % abs(foot_y))
     discs = new_bodies(ctx, ctx.all_profiles(skd), "foot_disc_h",
-                       "foot_disc")
+                       "foot_disc" + tag)
     if len(discs) != 2:
         raise RuntimeError("foot discs %d" % len(discs))
     # bevel both rims of each foot biscuit (before the cream and socket,
@@ -1192,12 +1195,12 @@ def feet(ctx, foot_x, foot_y):
             finp.edgeSetInputs.addConstantRadiusEdgeSet(
                 coll, ctx.cbs(expr), True)
             ff = fil.add(finp)
-            ff.name = "foot_%s_bevel_%d" % (nm, n + 1)
+            ff.name = "foot%s_%s_bevel_%d" % (tag, nm, n + 1)
             if (ff.healthState
                     != adsk.fusion.FeatureHealthStates.HealthyFeatureHealthState
                     or v0 - disc.volume < 1e-5):
                 raise RuntimeError("foot %d %s bevel failed" % (n + 1, nm))
-    plc = ctx.plane_at_z("foot_disc_h", "foot_cream_plane")
+    plc = ctx.plane_at_z("foot_disc_h", "foot_cream_plane" + tag)
     zc = ctx.val("foot_disc_h")
     stars = []
     for sx in (1, -1):
@@ -1208,14 +1211,14 @@ def feet(ctx, foot_x, foot_y):
             star.append((sx * foot_x + r * math.cos(a),
                          foot_y + r * math.sin(a)))
         stars.append(star)
-    skc = fixed_sketch(ctx, plc, "foot_cream_stars", zc, polys=stars)
+    skc = fixed_sketch(ctx, plc, "foot_cream_stars" + tag, zc, polys=stars)
     prism = prof_area(ctx.all_profiles(skc)) * ctx.val("foot_cream_h")
     creams = None
     for taper in ("-12 deg", "12 deg"):
         adsk.doEvents()
         f = extrude(ctx, ctx.all_profiles(skc),
                     ctx.ops.NewBodyFeatureOperation, "foot_cream_h",
-                    "foot_cream_extrude", taper=taper)
+                    "foot_cream_extrude" + tag, taper=taper)
         got = [f.bodies.item(i) for i in range(f.bodies.count)]
         if sum(b.volume for b in got) < 0.95 * prism:
             creams = got
@@ -1224,21 +1227,33 @@ def feet(ctx, foot_x, foot_y):
     if creams is None or len(creams) != 2:
         raise RuntimeError("foot cream taper never narrowed")
     for i, b in enumerate(creams):
-        b.name = "foot_cream_%d" % (i + 1)
-    pls = ctx.plane_at_z("foot_disc_h + foot_cream_h", "foot_top_plane")
+        b.name = "foot_cream%s_%d" % (tag, i + 1)
+    pls = ctx.plane_at_z("foot_disc_h + foot_cream_h", "foot_top_plane" + tag)
     zs = zc + ctx.val("foot_cream_h")
     sks = root.sketches.add(pls)
-    sks.name = "foot_sockets"
+    sks.name = "foot_sockets" + tag
     for sx in (1, -1):
         adsk.doEvents()
         ctx.bound_circle(sks, (sx * foot_x * MM, foot_y * MM, zs), 0.325,
-                         "foot_hole_d", x_pos="%g mm" % foot_x,
+                         hole_param, x_pos="%g mm" % foot_x,
                          v_pos="%g mm" % abs(foot_y))
     f = ctx.sym_cut(ctx.all_profiles(sks),
                     "2 * (foot_cream_h + foot_disc_h / 2)",
                     discs + creams, min_vol_cm3=0.1)
-    f.name = "foot_socket_cut"
-    print("FH feet ok")
+    f.name = "foot_socket_cut" + tag
+    if marks:
+        dots = []
+        for sx in (1, -1):
+            for k in range(marks):
+                dots.append((sx * foot_x - 6.0, foot_y - 1.5 + 3.0 * k, 0.8))
+        skm = fixed_sketch(ctx, root.xYConstructionPlane,
+                           "foot_marks" + tag, 0, circles=dots)
+        v0 = sum(b.volume for b in discs)
+        extrude(ctx, ctx.all_profiles(skm), ctx.ops.CutFeatureOperation,
+                "0.4 mm", "foot_marks_cut" + tag, participants=discs)
+        if v0 - sum(b.volume for b in discs) < 1e-5:
+            raise RuntimeError("foot marks cut nothing")
+    print("FH feet ok" + tag)
 
 
 def bevel_params(ctx, taper_deg=30):
