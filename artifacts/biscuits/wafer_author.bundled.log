@@ -1,0 +1,20 @@
+SUCCESS=True
+--- message ---
+FH params added
+FH block 42.000
+FH grooves 41.480
+FH lattice 41.901
+FH face ok
+FH feet+legs ok
+FH BUILD OK: 12 bodies
+FH_CHECK1 {"c":"constraints","s":"warn","f":[{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_outline","dim":0,"expr":"35 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_outline","dim":1,"expr":"75 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_outline","dim":2,"expr":"abs(0 mm - ( 17.5 mm ))"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/wafer_outline","dim":3,"expr":"abs(0 mm - ( 37.5 mm ))"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/groove_ring_1","dim":0,"expr":"41 mm"}],"more":23}
+FH_CHECK1 {"c":"timeline","s":"pass"}
+FH_CHECK1 {"c":"interference","s":"pass"}
+FH_CHECK1 {"c":"clearance","s":"skip","why":"none_declared"}
+FH_GUARD1 {"restore":{"wafer_t":"16 mm","groove_d":"0.8 mm","groove_h":"1 mm","relief_h":"0.8 mm","inlay_d":"0.6 mm","leg_hole_d":"6.5 mm","leg_hole_depth":"12 mm","leg_clear":"0.9 mm","leg_w":"leg_hole_d - leg_clear","leg_len":"55 mm","foot_disc_h":"6 mm","foot_cream_h":"7 mm"}}
+FH_GUARD1 {"restore":"released"}
+FH_CHECK1 {"c":"liveness","s":"pass"}
+FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":12,"volume_mm3":48032.54,"bbox_mm":[60.8,101.5,16.8],"origin_mm":[-21,-64,0]},"stats":{"timeline":38,"params":12,"sec":33.4},"skipped":{"clearance":"none_declared"}}
+
+--- error ---
+

@@ -1,0 +1,18 @@
+SUCCESS=True
+--- message ---
+FH params added
+FH sandwich: 16.137 10.178 16.137
+FH face ok
+FH feet+legs ok
+FH BUILD OK: 14 bodies
+FH_CHECK1 {"c":"constraints","s":"warn","f":[{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/leg_sockets","dim":0,"expr":"9 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/leg_sockets","dim":3,"expr":"9 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/foot_discs","dim":0,"expr":"12 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/foot_discs","dim":1,"expr":"48 mm"},{"code":"dimension.literal_expression","sev":"warn","sketch":"(Unsaved)/foot_discs","dim":2,"expr":"18 mm"}],"more":7}
+FH_CHECK1 {"c":"timeline","s":"pass"}
+FH_CHECK1 {"c":"interference","s":"pass"}
+FH_CHECK1 {"c":"clearance","s":"skip","why":"none_declared"}
+FH_GUARD1 {"restore":{"bis_t":"6 mm","fill_t":"4 mm","heart_recess":"1.5 mm","inlay_d":"0.6 mm","leg_hole_d":"6.5 mm","leg_hole_depth":"12 mm","leg_clear":"0.9 mm","leg_w":"leg_hole_d - leg_clear","leg_len":"55 mm","foot_disc_h":"6 mm","foot_cream_h":"7 mm"}}
+FH_GUARD1 {"restore":"released"}
+FH_CHECK1 {"c":"liveness","s":"pass"}
+FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":14,"volume_mm3":48374.59,"bbox_mm":[81.543,86.743,16],"origin_mm":[-29.743,-57,0]},"stats":{"timeline":33,"params":11,"sec":11.5},"skipped":{"clearance":"none_declared"}}
+
+--- error ---
+
