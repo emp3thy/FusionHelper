@@ -1,0 +1,6 @@
+SUCCESS=True
+--- message ---
+FH_RESULT {"timeline": 99, "unhealthy": [], "root_bodies": 0, "components": {"Jam biscuit": ["biscuit_base", "jam", "biscuit_top", "ink_1", "ink_2", "ink_3", "cheek_1", "cheek_2", "thigh_1", "shin_1", "thigh_2", "shin_2"], "Feet": ["foot_disc_1", "foot_disc_2", "foot_cream_1", "foot_cream_2"]}}
+
+--- error ---
+

@@ -60,6 +60,48 @@ def run(_context: str):
     print("FH_RESULT closed", n, "remaining", app.documents.count)
 '''
 
+GROUP = '''
+import adsk.core, adsk.fusion, json
+def run(_context: str):
+    app = adsk.core.Application.get()
+    docs = [app.documents.item(i) for i in range(app.documents.count)]
+    last = app.activeDocument
+    report = []
+    for d in docs:
+        d.activate()
+        adsk.doEvents()
+        des = adsk.fusion.Design.cast(app.activeProduct)
+        if des is None:
+            continue
+        root = des.rootComponent
+        bodies = [b for b in root.bRepBodies]      # list first: moves mutate the collection
+        names = sorted(b.name for b in bodies)
+        if not any(n.startswith("foot_disc") for n in names):
+            report.append([d.name, "skipped: no loose feet at root", len(names)])
+            continue
+        kind = ("Pink wafer" if "wafer" in names else
+                "Custard cream" if "cream" in names else "Jam biscuit")
+        v0 = sum(b.volume for b in bodies)
+        occ_c = root.occurrences.addNewComponent(adsk.core.Matrix3D.create())
+        occ_c.component.name = kind
+        occ_f = root.occurrences.addNewComponent(adsk.core.Matrix3D.create())
+        occ_f.component.name = "Feet"
+        for b in bodies:
+            adsk.doEvents()
+            b.moveToComponent(occ_f if b.name.startswith("foot_") else occ_c)
+        cb = [b for b in occ_c.component.bRepBodies]
+        fb = [b for b in occ_f.component.bRepBodies]
+        v1 = sum(b.volume for b in cb) + sum(b.volume for b in fb)
+        same = sorted(b.name for b in cb + fb) == names
+        occ_c.isLightBulbOn = True
+        occ_f.isLightBulbOn = True
+        report.append([d.name, kind, len(cb), "Feet", len(fb),
+                       "left at root", root.bRepBodies.count,
+                       "names kept", same, "dvol_mm3", round((v1 - v0) * 1000, 4)])
+    last.activate()
+    print("FH_RESULT " + json.dumps(report))
+'''
+
 PAINT = '''
 import adsk.core, adsk.fusion
 COLOURS = {
@@ -150,7 +192,7 @@ else:
         view = sys.argv[3] if len(sys.argv) > 3 else "6, -14, 28"
         text = SHOT % (view, out)
     else:
-        text = {"probe": PROBE, "newdoc": NEWDOC, "paint": PAINT, "docs": DOCS, "close_unsaved": CLOSE_UNSAVED}[cmd]
+        text = {"probe": PROBE, "newdoc": NEWDOC, "paint": PAINT, "docs": DOCS, "group": GROUP, "close_unsaved": CLOSE_UNSAVED}[cmd]
     r = c.execute(text)
     print("SUCCESS", r.success)
     print((r.message if r.success else r.error)[-1500:])
