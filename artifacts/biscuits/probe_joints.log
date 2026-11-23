@@ -1,6 +1,6 @@
 SUCCESS=True
 --- message ---
-FH_RESULT {"hip_mm": [9.0, -22.1, 8.0], "leg_top_mm": 35.0, "rest": 0.0, "lift_0.2": 0.0, "lift_1.0": 2.609, "lift_2.0": 6.511, "swing_15": 0.0, "swing_30": 0.0, "swing_45": 0.0, "swing_60": 0.0, "swing_75": 0.0, "swing_90": 0.0, "swing_100": 0.815}
+FH_RESULT {"hip_mm": [9.0, -22.1, 8.0], "leg_top_mm": 35.0, "rest": 0.0, "lift_0.2": 0.0, "lift_1.0": 2.609, "lift_2.0": 6.511, "swing_15": 0.0, "swing_30": 0.0, "swing_45": 0.0, "swing_60": 0.0, "swing_75": 0.0, "swing_90": 0.0, "swing_100": 0.558}
 FH_RESULT overhang leg_1: [nz, mm2, z] [[-1.0, 3.35, 11.0], [-1.0, 0.79, 2.84]]
 FH_RESULT overhang leg_2: [nz, mm2, z] [[-1.0, 3.35, 11.0], [-1.0, 0.79, 2.84]]
 

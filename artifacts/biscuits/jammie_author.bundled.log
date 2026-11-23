@@ -14,10 +14,10 @@ FH_CHECK1 {"c":"constraints","s":"warn","f":[{"code":"dimension.literal_expressi
 FH_CHECK1 {"c":"timeline","s":"pass"}
 FH_CHECK1 {"c":"interference","s":"pass"}
 FH_CHECK1 {"c":"clearance","s":"skip","why":"none_declared"}
-FH_GUARD1 {"restore":{"bis_t":"6 mm","fill_t":"4 mm","heart_recess":"1.5 mm","edge_fillet":"1.5 mm","under_fillet":"0.5 mm","relief_h":"0.8 mm","emboss_taper":"30 deg","inlay_d":"0.6 mm","foot_hole_d":"6.5 mm","face_sink":"1.2 mm","foot_fillet":"1.2 mm","foot_disc_h":"6 mm","foot_cream_h":"7 mm"}}
+FH_GUARD1 {"restore":{"bis_t":"6 mm","fill_t":"4 mm","heart_recess":"1.5 mm","edge_fillet":"1.5 mm","under_fillet":"0.5 mm","relief_h":"0.8 mm","emboss_taper":"30 deg","inlay_d":"0.6 mm","foot_hole_d":"6.3 mm","face_sink":"1.2 mm","foot_fillet":"1.2 mm","foot_disc_h":"6 mm","foot_cream_h":"7 mm"}}
 FH_GUARD1 {"restore":"released"}
 FH_CHECK1 {"c":"liveness","s":"pass"}
-FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":15,"volume_mm3":49046.12,"bbox_mm":[59,104.5,35],"origin_mm":[-29.5,-75,0]},"stats":{"timeline":89,"params":13,"sec":54.5},"skipped":{"clearance":"none_declared"}}
+FH_VERDICT1 {"v":1,"status":"warn","attempt":1,"units":"mm","checks":{"constraints":"warn","timeline":"pass","interference":"pass","clearance":"skip","liveness":"pass"},"model":{"bodies":15,"volume_mm3":49086.33,"bbox_mm":[59,104.5,35],"origin_mm":[-29.5,-75,0]},"stats":{"timeline":89,"params":13,"sec":60},"skipped":{"clearance":"none_declared"}}
 
 --- error ---
 
