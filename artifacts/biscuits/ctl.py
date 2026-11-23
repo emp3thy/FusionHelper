@@ -223,6 +223,9 @@ def run(_context: str):
         if is_wafer and key in ("thigh", "shin", "leg"):
             nm = "fh_white_leg"
             rgb = WAFER_LEGS
+        if is_wafer and key == "foot_disc":
+            nm = "fh_wafer"              # pink feet; the cream tops stay
+            rgb = COLOURS["wafer"]       # white, as socks
         if is_choc and key in ("leg", "foot_disc"):
             nm = "fh_choc"
             rgb = COLOURS["choc"]
