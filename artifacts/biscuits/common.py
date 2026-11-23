@@ -937,11 +937,11 @@ def feet(ctx, foot_x, foot_y, hole_param="foot_hole_d", tag="", marks=0):
     print("FH feet ok" + tag)
 
 
-def bevel_params(ctx, taper_deg=30):
+def bevel_params(ctx, taper_deg=30, relief="0.8 mm"):
     up, cbs = ctx.up, ctx.cbs
     up.add("edge_fillet", cbs("1.5 mm"), "mm", "upward-facing rim bevel")
     up.add("under_fillet", cbs("0.5 mm"), "mm", "downward-facing rim bevel")
-    up.add("relief_h", cbs("0.8 mm"), "mm", "embossed pattern height")
+    up.add("relief_h", cbs(relief), "mm", "embossed pattern height")
     up.add("emboss_taper", cbs("%g deg" % taper_deg), "deg",
            "embossing bevel angle")
 

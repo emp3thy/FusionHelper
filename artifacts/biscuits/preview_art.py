@@ -88,6 +88,26 @@ for sx in (1, -1):
     circ(ax, sx * 4, 3.5, 1.1, INK)
     circ(ax, sx * 10, -30, 3.25, "w")
 
+ch = load("choc")
+figc, axc = plt.subplots(figsize=(6, 6))
+circ(axc, 0, 0, ch.CH_R, "#34241e", 1)
+circ(axc, 0, 0, ch.CH_RING[1], "#5a4034", 1.5)
+circ(axc, 0, 0, ch.CH_RING[0], "#34241e", 1.6)
+for q in ch.ch_ticks():
+    poly(axc, q, "#5a4034", 2)
+for (x, y, r) in ch.ch_flowers():
+    circ(axc, x, y, r, "#5a4034", 2)
+ov = ch.ch_oval(ch.CH_OVAL_W / 2)
+poly(axc, ov[0], "#5a4034", 2)
+poly(axc, ov[1], "#34241e", 2.1)
+poly(axc, ch.smile(0, 13.5, 6.0, 1.3), "#faf6ec", 3)
+for sx in (1, -1):
+    circ(axc, sx * 7.5, 14.5, 1.2, "#faf6ec")
+    circ(axc, sx * ch.CH_HIP[0], ch.CH_HIP[1], 4.1, "#888", 4)
+axc.set_aspect("equal"); axc.set_xlim(-32, 32); axc.set_ylim(-32, 32)
+figc.savefig(here / "choc_preview.png", dpi=80)
+print("choc ticks", len(ch.ch_ticks()), "flower dots", len(ch.ch_flowers()))
+
 for ax in axs:
     ax.set_aspect("equal")
     ax.set_xlim(-34, 34)

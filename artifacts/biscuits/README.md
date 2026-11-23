@@ -122,3 +122,13 @@ Once a size is chosen: `python ctl.py setparam foot_hole_d "<size>"`
 applies it to every open biscuit document.
 
 Result: **6.3 mm is the push fit** (print-confirmed); `foot_hole_d` is 6.3 in the scripts and the three open biscuit documents.
+
+## Chocolate sandwich cookie (2026-11-23)
+
+Fourth character, `choc_part.py`: same size, face layout, hips, legs,
+brace and feet as the jam biscuit. Dark `choc_base` / `choc_top` with a
+white `filling`; embossed ring of 60 rim ticks, a ring line, seven
+four-petal flowers and a plain oval where the jam biscuit has its
+heart; eyes and smile are painted white (`ctl.py paint` detects the
+`choc_` bodies). No brand name or emblem. `pipeline.sh choc` rebuilds
+it; `ctl.py activate choc` finds its document.

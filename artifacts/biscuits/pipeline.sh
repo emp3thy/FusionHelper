@@ -9,6 +9,7 @@ case "$kind" in
   jam) script=jammie ;;
   wafer) script=wafer ;;
   custard) script=custard ;;
+  choc) script=choc ;;
   *) echo "unknown kind $kind"; exit 2 ;;
 esac
 B=artifacts/biscuits

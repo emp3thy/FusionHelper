@@ -79,7 +79,8 @@ def run(_context: str):
         if not any(n.startswith("foot_disc") for n in names):
             report.append([d.name, "skipped: no loose feet at root", len(names)])
             continue
-        kind = ("Pink wafer" if any(n.startswith("wafer") for n in names) else
+        kind = ("Chocolate sandwich" if any(n.startswith("choc") for n in names) else
+                "Pink wafer" if any(n.startswith("wafer") for n in names) else
                 "Custard cream" if "cream" in names else "Jam biscuit")
         v0 = sum(b.volume for b in bodies)
         occ_c = root.occurrences.addNewComponent(adsk.core.Matrix3D.create())
@@ -177,6 +178,7 @@ COLOURS = {
     "foot_cream": (250, 246, 236), "scroll": (92, 52, 30),
     "wafer_cream": (250, 246, 236),
     "print_brace": (120, 125, 135),
+    "choc": (52, 36, 30), "filling": (250, 246, 236),
 }
 WAFER_LEGS = (250, 246, 236)   # the pink wafer has white legs
 def run(_context: str):
@@ -206,6 +208,7 @@ def run(_context: str):
     for o in root.occurrences:
         todo += [b for b in o.component.bRepBodies]
     is_wafer = any(b.name.startswith("wafer") for b in todo)
+    is_choc = any(b.name.startswith("choc") for b in todo)
     for b in todo:
         adsk.doEvents()
         key = None
@@ -220,6 +223,12 @@ def run(_context: str):
         if is_wafer and key in ("thigh", "shin", "leg"):
             nm = "fh_white_leg"
             rgb = WAFER_LEGS
+        if is_choc and key in ("leg", "foot_disc"):
+            nm = "fh_choc"
+            rgb = COLOURS["choc"]
+        if is_choc and key == "ink":
+            nm = "fh_white_ink"          # light face on a dark cookie
+            rgb = COLOURS["filling"]
         ap = None
         for j in range(des.appearances.count):
             if des.appearances.item(j).name == nm:
@@ -277,6 +286,7 @@ def run(_context: str):
         for o in root.occurrences:
             names += [b.name for b in o.component.bRepBodies]
         kind = ("wafer" if any(n.startswith("wafer") for n in names) else
+                "choc" if any(n.startswith("choc") for n in names) else
                 "custard" if "cream" in names else
                 "jam" if "jam" in names else
                 "empty" if not names else "other")
