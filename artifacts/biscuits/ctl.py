@@ -209,6 +209,7 @@ def run(_context: str):
         todo += [b for b in o.component.bRepBodies]
     is_wafer = any(b.name.startswith("wafer") for b in todo)
     is_choc = any(b.name.startswith("choc") for b in todo)
+    is_jam = any(b.name == "jam" for b in todo)
     for b in todo:
         adsk.doEvents()
         key = None
@@ -226,6 +227,9 @@ def run(_context: str):
         if is_wafer and key == "foot_disc":
             nm = "fh_wafer"              # pink feet; the cream tops stay
             rgb = COLOURS["wafer"]       # white, as socks
+        if is_jam and key == "foot_cream":
+            nm = "fh_jam"                # jam socks on the jam biscuit
+            rgb = COLOURS["jam"]
         if is_choc and key in ("leg", "foot_disc"):
             nm = "fh_choc"
             rgb = COLOURS["choc"]

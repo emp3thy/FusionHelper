@@ -1,6 +1,6 @@
 SUCCESS=True
 --- message ---
-FH_RESULT {"wafer_1": "fh_wafer", "wafer_cream_1": "fh_wafer_cream", "wafer_2": "fh_wafer", "wafer_cream_2": "fh_wafer_cream", "wafer_3": "fh_wafer", "wafer_cream_3": "fh_wafer_cream", "wafer_4": "fh_wafer", "ink_1": "fh_ink", "ink_2": "fh_ink", "ink_3": "fh_ink", "cheek_1": "fh_cheek", "cheek_2": "fh_cheek", "leg_1": "fh_white_leg", "leg_2": "fh_white_leg", "print_brace": "fh_print_brace", "foot_disc_1": "fh_wafer", "foot_disc_2": "fh_wafer", "foot_cream_1": "fh_foot_cream", "foot_cream_2": "fh_foot_cream"}
+FH_RESULT {"biscuit_base": "fh_biscuit", "jam": "fh_jam", "biscuit_top": "fh_biscuit", "ink_1": "fh_ink", "ink_2": "fh_ink", "ink_3": "fh_ink", "cheek_1": "fh_cheek", "cheek_2": "fh_cheek", "leg_1": "fh_leg", "leg_2": "fh_leg", "print_brace": "fh_print_brace", "foot_disc_1": "fh_foot_disc", "foot_disc_2": "fh_foot_disc", "foot_cream_1": "fh_jam", "foot_cream_2": "fh_jam"}
 
 --- error ---
 
