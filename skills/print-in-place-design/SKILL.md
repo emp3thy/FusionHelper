@@ -194,6 +194,61 @@ model oscillates; bisection is overlap-proof.
   With disjoint open strokes the sketch yields exactly one profile per
   polygon and no profile classification is needed.
 
+## Ball joints (measured, biscuit ornaments 2026-11)
+
+A ball printed pole-down inside its socket. Sizes that built and measured
+clean: ball 8.0 mm, socket 8.6 mm (0.3 mm radial gap), socket lip 3.0 mm above
+the ball centre (wraps 44° past the equator, opening 6.16 mm), neck 4.0 mm,
+slot 4.8 mm.
+
+- **A teardrop ball jams a snug spherical socket.** The 45° cone under the
+  ball (needed so nothing starts on a shallow overhang) reaches r·√2 from the
+  centre — outside the socket sphere. At rest it sits in a matching pocket and
+  the interference check is clean; rotate the joint and the tip is in the
+  wall (3.5 mm³ at 60–90°). Give the tip somewhere to go: sweep the tip pocket
+  about the hinge axis, round to **135°** on the side the tip travels, so the
+  channel's end face is a 45° roof rather than a ceiling.
+- **Keep the slot neck-wide only around the ball.** That narrow slot is the
+  retention. If the hinge sits deep in the body, the thicker shaft also passes
+  through the body on the way round (2.8 mm³ at 30°): widen the slot to shaft
+  width above the socket lip and beyond the socket wall, nowhere else.
+- **Break-away tabs leave nubs — put them where the nub rides clear.** Tabs on
+  the hinge-axis sides stay on the neck and foul the socket through the swing.
+  One wide tab on the side opposite the slot rides over the rim and ends above
+  the slot. Check the tab's CORNER radius against any recess wall, not its
+  edge distance (a 3.99 mm corner clipped a 3.9 mm recess).
+- **Hinge at mid thickness of a flat standing figure.** **PRINT-PROVEN, the
+  expensive way:** hips 3.4 mm behind the front face of a 16 mm body
+  over-balanced it forward.
+- **One joint may be all the part needs.** A two-joint leg (22 + 26 mm) was too
+  long; the hip-to-knee stub that survived the print stood and sat well.
+- **Push fit, round rod in round socket — PRINT-PROVEN:** 6.3 mm socket on a
+  6.2 mm vertically printed rod with a 0.6 mm lead chamfer, about 10 mm deep,
+  holds without glue. 6.4 and 6.5 mm were both loose. Find a fit with a
+  two-size test print, marked so the sizes can be told apart (sole dimples),
+  not by stepping 0.1 mm per full print.
+
+Not yet print-proven: the tip relief channel, the single wide tab, the short
+single-joint leg (hip at mid thickness, 27 mm).
+
+## Tall parts and print braces (measured, biscuit ornaments 2026-11)
+
+- **A tall part standing on a joint wobbles.** **PRINT-PROVEN, as a failure:**
+  a 60 mm leg of 6.2 mm rod on a ball joint, held by one tab and a tip weld,
+  moved during printing. A slot that leaves one swing direction free is a
+  hinge the nozzle will find.
+- **Slicer supports do not fix this** — they generate under overhangs, and a
+  correctly designed print-in-place part has none to grab.
+- **Shorten first, brace second.** Removing a joint took the part from 61 to
+  35 mm.
+- **A sacrificial brace needs its own bed footprint.** **PRINT-PROVEN, as a
+  failure:** a 1.2 mm wall with two thin buttress edges on the bed was knocked
+  loose. Current form: 2.0 mm wall and buttresses on a 0.8 mm flat pad with a
+  3 mm margin, 0.6 mm from the part. Struts rise at 45° from the wall and end
+  TANGENT to the rod — zero overlap, so the interference check stays clean and
+  the slicer still fuses them; confirm 0.0 mm with a minimum-distance probe.
+  The padded brace is not yet print-proven.
+
 ## Geometry rules
 
 - **Every overhang 45° or shallower.** Short bridges anchored at both ends are
@@ -220,10 +275,19 @@ builds was caught by measurement:
 1. **Interference check** every pair — it caught risers driven through gear teeth
    and pucks grazing tooth tips by 0.41 mm³.
 2. **Overhang sweep** — sample face normals, flag `normal.z < -0.7075`, skip faces
-   on z0.
+   on z0. Orient each normal outward first (`fusion-design` api-recipes): the
+   evaluator's normal points inward on reversed faces.
 3. **Minimum-distance probe** — confirm the interface you *intended* to locate the
    part is the tightest one in the model.
 4. **Volume delta on every feature** — a join that no-ops returns success.
+5. **Swing probe** — for anything that rotates: copy the moving body with
+   `TemporaryBRepManager`, rotate it about the joint centre, intersect with what
+   it moves in. Do it at **every 15°** through the travel, not just the end
+   stop: one joint clashed at 30° and was clean at 90°. Pair it with the lift
+   test above (clash expected past the float, none inside it).
+
+The rest-pose interference check passes on a joint that cannot move. It has
+done so twice.
 
 ## Fidget spinners specifically
 

@@ -18,7 +18,7 @@ error text).
 import adsk.core
 import adsk.fusion
 
-KIT_VERSION = "2"
+KIT_VERSION = "3"
 
 __all__ = ["KIT_VERSION", "BuildCtx"]
 
@@ -32,6 +32,19 @@ class BuildCtx:
         self.des = adsk.fusion.Design.cast(app.activeProduct)
         self.root = self.des.rootComponent
         self.up = self.des.userParameters
+        # Record WHICH document this build runs in: the root component id
+        # is a per-document GUID (probed across four open documents,
+        # stable between calls). The verify stub passes FH_OPTS through
+        # and fh_verify refuses to run against any other document - a
+        # user tab switch mid-build once produced a verdict, and a
+        # liveness pass, for the wrong part.
+        rid = getattr(self.root, "id", None)
+        if rid:
+            opts = globals().get("FH_OPTS")
+            if not isinstance(opts, dict):
+                opts = {}
+                globals()["FH_OPTS"] = opts
+            opts["built_root_id"] = rid
         self.extrudes = self.root.features.extrudeFeatures
         self.patterns = self.root.features.rectangularPatternFeatures
         self.planes = self.root.constructionPlanes

@@ -1243,6 +1243,31 @@ def _mirror_verdict(line):
     return line
 
 
+def _document_mismatch(opts, des):
+    """None when verify is looking at the document the build ran in, else a
+    message. The build kit records the root component id (a per-document GUID)
+    in FH_OPTS['built_root_id']. Scripts run on the UI thread and every
+    adsk.doEvents() lets the user's clicks through, so a tab switched (or a
+    document closed) mid-build leaves a DIFFERENT document active by the time
+    verify starts. Measured 2026-11-22: a custard-cream build came back with a
+    verdict - bounding box, parameter count and a full liveness pass - for the
+    wafer open in the next tab. Liveness steps parameters, so this must be
+    refused before any check runs, not reported afterwards."""
+    want = (opts or {}).get('built_root_id')
+    if not want:
+        return None
+    try:
+        have = des.rootComponent.id
+    except Exception:
+        return 'build recorded document %s but no design is active' % want
+    if have == want:
+        return None
+    return ('the active document (root %s) is not the one this build ran in '
+            '(root %s): a tab was switched or a document closed mid-run. '
+            'Nothing was checked or stepped. Re-activate the built document '
+            'and re-run the build there.' % (have, want))
+
+
 def fh_verify(clearances=None, face_specs=None, datum_heights_cm=None, digest=None,
               interference_allowed=None, expect_dead=None, refs=None, attempt=1, **opts):
     t0 = time.time()
@@ -1259,6 +1284,13 @@ def fh_verify(clearances=None, face_specs=None, datum_heights_cm=None, digest=No
                 'interference_allowed': interference_allowed,
                 'expect_dead': expect_dead}
         ctx = Ctx(decl, refs, opts)
+
+        wrong = _document_mismatch(opts, ctx.des)
+        if wrong:
+            return _mirror_verdict(VERDICT_PREFIX + json.dumps(
+                {'v': FH_CONTRACT, 'status': 'error',
+                 'code': 'verify.wrong_document', 'msg': wrong},
+                separators=(',', ':')))
 
         # Order is load-bearing: interference must precede clearance, because a
         # measured distance of 0 is only interpretable against the clash result.

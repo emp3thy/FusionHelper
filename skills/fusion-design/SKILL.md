@@ -58,7 +58,9 @@ the reason.
 
 1. **Parameter table first.** Named `snake_case` user parameters before any
    geometry; derived values as expressions (`wall_t = outer_w / 20`). One value,
-   stated once, referenced thereafter.
+   stated once, referenced thereafter. Liveness steps DERIVED parameters too:
+   never give a stack height or datum offset its own derived parameter —
+   inline the expression where it is used (hazards: "Derived and fixed-height").
 2. **Named datums.** Construction planes at parameter-bound offsets, named.
    Layout major masses against datums; fillets/chamfers last and minimal.
 3. **Generate** the script per `reference/api-recipes.md` (read the section you
@@ -87,6 +89,10 @@ the reason.
    (which sketch, which entities, which parameter) is in the `FH_CHECK1` lines.
    `pass` → render screenshots *for the user* (renders are for the human —
    numeric read-back is the oracle, not your eyes). Anything else → repair loop.
+   **Confirm the verdict is for YOUR part**: `verify.wrong_document` means the
+   active document changed mid-run (kit v3 records the build document; nothing
+   was checked). Also compare `bbox_mm` and `params` with what you built, and
+   ask the user not to switch Fusion tabs while a build runs.
    Verify options go in module globals: `FH_OPTS = {...}` before `run`, keys:
    `force_liveness` (run liveness even after a cheap-check failure — essential in
    a pre-existing document, see `reference/hazards.md`), `only_params` (scope liveness to YOUR
@@ -130,7 +136,8 @@ More measured rules:
   timeline — never trust add() alone, check timeline health. Fillet radii
   are bounded by the SHORTEST edge in the chain (scalloped rims bound at
   ~0.8 mm; measured fails at 1.0/1.18/1.43 mm and as a compounding second
-  pass).
+  pass). Draw outlines you mean to fillet as closed SPLINES, not polylines:
+  the same swirl took 0.3 mm as a spline and 0.12 mm as a polyline.
 - Delete parameters together with their features — an orphaned parameter
   is correctly flagged by liveness as `param.dead`.
 - Derive embed depths from the THINNEST layer penetrated, not from the
@@ -197,7 +204,9 @@ More measured rules:
 - Auditing overhangs is scriptable: sample face normals via
   `face.evaluator.getNormalsAtParameters(<list of Point2D>)` and flag any
   `normal.z < -0.7075` (steeper than a 45° overhang), skipping faces on
-  z=0. Renders cannot show this; the sweep found every one.
+  z=0. Orient each normal OUTWARD first (step 0.02 mm along it; if
+  `body.pointContainment` says inside, negate) — the evaluator's normal is
+  inward on reversed faces. Renders cannot show this; the sweep found every one.
 
 ## When something is off, read the hazard file
 
@@ -209,6 +218,12 @@ your symptom names, not the whole file:
 - client timeout, orphaned request, busy-vs-frozen, instanced-heavy cost,
   geometry gone dark (light bulbs) → "Heavy documents"
 - `param.dead` on a parameter you believe is live → "Editing a committed model"
+- a verdict for the wrong part, documents the user closed or reordered,
+  reusing a document for a rebuild → "Sharing Fusion with the user"
+- `param.fragile` / `edit.introduces_clash` on geometry you just built →
+  "Derived and fixed-height geometry"
+- a cut whose volume makes no sense, a taper that raises, a fillet refused
+  on decor → "Booleans, tapers and fillets on decorative geometry"
 - decorative line-art: UI freeze on a big sketch, a guard that skips a stage
   that never ran, a stroke that extrudes solid → "Art sketches at scale"
 

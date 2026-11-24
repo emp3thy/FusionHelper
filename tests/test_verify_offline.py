@@ -45,6 +45,17 @@ ok(V._mm(1.0) == 10, "cm->mm integer collapse")
 ok(V._mm3(3.2) == 3200, "cm3->mm3")
 ok(V._n(2.50000001) == 2.5, "rounding")
 
+# ----------------------------------------------------------------- wrong document
+# A user tab switch mid-build once produced a full verdict for another document.
+_des = lambda rid: types.SimpleNamespace(rootComponent=types.SimpleNamespace(id=rid))
+ok(V._document_mismatch({}, _des('A')) is None, "no recorded id -> no document check")
+ok(V._document_mismatch(None, _des('A')) is None, "no opts -> no document check")
+ok(V._document_mismatch({'built_root_id': 'A'}, _des('A')) is None, "same document passes")
+_msg = V._document_mismatch({'built_root_id': 'A'}, _des('B'))
+ok(_msg and 'root B' in _msg and 'root A' in _msg, "different document names both ids")
+ok(V._document_mismatch({'built_root_id': 'A'}, object()) is not None,
+   "no active design is a mismatch, not a crash")
+
 # ----------------------------------------------------------------- change detection
 ok(V._num_differs(1.0, 1.0000001) is True, "1e-7 detected")
 ok(V._num_differs(1.0, 1.0 + 1e-12) is False, "float noise ignored")

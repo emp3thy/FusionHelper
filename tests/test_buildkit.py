@@ -64,6 +64,26 @@ def test_buildctx_binds_handles():
     assert ctx.val("p") == 4.2
 
 
+def test_buildctx_records_the_document_it_builds_in():
+    """fh_verify refuses to run against another document; the kit is what
+    tells it which one the build used."""
+    app = FakeApp()
+    app.activeProduct.rootComponent.id = "guid-built-here"
+    buildkit.FH_OPTS = {"only_params": ["p"]}
+    buildkit.BuildCtx(app)
+    assert buildkit.FH_OPTS == {"only_params": ["p"],
+                                "built_root_id": "guid-built-here"}
+    del buildkit.FH_OPTS
+    buildkit.BuildCtx(app)                      # no FH_OPTS yet: created
+    assert buildkit.FH_OPTS == {"built_root_id": "guid-built-here"}
+    del buildkit.FH_OPTS
+
+
+def test_buildctx_without_root_id_records_nothing():
+    buildkit.BuildCtx(FakeApp())
+    assert not hasattr(buildkit, "FH_OPTS")
+
+
 def test_kit_version_is_string():
     assert isinstance(buildkit.KIT_VERSION, str)
 

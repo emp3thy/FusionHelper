@@ -139,6 +139,12 @@ unchanged. Both mechanisms are required: bound sketch dimensions **and** bound e
 
 Extrude direction is clean: a positive distance always follows the plane normal.
 
+**Taper sign is not clean.** `inp.setOneSideExtent(extent, direction, taperAngle)` takes a
+third `ValueInput`; which sign narrows is not worth assuming, and the widening sign RAISES
+(`ASM_INCONS_REL`) on tight profiles rather than returning a body to inspect. Try both signs
+once on a simple profile, accept the one whose volume is below the straight prism's, and
+reuse it (measured 2026-11-22; see hazards, "Booleans, tapers and fillets").
+
 ## Fully-constrained rectangle, and the DOF arithmetic
 
 The verified sequence. `isFullyConstrained` flips `False` → `True` on the last dimension.
@@ -343,6 +349,22 @@ The stub declares `(bool, …)` tuples for both; `parametricRange()` actually re
 `BoundingBox2D` itself, and `getNormalsAtParameters` returns a two-element list whose second
 element holds the vectors. Passing an `ObjectCollection` of points raises a `TypeError` —
 use a plain Python list.
+
+**The evaluator's normal is not necessarily outward** (measured 2026-11-22): on reversed
+faces it points into the body, so an overhang test on the raw value misreads them. Orient
+it before using it:
+
+```python
+pof = face.pointOnFace
+n = face.evaluator.getNormalAtPoint(pof)[1]
+probe = adsk.core.Point3D.create(pof.x + n.x * 0.002, pof.y + n.y * 0.002, pof.z + n.z * 0.002)
+inside = adsk.fusion.PointContainment.PointInsidePointContainment
+sign = -1.0 if body.pointContainment(probe) == inside else 1.0
+overhang = sign * n.z < -0.7075          # steeper than 45 degrees, facing down
+```
+
+`body.pointContainment(point)` is also the direct way to learn which way a partial revolve
+swept: test a point that should now be air.
 
 ## entityToken capture and round-trip
 
@@ -560,6 +582,13 @@ Constraints work only **within** a single sketch. Cross-sketch relationships nee
 
 ## Things that do not work
 
+- **`Appearances.itemByName` raises on a missing name** (`RuntimeError: 3 : invalid name`),
+  on material libraries and on `design.appearances` alike — it does not return `None`
+  (`userParameters.itemByName` does). To colour bodies without `try`/`except`: loop
+  `app.materialLibraries`, skip libraries whose name lacks "ppearance", take the first
+  appearance whose name starts with "Plastic - Matte", `design.appearances.addByCopy(base,
+  name)`, set its `"Color"` `ColorProperty`, assign `body.appearance`. Scan
+  `design.appearances` by index to find one you already made (measured 2026-11-22).
 - **`geometricConstraints.addFixed` does not exist.** It is plausible-looking and the
   pre-flight catches it. Check unfamiliar calls against `fusion_mcp_read`,
   `queryType: apiDocumentation` before writing them.

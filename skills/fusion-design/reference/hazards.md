@@ -117,3 +117,82 @@ that hold fine for a dozen feature sketches.
   a centroid test fails outright, because a C-shaped strip's centroid lies in
   its own eye. Design the strokes pairwise-disjoint with open curls, and the
   sketch yields exactly one profile per polygon. See `print-in-place-design`.
+
+## Sharing Fusion with the user (measured 2026-11-22)
+
+The user is in the same Fusion session, clicking, while your scripts run.
+
+- **Verify checks whatever document is in front when it starts.** Scripts run
+  on the UI thread and every `adsk.doEvents()` lets the user's clicks through.
+  A tab switched mid-build returned a complete verdict — bounding box,
+  parameter count, a full liveness pass that stepped parameters — for the
+  document in the next tab. Kit v3 records the build document
+  (`FH_OPTS['built_root_id']`, the root component's GUID) and `fh_verify`
+  answers `verify.wrong_document` without checking or stepping anything. A
+  script that does not use the kit has no such guard: set
+  `FH_OPTS["built_root_id"] = des.rootComponent.id` at the top of `run`, and
+  compare the verdict's `bbox_mm` / `params` with what you built.
+- **The same applies to every utility script.** A colouring pass reported
+  "painted 0 of 0" because it ran against another tab. Have utilities print
+  what they acted on, and read it.
+- **Never address a document by position.** `app.documents.item(i)` changes
+  meaning when the user closes a superseded document — and they will. Find a
+  document by what is in it (body names at root AND inside components) and
+  refuse unless exactly one matches.
+- **Reusing a document for a rebuild:** loop `fusion_mcp_update` undo until
+  `canUndo` is false, then probe for `timeline 0 / bodies 0` before building.
+  This beats opening a new document per attempt, which leaves the user a
+  stack of anonymous "Untitled" tabs to sort out.
+- **Post-build steps act on components too.** Once bodies are grouped into
+  components, `root.bRepBodies` is empty; walk `root.occurrences` as well.
+
+## Derived and fixed-height geometry (measured 2026-11-22)
+
+- **Liveness steps derived parameters, not just root ones.** A derived
+  `total_t = 2 * bis_t + fill_t` was overridden with a literal step, moved an
+  inlay plane above the body, and read as `param.fragile` ("No target
+  body"). Do not create derived convenience parameters for stack heights or
+  datum offsets; write the expression inline in the plane offset or dimension.
+- **A fixed-height feature in a parameter-driven pocket clashes.** A revolved
+  profile lives at absolute z. Its pocket, cut from a plane at
+  `thickness - depth`, rises when thickness is stepped and buries the fixed
+  plug: `edit.introduces_clash`. Cut the pocket with a revolve at the same
+  fixed heights, open upward — then a thickness edit leaves the feature proud
+  or recessed, but never inside material. State in the report that it is
+  fixed art.
+- **Fixed art is a legitimate choice — say so.** Outlines and decor mapped
+  through `modelToSketchSpace` and fixed do not follow parameters. Use literal
+  expressions for their sizes rather than a parameter that only half-drives
+  the part, and tell the user which things the parameters do and do not move.
+- **A fillet or taper sized near its limit is fragile under stepping.** Leave
+  headroom, or use a literal where a parameter could only break it.
+
+## Booleans, tapers and fillets on decorative geometry (measured 2026-11-22)
+
+- **A cut exactly tangent to, or coincident with, an existing surface returns
+  garbage.** A revolve-cut whose sides lay on an existing cone left the
+  bodies' summed volume 55 mm³ HIGHER after later cuts. Keep cut profiles
+  0.1–0.2 mm proud of what they meet, with their open edge well inside the
+  existing void — and gate every cut on a plausible volume range, both ends.
+- **A profile edge just outside an existing cavity leaves hanging slivers**
+  (0.38 mm wide, found only by an overhang sweep).
+- **A tapered extrude with the WIDENING sign raises** (`ASM_INCONS_REL`) on
+  tight strokes instead of returning something checkable. Learn the narrowing
+  sign once, on a simple shape (ring, frame), and reuse it for the rest.
+- **Taper limits depend on what is joined together.** Four mirrored spiral
+  strokes failed a 30° tapered join as a set, passed individually, and passed
+  as a set at 20°.
+- **Spline outlines fillet; polyline outlines barely do.** Tops of tapered
+  relief: polyline swirls took 0.12 mm, the same swirls as closed fitted
+  splines took 0.3 mm (2–4 edges per set instead of 68–216). Rim fillet on a
+  24-lobe crimped spline, r 29 mm: 0.7 mm crimp amplitude took 1.3 mm, 0.5 mm
+  amplitude took 2.0 mm.
+- **Fillet only what is new.** Rounded relief keeps flat-top edges at the
+  same height, so a second fillet selected by height re-selects them and
+  fails. Key the top edges (plan bounding box) before the emboss and fillet
+  the ones that appeared.
+- **Measure limits with a spike, not by patching.** When a fillet, taper or
+  boolean refuses twice, run one probe in an empty document that tries the
+  candidate values under `try`/`except` and reports which pass, then undo it.
+  A spike is a probe, not a part build: it carries no stub, does not count
+  against the execute cap, and catching the failures is its whole purpose.
