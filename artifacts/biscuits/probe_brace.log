@@ -1,0 +1,6 @@
+SUCCESS=True
+--- message ---
+FH_RESULT {"gap_mm_leg_1": 0.0, "gap_mm_leg_2": 0.0, "gap_mm_to_biscuit": 0.6, "brace_faces": 46, "brace_overhang_faces": []}
+
+--- error ---
+

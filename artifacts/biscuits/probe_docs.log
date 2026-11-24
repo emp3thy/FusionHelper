@@ -1,0 +1,6 @@
+SUCCESS=True
+--- message ---
+FH_RESULT [{"i": 0, "active": true, "timeline": 101, "root_bodies": 0, "occ": 2, "n_bodies": 13, "sample": ["Custard cream/biscuit_base", "Custard cream/cream", "Custard cream/biscuit_top"], "has_face_sink": true, "n_params": 14}, {"i": 1, "active": false, "timeline": 110, "root_bodies": 0, "occ": 2, "n_bodies": 19, "sample": ["Pink wafer/wafer_1", "Pink wafer/wafer_cream_1", "Pink wafer/wafer_2"], "has_face_sink": true, "n_params": 10}, {"i": 2, "active": false, "timeline": 93, "root_bodies": 0, "occ": 2, "n_bodies": 13, "sample": ["Chocolate sandwich/choc_base", "Chocolate sandwich/filling", "Chocolate sandwich/choc_top"], "has_face_sink": true, "n_params": 12}]
+
+--- error ---
+

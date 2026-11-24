@@ -1,0 +1,12 @@
+SUCCESS=True
+--- message ---
+FH_RESULT frame -> -30 deg:ok 0.71 | -20 deg:ok 0.82 | -10 deg:ok 0.91 | 0 deg:ok 1.00
+FH_RESULT corner -> -30 deg:FAIL(L - Failed to perform boolean operation.) | -20 deg:ok 0.78 | -10 deg:ok 0.89 | 0 deg:ok 1.00
+FH_RESULT corner_one -> -30 deg:ok 0.64 | -20 deg:ok 0.78 | -10 deg:ok 0.89 | 0 deg:ok 1.00
+FH_RESULT top -> -30 deg:ok 0.64 | -20 deg:ok 0.77 | -10 deg:ok 0.89 | 0 deg:ok 1.00
+FH_RESULT side -> -30 deg:ok 0.64 | -20 deg:ok 0.77 | -10 deg:ok 0.89 | 0 deg:ok 1.00
+FH_RESULT tendrils -> -30 deg:ok 0.65 | -20 deg:ok 0.77 | -10 deg:ok 0.89 | 0 deg:ok 1.00
+FH_RESULT dots -> -30 deg:ok 0.67 | -20 deg:ok 0.78 | -10 deg:ok 0.89 | 0 deg:ok 1.00
+
+--- error ---
+

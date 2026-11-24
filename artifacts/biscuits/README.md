@@ -1,0 +1,134 @@
+# Dangly biscuit ornaments
+
+Three printable biscuit characters modelled from shop photos (2026-11-22):
+a round jam sandwich, a pink wafer and a custard cream. Each has two
+6.5 mm sockets in its bottom edge for rope legs, two biscuit feet with
+piped-cream tops, and two optional printed octagonal legs.
+
+All three print flat, face up. Every colour is its own flush body
+(inlay depth `inlay_d`, 0.6 mm) so filaments can be assigned per body.
+
+| File | Role |
+|---|---|
+| `common.py` | shared art generators and Fusion helpers (feet, legs, sockets, inlays) |
+| `jammie_part.py`, `wafer_part.py`, `custard_part.py` | one biscuit each |
+| `make.py` | concatenates `common.py` + part into `<name>_author.py` |
+| `<name>_author.bundled.py` | the artifact that ran in Fusion (kit + stub) |
+| `<name>_author.bundled.log` | build output and `FH_VERDICT1` |
+| `ctl.py` | session utilities: probe, undo, newdoc, paint, shot |
+| `preview_art.py` | offline matplotlib preview of the 2D art |
+
+Rebuild: `python make.py`, `python -m fusionhelper.bundle <author>`,
+`python -m fusionhelper.preflight <bundled>`, then in an EMPTY Fusion
+document `python run_fusion.py <bundled>` and `python ctl.py paint`.
+
+Outline and artwork coordinates are fixed constants in the part files;
+the user parameters drive thicknesses, inlay depth, relief heights,
+socket size/depth and the feet and legs.
+
+Verdicts (2026-11-22): all three `warn` only for
+`dimension.literal_expression` (layout positions are literals by
+design); timeline, interference and liveness pass.
+
+## Revision 2 (2026-11-22, same day)
+
+- Jam biscuit and custard cream: bevelled rims (`edge_fillet`,
+  `under_fillet`), embossed front patterns with a bevel (`relief_h`,
+  `emboss_taper`), domed dimples on the jam biscuit, rounded corners on
+  the custard cream.
+- Rope sockets and loose legs replaced by print-in-place ball-jointed
+  legs (`jointed_legs` in `common.py`): hip socket inside the biscuit,
+  knee bowl on the thigh, teardrop balls, tip relief channels, one
+  break-away tab per joint. Feet still push on (`foot_hole_d`).
+- `probe_joints.py` measures retention (lift), swing clash (rotate) and
+  overhangs; `spike_*_part.py` are the probes behind the fillet and
+  taper limits; `ctl.py` gained `docs`.
+
+Revision 3 (same day): all three biscuits rebuilt on one leg design
+(knee bowl r 6.7, hip recess r 4.1) and verified: timeline,
+interference and liveness pass; `probe_joints.py` reads 0.0 mm3 clash
+at 30/60/90 deg swing and 2.6 mm3 lip engagement at 1 mm lift on each.
+Rosy cheeks (jam biscuit, wafer) are spherical caps 0.9 mm proud
+(`domed_cheeks`). Print orientation: on the back, legs straight up.
+Not yet print-tested.
+
+## Revision 4 (2026-11-22)
+
+- Eyes and smile sit `face_sink` (1.2 mm) below the face; the colour is
+  the bottom `inlay_d` of the pocket.
+- Foot biscuits have bevelled rims (`foot_fillet`, bed edge at 0.4x).
+- Pink wafer is four pink sheets (`wafer_1..4`) with three white cream
+  layers (`wafer_cream_1..3`) set back `groove_d`; its legs are painted
+  white by `ctl.py paint`.
+- Post-build steps per document: `ctl.py paint`, then `ctl.py group`
+  (cookie component + Feet component).
+- `ctl.py activate jam|wafer|custard` finds a document by its bodies;
+  `ctl.py undoall` rolls the active document back to empty for a
+  rebuild. Do not switch Fusion tabs during a build: verify reads the
+  active document.
+
+## Revision 5 (2026-11-22)
+
+Custard cream relief softened: swirl and tendril outlines are closed
+splines (`CC_SMOOTH`), and each embossed set has its ridge tops rounded
+by `CC_TOP_ROUND` (0.25 mm) via `soften_new_tops`. `spike_soften_part.py`
+is the measurement behind it (polyline swirls take 0.12 mm at most,
+spline swirls 0.3 mm). Jam biscuit and wafer geometry unchanged.
+
+Revision 6: the jam biscuit gets the same treatment - rim ring and
+splat arms (now spline outlines) have their tops rounded by
+`JM_TOP_ROUND` (0.25 mm).
+
+## Revision 7 (2026-11-22): print brace
+
+First print: a leg wobbled (60 mm tower on a ball joint, one tab).
+Every biscuit now carries a `print_brace` body in the cookie component:
+a 1.2 mm wall on the bed just past the bottom edge, two buttresses
+behind it, and five 45 degree struts per leg that end tangent to the
+thigh and shin rods (`print_brace` in `common.py`). `probe_brace.py`
+measures 0.0 mm strut-to-leg gap on all four leg parts and no overhang
+faces. It snaps off after printing. Feet moved further out to clear the
+buttresses. Not yet print-tested.
+
+## Revision 8 (2026-11-22): single-joint legs at mid thickness
+
+First print came off with hips near the front face (over-balanced) and
+legs too long; the hip-to-knee part alone stood and sat well. Now:
+
+- hip ball at MID thickness (`zc = face_z / 2`), reached through a well
+  from the face; slot neck-wide round the ball, shaft-wide above the lip
+  and beyond the socket wall;
+- one segment per leg, `J_LEG` = 27 mm hip centre to end (no knee, no
+  shin); printed height about 35 mm instead of 61;
+- brace kept, three struts per leg.
+
+`probe_joints.py` (leg_1): 0.0 mm3 clash at 15/30/45/60/75/90 deg,
+2.6 mm3 lip engagement at 1 mm lift, on all three biscuits.
+
+## Revision 9 (2026-11-22): brace bed pad
+
+Printed brace was too thin and kept being dislodged. Wall and buttresses
+are now 2.0 mm (`BR_T`) and the brace stands on a 0.8 mm flat pad with a
+3 mm margin round its footprint (`BR_PAD`). `pipeline.sh <kind>` rebuilds
+one biscuit end to end in its open document.
+
+## Foot socket fit test (2026-11-22)
+
+6.5 and 6.4 mm sockets both printed loose on the 6.2 mm leg end.
+`feet_test_part.py` builds two pairs of feet in their own document:
+`foot_hole_63` (6.3 mm, three sole dimples) and `foot_hole_62` (6.2 mm,
+two sole dimples). `feet()` now takes `hole_param`, `tag` and `marks`.
+Once a size is chosen: `python ctl.py setparam foot_hole_d "<size>"`
+applies it to every open biscuit document.
+
+Result: **6.3 mm is the push fit** (print-confirmed); `foot_hole_d` is 6.3 in the scripts and the three open biscuit documents.
+
+## Chocolate sandwich cookie (2026-11-23)
+
+Fourth character, `choc_part.py`: same size, face layout, hips, legs,
+brace and feet as the jam biscuit. Dark `choc_base` / `choc_top` with a
+white `filling`; embossed ring of 60 rim ticks, a ring line, seven
+four-petal flowers and a plain oval where the jam biscuit has its
+heart; eyes and smile are painted white (`ctl.py paint` detects the
+`choc_` bodies). No brand name or emblem. `pipeline.sh choc` rebuilds
+it; `ctl.py activate choc` finds its document.
